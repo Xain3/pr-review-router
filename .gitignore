@@ -1,0 +1,27 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+
+# Test and lint caches
+.pytest_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Private runtime reports
+reports/
+
+# macOS
+.DS_Store

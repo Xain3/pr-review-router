@@ -1,0 +1,30 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "pr-review-router"
+version = "0.1.0"
+description = "An advisory tool for routing pull request reviews."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = []
+
+[project.scripts]
+pr-review-router = "pr_review_router.cli:main"
+
+[dependency-groups]
+dev = ["ruff", "pytest", "codespell"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.codespell]
+skip = ["uv.lock", "build", "dist", ".venv", ".git", ".pytest_cache", ".ruff_cache"]
