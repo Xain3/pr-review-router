@@ -1,0 +1,54 @@
+name: CI Checks
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          uv sync --locked
+
+      - name: Run Ruff checks
+        run: |
+          uv run ruff check .
+
+      - name: Run Ruff formatting check
+        run: |
+          uv run ruff format --check .
+
+      - name: Run codespell
+        run: |
+          uv run codespell
+
+      - name: Run tests
+        run: |
+          uv run pytest
+
+      - name: Build package
+        run: |
+          uv build
+
+      - name: Check CLI help
+        run: |
+          uv run pr-review-router --help
+
+      - name: Check CLI version
+        run: |
+          uv run pr-review-router --version
