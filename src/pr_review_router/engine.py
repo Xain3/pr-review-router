@@ -1,14 +1,18 @@
 """Provider-independent advisory routing; incomplete evidence fails closed."""
 
+import re
 from typing import Literal
 
-from .config import Policy
+from .config import Policy, RubricCriterion
 from .contracts import (
     Coverage,
     Finding,
+    PRTextValidation,
     PullRequestEvidence,
     ReviewReport,
     ReviewStage,
+    RubricCriterionResult,
+    RubricEvaluation,
 )
 from .patches import parse_patch
 from .providers import (
@@ -18,6 +22,9 @@ from .providers import (
     request_decision,
     request_review,
 )
+
+_CONVENTIONAL_COMMIT_TITLE = re.compile(r"^[a-z][a-z0-9-]*(?:\([^\s()]+\))?!?: \S.*$")
+_MARKDOWN_HEADING = re.compile(r"^ {0,3}#{1,6}\s+")
 
 
 def assess_coverage(evidence: PullRequestEvidence, policy: Policy) -> Coverage:
@@ -60,6 +67,113 @@ def assess_coverage(evidence: PullRequestEvidence, policy: Policy) -> Coverage:
     )
 
 
+def _has_nonempty_body_section(body: str, section: str) -> bool:
+    lines = body.splitlines()
+    heading = f"## {section}"
+    for index, line in enumerate(lines):
+        if line.strip() != heading:
+            continue
+        for content in lines[index + 1 :]:
+            if re.match(r"^ {0,3}#{1,2}(?:\s|$)", content):
+                break
+            if content.strip() and not _MARKDOWN_HEADING.match(content):
+                return True
+    return False
+
+
+def assess_pr_text(evidence: PullRequestEvidence, policy: Policy) -> PRTextValidation:
+    issues = []
+    if policy.title_format == "conventional_commit" and not _CONVENTIONAL_COMMIT_TITLE.fullmatch(
+        evidence.title
+    ):
+        issues.append("PR title must follow Conventional Commits format: type(scope): description.")
+    for section in policy.required_body_sections:
+        if not _has_nonempty_body_section(evidence.body, section):
+            issues.append(f"PR body must include a non-empty '## {section}' section.")
+    return PRTextValidation(
+        enabled=policy.title_format != "any" or bool(policy.required_body_sections),
+        valid=not issues,
+        issues=issues,
+    )
+
+
+def _criterion_score(
+    criterion: RubricCriterion, evidence: PullRequestEvidence
+) -> tuple[float, str]:
+    text = getattr(evidence, criterion.field)
+    if criterion.check == "non_empty":
+        passed = bool(text.strip())
+        return (100.0 if passed else 0.0, "Text is present." if passed else "Text is empty.")
+    if criterion.check == "contains":
+        assert criterion.value is not None
+        passed = criterion.value.casefold() in text.casefold()
+        explanation = (
+            f"Required phrase '{criterion.value}' was found."
+            if passed
+            else f"Required phrase '{criterion.value}' was not found."
+        )
+        return (100.0 if passed else 0.0, explanation)
+    if criterion.check == "section_nonempty":
+        assert criterion.value is not None
+        passed = _has_nonempty_body_section(text, criterion.value)
+        explanation = (
+            f"Section '## {criterion.value}' has content."
+            if passed
+            else f"Section '## {criterion.value}' is missing or empty."
+        )
+        return (100.0 if passed else 0.0, explanation)
+
+    assert criterion.minimum_words is not None
+    word_count = len(re.findall(r"\b[\w'-]+\b", text))
+    score = min(100.0, word_count / criterion.minimum_words * 100)
+    return (
+        score,
+        f"Found {word_count} words; {criterion.minimum_words} required.",
+    )
+
+
+def assess_pr_text_rubric(evidence: PullRequestEvidence, policy: Policy) -> RubricEvaluation:
+    if not policy.rubric_criteria:
+        return RubricEvaluation(
+            enabled=False,
+            minimum_score=policy.rubric_minimum_score,
+            passed=True,
+        )
+
+    results = []
+    for criterion in policy.rubric_criteria:
+        score, explanation = _criterion_score(criterion, evidence)
+        results.append(
+            RubricCriterionResult(
+                criterion_id=criterion.criterion_id,
+                score=score,
+                weight=criterion.weight,
+                blocker=criterion.blocker,
+                pass_score=criterion.pass_score,
+                passed=score >= criterion.pass_score,
+                explanation=explanation,
+            )
+        )
+    score = sum(result.score * result.weight for result in results) / sum(
+        result.weight for result in results
+    )
+    hard_failures = [
+        result.criterion_id for result in results if result.blocker == "hard" and not result.passed
+    ]
+    soft_failures = [
+        result.criterion_id for result in results if result.blocker == "soft" and not result.passed
+    ]
+    return RubricEvaluation(
+        enabled=True,
+        score=score,
+        minimum_score=policy.rubric_minimum_score,
+        passed=not hard_failures and score >= policy.rubric_minimum_score,
+        failed_hard_blockers=hard_failures,
+        failed_soft_criteria=soft_failures,
+        criteria=results,
+    )
+
+
 def _findings(reviews: list[ReviewStage]) -> list[Finding]:
     unique: list[Finding] = []
     seen: set[tuple[str, int | None, str, str, str]] = set()
@@ -79,9 +193,19 @@ def review_pull_request(
     review_provider: ReviewProvider,
 ) -> ReviewReport:
     coverage = assess_coverage(evidence, policy)
+    pr_text = assess_pr_text(evidence, policy)
+    rubric = assess_pr_text_rubric(evidence, policy)
     decision = None
     reviews: list[ReviewStage] = []
-    reasons = list(coverage.issues)
+    reasons = [*coverage.issues, *pr_text.issues]
+    reasons.extend(
+        f"Rubric hard blocker failed: {criterion_id}."
+        for criterion_id in rubric.failed_hard_blockers
+    )
+    if rubric.enabled and rubric.score is not None and rubric.score < rubric.minimum_score:
+        reasons.append(
+            f"Rubric score {rubric.score:.1f} is below the {rubric.minimum_score:.1f} minimum."
+        )
 
     def report(
         outcome: Literal["skipped", "reviewed", "needs_human_review"],
@@ -108,13 +232,15 @@ def review_pull_request(
             route=route,
             reasons=reasons,
             coverage=coverage,
+            pr_text=pr_text,
+            rubric=rubric,
             decision=decision,
             reviews=exported,
             findings=findings[: policy.max_findings],
             findings_omitted=max(0, len(findings) - policy.max_findings),
         )
 
-    if not coverage.complete:
+    if not coverage.complete or not pr_text.valid or not rubric.passed:
         return report("needs_human_review", "human")
     try:
         decision = request_decision(decision_provider, evidence)
