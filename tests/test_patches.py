@@ -37,3 +37,23 @@ def test_new_removed_and_header_like_content(patch, removed, added):
     hunk = parse_patch(patch)[0]
     assert hunk.removed == removed
     assert hunk.added == added
+
+
+@pytest.mark.parametrize(
+    "patch",
+    [
+        "@@ -0 +0 @@\n-the the\n+the\n",
+        "@@ -0,1 +1 @@\n-old\n+new\n",
+        "@@ -1 +0,1 @@\n-old\n+new\n",
+        "@@ -0,2 +0,0 @@\n-a\n-b\n",
+        "@@ -0,0 +0,2 @@\n+a\n+b\n",
+    ],
+)
+def test_nonempty_range_starting_at_zero_is_rejected(patch):
+    with pytest.raises(ValueError, match="starts at line zero"):
+        parse_patch(patch)
+
+
+def test_zero_start_with_zero_count_is_allowed():
+    assert parse_patch("@@ -0,0 +1 @@\n+new\n")[0].added == [(1, "new")]
+    assert parse_patch("@@ -1 +0,0 @@\n-old\n")[0].removed == ["old"]

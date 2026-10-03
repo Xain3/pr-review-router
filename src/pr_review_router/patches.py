@@ -27,6 +27,8 @@ def parse_patch(patch: str) -> list[Hunk]:
             old_remaining = int(header[2]) if header[2] is not None else 1
             new_remaining = int(header[4]) if header[4] is not None else 1
             new_line = int(header[3])
+            if (int(header[1]) == 0 and old_remaining) or (new_line == 0 and new_remaining):
+                raise ValueError("nonempty diff range starts at line zero")
             hunks.append(Hunk(old_start=int(header[1])))
             continue
         if line == "\\ No newline at end of file":
