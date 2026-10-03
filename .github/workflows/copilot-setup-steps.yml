@@ -14,17 +14,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+      - name: Set up Python with pip cache
+        uses: actions/setup-python@v4
         with:
           python-version: "3.12"
-
-      - uses: astral-sh/setup-uv@<same pinned version as checks.yml>
-        with:
-          version: "0.10.0"
-          enable-cache: true
+          cache: "pip"
 
       - name: Install dependencies
-        run: uv sync --locked --group dev
+        run: pip install -e .
+
+      - name: Install Playwright browsers
+        run: |
+          pip install playwright
+          playwright install chromium --with-deps
 
       - name: Run tests
-        run: uv run --no-sync pytest -q
+        run: python -m pytest -q
