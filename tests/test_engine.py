@@ -78,6 +78,7 @@ def test_editorial_example_skips_and_report_round_trips(evidence):
     report = run(evidence)
     assert report.outcome == "skipped"
     assert report.route == "no_review"
+    assert report.schema_version == "2"
     assert report.coverage.complete
     assert not report.pr_text.enabled
     assert report.pr_text.valid
@@ -86,6 +87,10 @@ def test_editorial_example_skips_and_report_round_trips(evidence):
     assert report.reviews == []
     assert ReviewReport.model_validate_json(report.model_dump_json()) == report
     assert json.loads(report.model_dump_json())["advisory_only"] is True
+    legacy_report = report.model_dump()
+    legacy_report["schema_version"] = "1"
+    with pytest.raises(ValidationError):
+        ReviewReport.model_validate(legacy_report)
 
 
 @pytest.mark.parametrize(
@@ -149,6 +154,36 @@ def test_pr_text_format_failure_hands_off_before_provider_calls(evidence, title,
     assert any(issue in message for message in report.pr_text.issues)
     assert decider.calls == 0
     assert reviewer.depths == []
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        "    ## Summary\nThis heading is in an indented code block.\n",
+        "```markdown\n## Summary\nThis heading is in a fenced code block.\n```\n",
+    ],
+)
+def test_pr_text_ignores_section_headings_in_code_blocks(evidence, body):
+    evidence.body = body
+    policy = Policy(required_body_sections=["Summary"])
+    decider = ScriptedDecision("skip_review")
+    reviewer = ScriptedReview()
+
+    report = run(evidence, policy=policy, decision=decider, reviewer=reviewer)
+
+    assert report.outcome == "needs_human_review"
+    assert not report.pr_text.valid
+    assert decider.calls == 0
+    assert reviewer.depths == []
+
+
+def test_pr_text_accepts_section_heading_with_three_space_indentation(evidence):
+    evidence.body = "   ## Summary\nAdd format validation.\n"
+    policy = Policy(required_body_sections=["Summary"])
+
+    report = run(evidence, policy=policy)
+
+    assert report.pr_text.valid
 
 
 def test_rubric_scores_weighted_criteria_and_reports_soft_failures(evidence):

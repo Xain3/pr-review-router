@@ -25,6 +25,7 @@ from .providers import (
 
 _CONVENTIONAL_COMMIT_TITLE = re.compile(r"^[a-z][a-z0-9-]*(?:\([^\s()]+\))?!?: \S.*$")
 _MARKDOWN_HEADING = re.compile(r"^ {0,3}#{1,6}\s+")
+_FENCED_CODE_START = re.compile(r"^ {0,3}(`{3,}|~{3,})")
 
 
 def assess_coverage(evidence: PullRequestEvidence, policy: Policy) -> Coverage:
@@ -68,15 +69,31 @@ def assess_coverage(evidence: PullRequestEvidence, policy: Policy) -> Coverage:
 
 
 def _has_nonempty_body_section(body: str, section: str) -> bool:
-    lines = body.splitlines()
-    heading = f"## {section}"
-    for index, line in enumerate(lines):
-        if line.strip() != heading:
+    lines = []
+    fence: tuple[str, int] | None = None
+    for line in body.splitlines():
+        if fence is not None:
+            lines.append((line, True))
+            marker, length = fence
+            if re.match(rf"^ {{0,3}}{re.escape(marker)}{{{length},}}[ \t]*$", line):
+                fence = None
             continue
-        for content in lines[index + 1 :]:
-            if re.match(r"^ {0,3}#{1,2}(?:\s|$)", content):
+        opening = _FENCED_CODE_START.match(line)
+        if opening:
+            marker = opening.group(1)
+            fence = (marker[0], len(marker))
+            lines.append((line, True))
+        else:
+            lines.append((line, False))
+
+    section_heading = re.compile(rf"^ {{0,3}}##[ \t]+{re.escape(section)}[ \t]*$")
+    for index, (line, in_fence) in enumerate(lines):
+        if in_fence or not section_heading.fullmatch(line):
+            continue
+        for content, content_in_fence in lines[index + 1 :]:
+            if not content_in_fence and re.match(r"^ {0,3}#{1,2}(?:[ \t]|$)", content):
                 break
-            if content.strip() and not _MARKDOWN_HEADING.match(content):
+            if content.strip() and (content_in_fence or not _MARKDOWN_HEADING.match(content)):
                 return True
     return False
 

@@ -123,7 +123,7 @@ class RubricEvaluation(Contract):
 
 
 class ReviewReport(Contract):
-    schema_version: Literal["1"] = "1"
+    schema_version: Literal["2"] = "2"
     advisory_only: Literal[True] = True
     repository: Text
     number: Annotated[int, Field(gt=0)]

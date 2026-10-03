@@ -57,9 +57,11 @@ When configured, `title_format = "conventional_commit"` requires a lowercase
 type, an optional non-whitespace scope, an optional breaking-change marker, and
 a colon followed by a nonempty description (for example,
 `feat(router): validate PR descriptions`). `required_body_sections` names exact
-level-two Markdown headings; each heading must have non-heading text beneath it
-before the next level-one or level-two heading. For example, `["Summary",
-"Testing"]` requires populated `## Summary` and `## Testing` sections.
+level-two Markdown headings outside fenced code blocks, allowing Markdown's
+0–3-space heading indentation. Each heading must have non-heading text beneath
+it before the next level-one or level-two heading. For example,
+`["Summary", "Testing"]` requires populated `## Summary` and `## Testing`
+sections.
 
 PR-text checks are disabled by default. They are deterministic format checks,
 separate from patch coverage and provider review. A format failure is reported
@@ -72,11 +74,12 @@ Each criterion has a unique `criterion_id`, description, text field (`title` or
 positive weight, and blocker type (`hard` or `soft`). `min_words` uses
 `minimum_words`; `contains` and `section_nonempty` use `value`. A minimum-word
 criterion gets proportional credit up to 100; the other checks score 100 or 0.
-The overall score is the weighted average of criterion scores. Any failed hard
-criterion prevents an automated pass regardless of the aggregate score. Soft
-criteria lower the aggregate score; a score below `rubric_minimum_score` also
-requires human review. Individual results and their deterministic explanations
-are included in `rubric`.
+Each criterion's `pass_score` defaults to 100 and it passes when its score is
+greater than or equal to `pass_score`. The overall score is the weighted average
+of criterion scores. Any failed hard criterion prevents an automated pass
+regardless of the aggregate score. Soft criteria lower the aggregate score; a
+score below `rubric_minimum_score` also requires human review. Individual
+results and their deterministic explanations are included in `rubric`.
 
 The input budget measures the UTF-8 bytes of the validated evidence's compact
 JSON representation, including metadata and patches. A budget violation prevents
@@ -124,7 +127,7 @@ reported concerns. Otherwise standard review escalates to deep review, and
 unresolved deep review requires human review. Provider exceptions and malformed
 responses require human review; exception text is excluded from reports.
 
-Report schema version `"1"` includes:
+Report schema version `"2"` includes:
 
 - `advisory_only: true`, repository, PR number, base/head identifiers.
 - `outcome`: `skipped`, `reviewed`, or `needs_human_review`.
@@ -135,6 +138,11 @@ Report schema version `"1"` includes:
 - `rubric`, with an optional weighted score, criterion scores/explanations,
   failed hard blockers, failed soft criteria, and whether the rubric passes.
 - Deduplicated findings capped by policy and a unique `findings_omitted` count.
+
+Version 2 adds the `pr_text` and `rubric` fields and is incompatible with version
+1. Reports emit version 2, and the version 2 contract rejects version 1 payloads;
+consumers handling stored version 1 reports must retain a version 1 parser or
+migrate those reports before validating them with the current contract.
 
 Stage finding lists are also capped individually. Escalation examines the complete
 provider results before capping. Findings from earlier stages cannot be silently
