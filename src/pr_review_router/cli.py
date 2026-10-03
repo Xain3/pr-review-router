@@ -6,15 +6,22 @@ import os
 import sys
 import tempfile
 import tomllib
-from importlib.metadata import version
+from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 
 from pydantic import ValidationError
 
-from .config import load_policy
+from .config import Policy, load_policy
 from .contracts import PullRequestEvidence
 from .engine import review_pull_request
 from .providers import MockDecisionProvider, MockReviewProvider
+
+
+def _get_version() -> str:
+    try:
+        return version("pr-review-router")
+    except PackageNotFoundError:
+        return "unknown"
 
 
 def _write_report(path: Path, content: str) -> None:
@@ -32,11 +39,10 @@ def _write_report(path: Path, content: str) -> None:
             temporary.unlink(missing_ok=True)
 
 
-def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Advisory pull request review router.")
-    parser.add_argument(
-        "--version", action="version", version=f"%(prog)s {version('pr-review-router')}"
-    )
+def _parse_args(
+    parser: argparse.ArgumentParser, argv: list[str] | None = None
+) -> argparse.Namespace | None:
+    parser.add_argument("--version", action="version", version=f"%(prog)s {_get_version()}")
     commands = parser.add_subparsers(dest="command")
     review = commands.add_parser(
         "review", help="Review evidence using deterministic offline mocks."
@@ -51,15 +57,23 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     if args.command is None:
         parser.print_help()
-        return 0
+        return None
     if args.output and args.output.resolve() in {
         args.input.resolve(),
         args.config.resolve() if args.config else None,
     }:
         parser.error("--output must differ from the evidence and policy paths")
+    return args
+
+
+def _load_inputs(
+    input_path: Path,
+    config_path: Path | None,
+    parser: argparse.ArgumentParser,
+) -> tuple[Policy, PullRequestEvidence]:
     try:
-        policy = load_policy(args.config)
-        data = json.loads(args.input.read_text(encoding="utf-8"))
+        policy = load_policy(config_path)
+        data = json.loads(input_path.read_text(encoding="utf-8"))
         evidence = PullRequestEvidence.model_validate(data)
     except ValidationError as error:
         # Avoid echoing untrusted evidence values in diagnostics.
@@ -72,6 +86,15 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("invalid JSON evidence or TOML policy")
     except (OSError, UnicodeError):
         parser.error("could not read evidence or policy as UTF-8")
+    return policy, evidence
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="Advisory pull request review router.")
+    args = _parse_args(parser, argv)
+    if args is None:
+        return 0
+    policy, evidence = _load_inputs(args.input, args.config, parser)
     report = review_pull_request(evidence, policy, MockDecisionProvider(), MockReviewProvider())
     content = report.model_dump_json(indent=2) + "\n"
     try:

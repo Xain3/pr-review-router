@@ -2,23 +2,29 @@ import json
 import os
 import shutil
 import subprocess
-from importlib.metadata import version
+from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 
 import pytest
+
+from pr_review_router import cli as cli_module
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
 def cli(*arguments):
     # Exercise the actual installed console script, with all model credentials removed.
+    executable = shutil.which("pr-review-router")
+    if executable is None:
+        pytest.fail("pr-review-router console script is not installed")
+
     environment = {
         key: value
         for key, value in os.environ.items()
         if key not in {"OPENAI_API_KEY", "TYPESAFE_API_KEY", "REVIEW_MODEL_API_KEY"}
     }
     return subprocess.run(
-        [shutil.which("pr-review-router"), *map(str, arguments)],
+        [executable, *map(str, arguments)],
         capture_output=True,
         text=True,
         env=environment,
@@ -33,6 +39,14 @@ def test_help_and_version():
     version_result = cli("--version")
     assert version_result.returncode == 0
     assert version_result.stdout.strip() == f"pr-review-router {version('pr-review-router')}"
+
+
+def test_version_without_package_metadata(monkeypatch):
+    def missing_distribution(_name):
+        raise PackageNotFoundError
+
+    monkeypatch.setattr(cli_module, "version", missing_distribution)
+    assert cli_module._get_version() == "unknown"
 
 
 def test_stdout_review_without_credentials():
