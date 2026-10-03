@@ -148,3 +148,47 @@ def test_duplicate_paths_and_unknown_fields_are_rejected(evidence, tmp_path):
     data["files"][0]["misspelled_field"] = True
     input_path.write_text(json.dumps(data), encoding="utf-8")
     assert cli("review", "--input", input_path).returncode == 2
+
+
+@pytest.mark.parametrize(
+    ("fixture", "valid"),
+    [("valid.json", True), ("invalid.json", False)],
+)
+def test_pr_text_format_examples(fixture, valid):
+    completed = cli(
+        "review",
+        "--input",
+        ROOT / "examples/pr-text" / fixture,
+        "--config",
+        ROOT / "examples/pr-text/policy.toml",
+    )
+    assert completed.returncode == 0
+    report = json.loads(completed.stdout)
+    assert report["pr_text"]["enabled"] is True
+    assert report["pr_text"]["valid"] is valid
+    assert (report["outcome"] == "skipped") is valid
+    assert report["coverage"]["complete"] is True
+
+
+@pytest.mark.parametrize(
+    ("fixture", "score", "passed", "hard_failures", "soft_failures"),
+    [
+        ("valid.json", 100.0, True, [], []),
+        ("soft_blocker.json", 80.0, True, [], ["risk-context"]),
+        ("hard_blocker.json", 70.0, False, ["testing"], []),
+    ],
+)
+def test_rubric_examples(fixture, score, passed, hard_failures, soft_failures):
+    completed = cli(
+        "review",
+        "--input",
+        ROOT / "examples/rubric" / fixture,
+        "--config",
+        ROOT / "examples/rubric/policy.toml",
+    )
+    assert completed.returncode == 0
+    rubric = json.loads(completed.stdout)["rubric"]
+    assert rubric["score"] == score
+    assert rubric["passed"] is passed
+    assert rubric["failed_hard_blockers"] == hard_failures
+    assert rubric["failed_soft_criteria"] == soft_failures

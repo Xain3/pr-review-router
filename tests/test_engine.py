@@ -77,11 +77,239 @@ def test_editorial_example_skips_and_report_round_trips(evidence):
     assert report.outcome == "skipped"
     assert report.route == "no_review"
     assert report.coverage.complete
+    assert not report.pr_text.enabled
+    assert report.pr_text.valid
     assert report.decision is not None
     assert report.decision.confidence.source == "mock"
     assert report.reviews == []
     assert ReviewReport.model_validate_json(report.model_dump_json()) == report
     assert json.loads(report.model_dump_json())["advisory_only"] is True
+
+
+@pytest.mark.parametrize(
+    "title",
+    [
+        "feat: validate pull request descriptions",
+        "feat(review): validate pull request descriptions",
+        "feat!: validate pull request descriptions",
+        "feat(review)!: validate pull request descriptions",
+    ],
+)
+def test_pr_text_policy_accepts_conventional_title_and_populated_sections(evidence, title):
+    evidence.title = title
+    evidence.body = "## Summary\nAdd format validation.\n\n## Testing\nRun the test suite.\n"
+    policy = Policy(
+        title_format="conventional_commit",
+        required_body_sections=["Summary", "Testing"],
+    )
+    report = run(evidence, policy=policy)
+    assert report.pr_text.enabled
+    assert report.pr_text.valid
+    assert report.pr_text.issues == []
+    assert report.outcome == "skipped"
+
+
+@pytest.mark.parametrize(
+    ("title", "body", "issue"),
+    [
+        (
+            "Add format validation",
+            "## Summary\nAdd format checks.\n\n## Testing\nRun tests.\n",
+            "Conventional Commits",
+        ),
+        (
+            "feat(review): validate descriptions",
+            "## Summary\nAdd format checks.\n\n## Testing\n",
+            "Testing",
+        ),
+        (
+            "feat(review): validate descriptions",
+            "## Summary\n\n## Testing\nRun tests.\n",
+            "Summary",
+        ),
+    ],
+)
+def test_pr_text_format_failure_hands_off_before_provider_calls(evidence, title, body, issue):
+    evidence.title = title
+    evidence.body = body
+    policy = Policy(
+        title_format="conventional_commit",
+        required_body_sections=["Summary", "Testing"],
+    )
+    decider = ScriptedDecision("skip_review")
+    reviewer = ScriptedReview()
+    report = run(evidence, policy=policy, decision=decider, reviewer=reviewer)
+    assert report.outcome == "needs_human_review"
+    assert report.route == "human"
+    assert report.coverage.complete
+    assert report.pr_text.enabled
+    assert not report.pr_text.valid
+    assert any(issue in message for message in report.pr_text.issues)
+    assert decider.calls == 0
+    assert reviewer.depths == []
+
+
+def test_rubric_scores_weighted_criteria_and_reports_soft_failures(evidence):
+    evidence.body = (
+        "## Summary\nAdd a rubric-based PR description evaluator.\n\n"
+        "## Testing\nRun focused tests and the full suite.\n"
+    )
+    policy = Policy.model_validate(
+        {
+            "rubric_minimum_score": 80,
+            "rubric_criteria": [
+                {
+                    "criterion_id": "summary",
+                    "description": "Summary is present.",
+                    "field": "body",
+                    "check": "section_nonempty",
+                    "value": "Summary",
+                    "weight": 3,
+                    "blocker": "hard",
+                },
+                {
+                    "criterion_id": "testing",
+                    "description": "Testing is present.",
+                    "field": "body",
+                    "check": "section_nonempty",
+                    "value": "Testing",
+                    "weight": 3,
+                    "blocker": "hard",
+                },
+                {
+                    "criterion_id": "risk-note",
+                    "description": "Mention risk.",
+                    "field": "body",
+                    "check": "contains",
+                    "value": "Risk:",
+                    "weight": 1,
+                    "blocker": "soft",
+                },
+                {
+                    "criterion_id": "description-depth",
+                    "description": "Description has enough words.",
+                    "field": "body",
+                    "check": "min_words",
+                    "minimum_words": 10,
+                    "weight": 2,
+                    "blocker": "soft",
+                },
+            ],
+        }
+    )
+    report = run(evidence, policy=policy)
+    assert report.rubric.enabled
+    assert report.rubric.score == pytest.approx(800 / 9)
+    assert report.rubric.passed
+    assert report.rubric.failed_hard_blockers == []
+    assert report.rubric.failed_soft_criteria == ["risk-note"]
+    assert report.outcome == "skipped"
+
+
+def test_rubric_hard_blocker_hands_off_even_at_zero_score_threshold(evidence):
+    evidence.body = "## Summary\nA meaningful summary.\n"
+    policy = Policy.model_validate(
+        {
+            "rubric_minimum_score": 0,
+            "rubric_criteria": [
+                {
+                    "criterion_id": "testing",
+                    "description": "Testing is required.",
+                    "field": "body",
+                    "check": "section_nonempty",
+                    "value": "Testing",
+                    "blocker": "hard",
+                },
+                {
+                    "criterion_id": "risk",
+                    "description": "Risk is a soft preference.",
+                    "field": "body",
+                    "check": "non_empty",
+                    "weight": 99,
+                    "blocker": "soft",
+                },
+            ],
+        }
+    )
+    decider = ScriptedDecision("skip_review")
+    report = run(evidence, policy=policy, decision=decider)
+    assert report.rubric.score == 99
+    assert report.rubric.failed_hard_blockers == ["testing"]
+    assert report.rubric.failed_soft_criteria == []
+    assert not report.rubric.passed
+    assert report.outcome == "needs_human_review"
+    assert decider.calls == 0
+
+
+def test_soft_criteria_below_rubric_minimum_handoff_without_hard_failure(evidence):
+    evidence.body = "## Summary\nA meaningful summary.\n"
+    policy = Policy.model_validate(
+        {
+            "rubric_minimum_score": 90,
+            "rubric_criteria": [
+                {
+                    "criterion_id": "summary",
+                    "description": "Summary is required.",
+                    "field": "body",
+                    "check": "section_nonempty",
+                    "value": "Summary",
+                    "weight": 4,
+                    "blocker": "hard",
+                },
+                {
+                    "criterion_id": "risk",
+                    "description": "Risk context is recommended.",
+                    "field": "body",
+                    "check": "contains",
+                    "value": "Risk:",
+                    "weight": 1,
+                    "blocker": "soft",
+                },
+            ],
+        }
+    )
+    decider = ScriptedDecision("skip_review")
+    report = run(evidence, policy=policy, decision=decider)
+    assert report.rubric.score == 80
+    assert report.rubric.failed_hard_blockers == []
+    assert report.rubric.failed_soft_criteria == ["risk"]
+    assert not report.rubric.passed
+    assert report.outcome == "needs_human_review"
+    assert decider.calls == 0
+
+
+@pytest.mark.parametrize(
+    "criteria",
+    [
+        [
+            {
+                "criterion_id": "words",
+                "description": "Minimum word count.",
+                "field": "body",
+                "check": "min_words",
+                "value": "not allowed",
+                "minimum_words": 5,
+            }
+        ],
+        [
+            {
+                "criterion_id": "same",
+                "description": "One.",
+                "field": "body",
+                "check": "non_empty",
+            },
+            {
+                "criterion_id": "same",
+                "description": "Duplicate.",
+                "field": "title",
+                "check": "non_empty",
+            },
+        ],
+    ],
+)
+def test_invalid_rubric_policy_is_rejected(criteria):
+    with pytest.raises(ValidationError):
+        Policy.model_validate({"rubric_criteria": criteria})
 
 
 @pytest.mark.parametrize(
