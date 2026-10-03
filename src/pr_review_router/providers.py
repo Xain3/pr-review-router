@@ -1,8 +1,12 @@
 """Provider protocols and deliberately limited, deterministic offline mocks."""
 
+import inspect
 import re
+from collections.abc import Callable
 from pathlib import PurePosixPath
-from typing import Literal, Protocol
+from typing import Any, Literal, Protocol
+
+from pydantic import BaseModel, ValidationError
 
 from .contracts import Confidence, Decision, Finding, PullRequestEvidence, ReviewResult
 from .patches import parse_patch
@@ -12,12 +16,86 @@ _FENCE = re.compile(r"^(?:> ?)* {0,3}(`{3,}|~{3,})")
 _INDENTED_CODE = re.compile(r"^(?:> ?)*(?: {4,}|\t)")
 
 
+DecisionPayload = Decision | dict[str, Any] | str | bytes | bytearray
+ReviewPayload = ReviewResult | dict[str, Any] | str | bytes | bytearray
+
+
 class DecisionProvider(Protocol):
-    def decide(self, evidence: PullRequestEvidence) -> Decision: ...
+    def decide(self, evidence: PullRequestEvidence) -> DecisionPayload: ...
 
 
 class ReviewProvider(Protocol):
-    def review(self, evidence: PullRequestEvidence, *, depth: Depth) -> ReviewResult: ...
+    def review(self, evidence: PullRequestEvidence, *, depth: Depth) -> ReviewPayload: ...
+
+
+class ProviderSchemaError(ValueError):
+    """Provider output violated the schema after the bounded retry.
+
+    The message lists only field locations and error types, never input values,
+    so it is safe to include in reports.
+    """
+
+
+def _diagnostic(error: ValidationError) -> str:
+    def mask(part: object) -> str:
+        if isinstance(part, int):
+            return str(part)
+        if isinstance(part, str):
+            if re.fullmatch(r"[a-z_][a-z0-9_]*", part):
+                return part
+            return "<redacted>"
+        return "<redacted>"
+
+    return "; ".join(
+        f"{'.'.join(mask(part) for part in item['loc']) or '<root>'}: {item['type']}"
+        for item in error.errors(include_input=False, include_url=False)[:5]
+    )
+
+
+def _validate[Model: BaseModel](model: type[Model], raw: Any) -> Model:
+    if isinstance(raw, str | bytes | bytearray):
+        return model.model_validate_json(raw)
+    return model.model_validate(raw)
+
+
+def _enforce[Model: BaseModel](model: type[Model], label: str, call: Callable[..., Any]) -> Model:
+    """Validate a provider response; retry once in strict-schema mode if supported."""
+    raw = call()
+    try:
+        return _validate(model, raw)
+    except ValidationError:
+        pass
+    try:
+        supports = "strict_schema" in inspect.signature(call.func).parameters  # type: ignore[attr-defined]
+    except (TypeError, ValueError, AttributeError):
+        supports = False
+    raw = call(strict_schema=True) if supports else call()
+    try:
+        return _validate(model, raw)
+    except ValidationError as error:
+        raise ProviderSchemaError(
+            f"{label} response failed schema validation after retry ({_diagnostic(error)})"
+        ) from None
+
+
+def request_decision(provider: DecisionProvider, evidence: PullRequestEvidence) -> Decision:
+    """Single boundary for decision output; raises ProviderSchemaError when invalid."""
+    return _enforce(Decision, "Decision", _Call(provider.decide, evidence))
+
+
+def request_review(
+    provider: ReviewProvider, evidence: PullRequestEvidence, *, depth: Depth
+) -> ReviewResult:
+    """Single boundary for review output; raises ProviderSchemaError when invalid."""
+    return _enforce(ReviewResult, "Review", _Call(provider.review, evidence, depth=depth))
+
+
+class _Call:
+    def __init__(self, func: Callable[..., Any], *args: Any, **kwargs: Any) -> None:
+        self.func, self.args, self.kwargs = func, args, kwargs
+
+    def __call__(self, **extra: Any) -> Any:
+        return self.func(*self.args, **self.kwargs, **extra)
 
 
 def _editorial(evidence: PullRequestEvidence) -> bool:

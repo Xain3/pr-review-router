@@ -68,6 +68,14 @@ Confidence records its score and provenance: `mock`, `self_reported`,
 The router uses scores according to policy; it does not calibrate them or assume
 self-reported scores are probabilities.
 
+Provider output is validated against these contracts at a single boundary
+(`request_decision`/`request_review`). Providers may return models, dicts, or raw
+JSON text; strict typing, enum values, confidence bounds, and required fields are
+enforced and unknown fields are rejected. On a schema failure the call is retried
+once (with `strict_schema=True` if the provider accepts that keyword). If the retry
+is also invalid, the router requires human review and records only field locations
+and error types, never provider output or exception text.
+
 Findings include a changed-file path, optional positive new-side line, severity
 (`low`, `medium`, `high`), title, and detail. Findings require a `concerns`
 outcome. Unknown file references and invalid provider responses fail closed.

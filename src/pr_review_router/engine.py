@@ -3,15 +3,19 @@
 from .config import Policy
 from .contracts import (
     Coverage,
-    Decision,
     Finding,
     PullRequestEvidence,
     ReviewReport,
-    ReviewResult,
     ReviewStage,
 )
 from .patches import parse_patch
-from .providers import DecisionProvider, ReviewProvider
+from .providers import (
+    DecisionProvider,
+    ProviderSchemaError,
+    ReviewProvider,
+    request_decision,
+    request_review,
+)
 
 
 def assess_coverage(evidence: PullRequestEvidence, policy: Policy) -> Coverage:
@@ -108,7 +112,10 @@ def review_pull_request(
     if not coverage.complete:
         return report("needs_human_review", "human")
     try:
-        decision = Decision.model_validate(decision_provider.decide(evidence))
+        decision = request_decision(decision_provider, evidence)
+    except ProviderSchemaError as error:
+        reasons.append(f"Decision provider failed schema validation: {error}")
+        return report("needs_human_review", "human")
     except Exception:
         # Never include provider exception text: it can contain credentials or PR content.
         reasons.append("Decision provider failed or returned an invalid response.")
@@ -137,10 +144,13 @@ def review_pull_request(
         depths = ("deep",)
     for depth in depths:
         try:
-            result = ReviewResult.model_validate(review_provider.review(evidence, depth=depth))
+            result = request_review(review_provider, evidence, depth=depth)
             paths = {file.path for file in evidence.files}
             if any(finding.path not in paths for finding in result.findings):
                 raise ValueError("finding references an unknown file")
+        except ProviderSchemaError as error:
+            reasons.append(f"{depth.capitalize()} review failed schema validation: {error}")
+            return report("needs_human_review", "human")
         except Exception:
             reasons.append(f"{depth.capitalize()} review failed or returned an invalid response.")
             return report("needs_human_review", "human")

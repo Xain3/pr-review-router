@@ -19,7 +19,9 @@ The engine receives provider instances; it contains no mock-specific decision
 rules and does not depend on provider transport SDKs. To integrate a real adapter,
 implement `DecisionProvider.decide(evidence)` or
 `ReviewProvider.review(evidence, *, depth)`, returning the normalized contracts.
-The engine validates responses at the provider boundary. Confidence provenance
+Responses are validated by `request_decision`/`request_review` in `providers.py`:
+malformed output gets one retry (passing `strict_schema=True` when the adapter
+accepts it), then fails closed to human review with value-free diagnostics. Confidence provenance
 must reflect the adapter's actual source.
 
 ## Review invariants
