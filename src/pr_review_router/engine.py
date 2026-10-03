@@ -56,9 +56,12 @@ def assess_coverage(evidence: PullRequestEvidence, policy: Policy) -> Coverage:
 
 def _findings(reviews: list[ReviewStage]) -> list[Finding]:
     unique: list[Finding] = []
+    seen: set[tuple[str, int | None, str, str, str]] = set()
     for stage in reviews:
         for finding in stage.result.findings:
-            if finding not in unique:
+            key = (finding.path, finding.line, finding.severity, finding.title, finding.detail)
+            if key not in seen:
+                seen.add(key)
                 unique.append(finding)
     return unique
 
