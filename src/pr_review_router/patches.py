@@ -10,6 +10,8 @@ _HEADER = re.compile(r"^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@.*$")
 class Hunk:
     removed: list[str] = field(default_factory=list)
     added: list[tuple[int, str]] = field(default_factory=list)
+    lines: list[tuple[str, str]] = field(default_factory=list)
+    old_start: int = 0
 
 
 def parse_patch(patch: str) -> list[Hunk]:
@@ -25,7 +27,7 @@ def parse_patch(patch: str) -> list[Hunk]:
             old_remaining = int(header[2]) if header[2] is not None else 1
             new_remaining = int(header[4]) if header[4] is not None else 1
             new_line = int(header[3])
-            hunks.append(Hunk())
+            hunks.append(Hunk(old_start=int(header[1])))
             continue
         if line == "\\ No newline at end of file":
             continue
@@ -46,6 +48,7 @@ def parse_patch(patch: str) -> list[Hunk]:
             hunks[-1].removed.append(content)
         elif prefix == "+":
             hunks[-1].added.append((new_line, content))
+        hunks[-1].lines.append((prefix, content))
         if prefix in " +":
             new_line += 1
     if not hunks or old_remaining or new_remaining:

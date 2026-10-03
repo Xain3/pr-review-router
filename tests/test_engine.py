@@ -245,6 +245,32 @@ def test_mocks_do_not_skip_source_or_substantive_documentation(evidence, before,
     assert [stage.depth for stage in report.reviews] == ["standard", "deep"]
 
 
+@pytest.mark.parametrize(
+    "patch",
+    [
+        ("@@ -1,4 +1,4 @@\n A command example:\n ```sh\n-echo go go\n+echo go\n ```\n"),
+        (
+            "@@ -1,3 +1,3 @@\n"
+            " These commands are examples.\n"
+            "-    echo go go\n"
+            "+    echo go\n"
+            " Run the next command afterward.\n"
+        ),
+    ],
+)
+def test_mocks_do_not_treat_code_as_editorial(evidence, patch):
+    evidence.files[0].patch = patch
+    report = run(evidence)
+    assert report.outcome == "needs_human_review"
+    assert [stage.depth for stage in report.reviews] == ["standard", "deep"]
+
+
+def test_mocks_remain_uncertain_without_prose_context(evidence):
+    evidence.files[0].patch = "@@ -1 +1 @@\n-echo go go\n+echo go\n"
+    report = run(evidence)
+    assert report.outcome == "needs_human_review"
+
+
 def test_mock_concern_only_uses_added_lines(evidence):
     evidence.files[0].patch = "@@ -1 +1 @@\n-MOCK_REVIEW_CONCERN\n+Updated guide.\n"
     report = run(evidence)

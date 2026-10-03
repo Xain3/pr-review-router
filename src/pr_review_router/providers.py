@@ -8,6 +8,8 @@ from .contracts import Confidence, Decision, Finding, PullRequestEvidence, Revie
 from .patches import parse_patch
 
 Depth = Literal["standard", "deep"]
+_FENCE = re.compile(r"^(?:> ?)* {0,3}(`{3,}|~{3,})")
+_INDENTED_CODE = re.compile(r"^(?:> ?)*(?: {4,}|\t)")
 
 
 class DecisionProvider(Protocol):
@@ -32,14 +34,44 @@ def _editorial(evidence: PullRequestEvidence) -> bool:
         ):
             return False
         for hunk in parse_patch(file.patch):
+            if hunk.old_start != 1:
+                return False
             if len(hunk.removed) != len(hunk.added):
                 return False
+            changed = False
+            context_before = False
+            context_after = False
+            fence: tuple[str, int] | None = None
             for before, (_, after) in zip(hunk.removed, hunk.added, strict=True):
                 if any(char in before + after for char in "`{}[]<>()#*_\t"):
                     return False
                 corrected = re.sub(r"\b([A-Za-z]+) \1\b", r"\1", before)
                 if corrected == before or corrected != after:
                     return False
+            for prefix, content in hunk.lines:
+                if prefix == " ":
+                    marker = _FENCE.match(content)
+                    if marker:
+                        delimiter = marker[1]
+                        if fence is None:
+                            fence = (delimiter[0], len(delimiter))
+                        elif (
+                            delimiter[0] == fence[0]
+                            and len(delimiter) >= fence[1]
+                            and not content[marker.end() :].strip()
+                        ):
+                            fence = None
+                    elif fence is None and not _INDENTED_CODE.match(content) and content.strip():
+                        if not changed:
+                            context_before = True
+                        else:
+                            context_after = True
+                    continue
+                if fence is not None or _INDENTED_CODE.match(content):
+                    return False
+                changed = True
+            if not context_before or not context_after:
+                return False
     return True
 
 

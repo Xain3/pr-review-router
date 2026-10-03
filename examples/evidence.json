@@ -12,7 +12,7 @@
       "status": "modified",
       "additions": 1,
       "deletions": 1,
-      "patch": "@@ -1 +1 @@\n-Read the the guide before starting.\n+Read the guide before starting.\n",
+      "patch": "@@ -1,3 +1,3 @@\n Read this guide before starting.\n-Read the the guide before starting.\n+Read the guide before starting.\n Continue with the next section.\n",
       "patch_truncated": false
     }
   ]
