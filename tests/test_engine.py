@@ -301,3 +301,90 @@ def test_invalid_confidence_is_rejected(confidence):
 def test_calibrated_confidence_records_provenance():
     confidence = Confidence(value=0.9, source="calibrated", calibration_id="evaluation-1")
     assert confidence.calibration_id == "evaluation-1"
+
+
+GOOD_REVIEW = {
+    "outcome": "no_concerns",
+    "confidence": {"value": 0.99, "source": "mock"},
+    "summary": "Raw JSON review.",
+    "provider": "raw-review",
+    "findings": [],
+}
+
+
+class RawReview:
+    """Returns scripted raw payloads; records whether strict mode was requested."""
+
+    def __init__(self, *payloads):
+        self.payloads = iter(payloads)
+        self.strict = []
+
+    def review(self, evidence, *, depth, strict_schema=False):
+        self.strict.append(strict_schema)
+        return next(self.payloads)
+
+
+def test_valid_raw_json_payload_maps_to_contract(evidence):
+    reviewer = RawReview(json.dumps(GOOD_REVIEW))
+    report = run(evidence, decision=ScriptedDecision(), reviewer=reviewer)
+    assert report.route == "standard"
+    assert report.reviews[0].result.provider == "raw-review"
+    assert reviewer.strict == [False]
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        {"outcome": "maybe"},
+        {"confidence": {"value": 1.5, "source": "mock"}},
+        {"confidence": {"value": "0.9", "source": "mock"}},
+        {"summary": None},
+    ],
+)
+def test_invalid_payload_retries_once_then_requires_human(evidence, mutation):
+    bad = json.dumps({**GOOD_REVIEW, **mutation})
+    reviewer = RawReview(bad, bad)
+    report = run(evidence, decision=ScriptedDecision(), reviewer=reviewer)
+    assert report.outcome == "needs_human_review"
+    assert reviewer.strict == [False, True]
+    assert any("schema validation" in reason for reason in report.reasons)
+
+
+def test_missing_field_and_non_json_fail(evidence):
+    missing = {k: v for k, v in GOOD_REVIEW.items() if k != "provider"}
+    reviewer = RawReview(missing, "not json")
+    report = run(evidence, decision=ScriptedDecision(), reviewer=reviewer)
+    assert report.outcome == "needs_human_review"
+
+
+def test_retry_can_recover(evidence):
+    reviewer = RawReview({**GOOD_REVIEW, "outcome": "bad"}, GOOD_REVIEW)
+    report = run(evidence, decision=ScriptedDecision(), reviewer=reviewer)
+    assert report.route == "standard"
+    assert reviewer.strict == [False, True]
+
+
+def test_retry_works_without_strict_mode_support(evidence):
+    class Plain:
+        def __init__(self):
+            self.calls = 0
+
+        def review(self, evidence, *, depth):
+            self.calls += 1
+            return {"outcome": "bad"} if self.calls == 1 else GOOD_REVIEW
+
+    reviewer = Plain()
+    report = run(evidence, decision=ScriptedDecision(), reviewer=reviewer)
+    assert report.route == "standard"
+    assert reviewer.calls == 2
+
+
+def test_schema_diagnostics_exclude_input_values(evidence):
+    class Leaky:
+        def decide(self, evidence):
+            return {"recommendation": "PRIVATE_VALUE", "confidence": 1.0}
+
+    report = run(evidence, decision=Leaky())
+    assert report.outcome == "needs_human_review"
+    assert "PRIVATE_VALUE" not in report.model_dump_json()
+    assert any("recommendation" in reason for reason in report.reasons)
