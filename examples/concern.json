@@ -1,0 +1,16 @@
+{
+  "repository": "example/project",
+  "number": 43,
+  "base_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "head_sha": "cccccccccccccccccccccccccccccccccccccccc",
+  "title": "Demonstrate synthetic review escalation",
+  "files": [
+    {
+      "path": "demo.py",
+      "status": "added",
+      "additions": 1,
+      "deletions": 0,
+      "patch": "@@ -0,0 +1 @@\n+# MOCK_REVIEW_CONCERN\n"
+    }
+  ]
+}

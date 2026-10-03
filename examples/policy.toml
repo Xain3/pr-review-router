@@ -1,0 +1,6 @@
+# Confidence values are mock/self-reported scores unless provenance says calibrated.
+skip_confidence = 0.95
+review_confidence = 0.85
+max_input_bytes = 100000
+max_files = 100
+max_findings = 5

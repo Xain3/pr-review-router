@@ -1,39 +1,57 @@
-# Implementation Handoff for pr-review-router
+# Implementation handoff
 
-## Overview
+The mock-provider MVP is implemented. Its contracts and behavior are documented
+in the [specification](specification.md); runnable inputs are in
+[examples](../examples/README.md).
 
-This document provides the full implementation handoff details for the `pr-review-router` project. It outlines the necessary information for future development, including architectural decisions, implementation guidelines, and any relevant considerations for contributors.
+## Architecture
 
-## Project Structure
+| Module | Responsibility |
+| --- | --- |
+| `contracts.py` | Strict Pydantic evidence, confidence, decision, finding, and report models |
+| `config.py` | Default policy and validated TOML loading |
+| `patches.py` | Unified hunk parsing and line tracking |
+| `providers.py` | Replaceable decision/review protocols and deterministic mocks |
+| `engine.py` | Coverage preflight, threshold routing, escalation, and finding limits |
+| `cli.py` | Argument parsing, evidence loading, mock wiring, and JSON/file output |
 
-The project is structured to facilitate modular development and ease of use. Below is a brief overview of the key components:
+The engine receives provider instances; it contains no mock-specific decision
+rules and does not depend on provider transport SDKs. To integrate a real adapter,
+implement `DecisionProvider.decide(evidence)` or
+`ReviewProvider.review(evidence, *, depth)`, returning the normalized contracts.
+The engine validates responses at the provider boundary. Confidence provenance
+must reflect the adapter's actual source.
 
-- **src/pr_review_router/**: Contains the core package code, including the command-line interface (CLI) logic.
-- **tests/**: Contains unit tests to ensure the functionality of the project.
-- **docs/**: Contains documentation files, including specifications and handoff documents.
-- **examples/**: Provides usage examples and potential configurations for users.
-- **.github/workflows/**: Defines the CI/CD pipeline for automated checks and tests.
+## Review invariants
 
-## Development Guidelines
+Coverage or budget gaps prevent provider calls. Provider failures cannot yield a
+clear advisory outcome, and exception messages do not enter reports.
+Earlier review concerns are retained through escalation. Findings are deduplicated
+and limited only after routing decisions; the report records omitted findings.
 
-1. **Code Quality**: Ensure that all code adheres to the project's coding standards as defined in the `.editorconfig` file. Use tools like Ruff and codespell for linting and spell checking.
+The mocked deeper review demonstrates the interface but is not a stronger model.
+Substantive changes remain uncertain at both depths and require human review.
 
-2. **Testing**: All new features and changes must be accompanied by appropriate unit tests located in the `tests/` directory. Use pytest for testing.
+## Development and verification
 
-3. **Documentation**: Update the documentation in the `docs/` directory whenever new features are added or existing features are modified. Ensure that the README.md and examples/README.md are kept up to date with usage instructions.
+Run the full checks in the [README](../README.md#development-checks).
+Tests exercise the installed console entry point, offline example routing, budget
+and coverage failures, threshold boundaries, unavailable confidence, provider
+failures, finding retention/caps, schema validation, and report file handling.
 
-4. **Version Control**: Follow best practices for Git usage. Commit changes frequently with clear, descriptive messages. Ensure that sensitive information is not included in commits.
+CI installs locked dependencies, runs the quality suite and example reports,
+builds the package, and runs the wheel from outside the checkout in a fresh
+environment. Action commits were resolved from official release refs.
 
-5. **Continuous Integration**: The project uses GitHub Actions for CI/CD. Ensure that all tests pass before merging changes into the main branch. The checks.yml file in the .github/workflows/ directory defines the CI process.
+## Later integration work
 
-## Future Development
+Real Jev/Typesafe and OpenAI-compatible adapters need transport validation,
+timeouts, credential handling, prompt/input isolation, and confidence provenance.
+A PR evidence collector must paginate files, bind metadata and patches to supplied
+commit identifiers, and mark unavailable/truncated content accurately. A consumer
+GitHub/Docker Action is separate from this repository's read-only quality CI.
 
-Future work will include the implementation of additional features such as:
-
-- Integration with GitHub pull requests for review functionality.
-- Implementation of providers and routing logic.
-- Integration with external APIs for enhanced functionality.
-
-## Conclusion
-
-This implementation handoff document serves as a guide for developers working on the `pr-review-router` project. Adhering to the guidelines and structure outlined here will help ensure a smooth development process and maintain the quality of the project.
+Keep raw exports, credentials, and private reports untracked; `reports/` is ignored.
+Preserve sanitized evidence fixtures and the dependency lockfile. Licensing remains
+pending owner selection. The [scaffold handoff](scaffold-handoff.md) records the
+earlier foundation-only phase.
