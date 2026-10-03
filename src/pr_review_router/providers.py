@@ -16,12 +16,16 @@ _FENCE = re.compile(r"^(?:> ?)* {0,3}(`{3,}|~{3,})")
 _INDENTED_CODE = re.compile(r"^(?:> ?)*(?: {4,}|\t)")
 
 
+DecisionPayload = Decision | dict[str, Any] | str | bytes | bytearray
+ReviewPayload = ReviewResult | dict[str, Any] | str | bytes | bytearray
+
+
 class DecisionProvider(Protocol):
-    def decide(self, evidence: PullRequestEvidence) -> Decision: ...
+    def decide(self, evidence: PullRequestEvidence) -> DecisionPayload: ...
 
 
 class ReviewProvider(Protocol):
-    def review(self, evidence: PullRequestEvidence, *, depth: Depth) -> ReviewResult: ...
+    def review(self, evidence: PullRequestEvidence, *, depth: Depth) -> ReviewPayload: ...
 
 
 class ProviderSchemaError(ValueError):
@@ -47,7 +51,7 @@ def _validate[Model: BaseModel](model: type[Model], raw: Any) -> Model:
 
 def _enforce[Model: BaseModel](model: type[Model], label: str, call: Callable[..., Any]) -> Model:
     """Validate a provider response; retry once in strict-schema mode if supported."""
-raw = call()
+    raw = call()
     try:
         return _validate(model, raw)
     except ValidationError:
