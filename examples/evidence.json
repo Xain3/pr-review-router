@@ -1,0 +1,19 @@
+{
+  "repository": "example/project",
+  "number": 42,
+  "base_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "title": "Fix a duplicate word in the documentation",
+  "body": "Sanitized offline example.",
+  "files_complete": true,
+  "files": [
+    {
+      "path": "docs/usage.md",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "patch": "@@ -1 +1 @@\n-Read the the guide before starting.\n+Read the guide before starting.\n",
+      "patch_truncated": false
+    }
+  ]
+}

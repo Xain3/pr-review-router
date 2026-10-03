@@ -1,45 +1,30 @@
-# Examples of Using pr-review-router
+# Offline examples
 
-## Overview
+These files contain fictional, sanitized evidence and require no credentials.
 
-This README provides examples of how to use the `pr-review-router` project. It includes usage instructions and potential configurations to help you get started.
-
-## Usage Instructions
-
-To use the `pr-review-router`, you can run the command line interface (CLI) with the following commands:
-
-1. **Help Command**: To see the available commands and options, run:
-   ```
-   pr-review-router --help
-   ```
-
-2. **Version Command**: To check the current version of the `pr-review-router`, run:
-   ```
-   pr-review-router --version
-   ```
-
-## Example Configurations
-
-### Basic Configuration
-
-You can set up your environment by creating a `.env` file based on the provided `.env.example`. Here’s an example of what your `.env` file might look like:
-
-```
-# Optional API Keys
-TYPESAFE_API_KEY=your_typesafe_api_key
-REVIEW_MODEL_API_KEY=your_review_model_api_key
+```sh
+uv run pr-review-router review --input examples/evidence.json --config examples/policy.toml
+uv run pr-review-router review --input examples/concern.json --output reports/concern.json
 ```
 
-### Running the CLI
+- `evidence.json`: correcting a duplicate word in prose documentation returns
+  `outcome: "skipped"` and `route: "no_review"`.
+- `concern.json`: an added `MOCK_REVIEW_CONCERN` marker creates a synthetic finding.
+  Standard and deep review both report concerns, so the final outcome is
+  `needs_human_review` with route `human`.
+- `policy.toml`: all supported policy keys and their default values.
 
-To run the CLI with specific commands, you can use the following syntax:
+To exercise the review path for the editorial example, copy the policy and set
+`skip_confidence = 1.0`. The mock decision's 0.99 score no longer permits skipping;
+standard review clears the narrow editorial correction.
 
-```
-uv run pr-review-router [command] [options]
-```
+An ordinary source-code change without the synthetic marker returns uncertainty
+and ends in a human handoff. Missing patches or exceeded budgets require human
+review before any provider is called.
 
-Replace `[command]` with the desired command (e.g., `--help`, `--version`) and `[options]` with any additional options you may need.
+Every result is advisory and labels mock confidence explicitly. CLI status 0
+means report generation succeeded, including human handoffs. It does not imply
+approval. See the [specification](../docs/specification.md) for the complete schema.
 
-## Future Examples
-
-As the project develops, additional examples and configurations will be added to this section to demonstrate new features and functionalities. Stay tuned for updates!
+Store private evidence and generated reports outside version control. The
+`reports/` directory is ignored; these sanitized fixtures remain tracked.
