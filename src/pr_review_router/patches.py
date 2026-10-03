@@ -19,7 +19,7 @@ def parse_patch(patch: str) -> list[Hunk]:
     hunks: list[Hunk] = []
     old_remaining = new_remaining = 0
     new_line = 0
-    for line in patch.splitlines():
+    for line in patch.removesuffix("\n").split("\n"):
         header = _HEADER.fullmatch(line)
         if header:
             if old_remaining or new_remaining:
