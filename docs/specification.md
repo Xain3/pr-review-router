@@ -48,6 +48,35 @@ The TOML file contains top-level fields; partial configurations use defaults.
 | `max_input_bytes` | 100000 | Positive integer |
 | `max_files` | 100 | Positive integer |
 | `max_findings` | 5 | Positive integer |
+| `title_format` | `"any"` | `"any"` or `"conventional_commit"` |
+| `required_body_sections` | `[]` | Unique, nonempty, trimmed, single-line section names |
+| `rubric_minimum_score` | `70` | Finite score in [0, 100] |
+| `rubric_criteria` | `[]` | List of unique, validated weighted criteria |
+
+When configured, `title_format = "conventional_commit"` requires a lowercase
+type, an optional non-whitespace scope, an optional breaking-change marker, and
+a colon followed by a nonempty description (for example,
+`feat(router): validate PR descriptions`). `required_body_sections` names exact
+level-two Markdown headings; each heading must have non-heading text beneath it
+before the next level-one or level-two heading. For example, `["Summary",
+"Testing"]` requires populated `## Summary` and `## Testing` sections.
+
+PR-text checks are disabled by default. They are deterministic format checks,
+separate from patch coverage and provider review. A format failure is reported
+under `pr_text` and hands the PR off to a human before any provider is called.
+The checks do not verify that the description accurately describes the diff.
+
+The optional rubric evaluates multiple title/body criteria independently.
+Each criterion has a unique `criterion_id`, description, text field (`title` or
+`body`), check (`non_empty`, `min_words`, `contains`, or `section_nonempty`),
+positive weight, and blocker type (`hard` or `soft`). `min_words` uses
+`minimum_words`; `contains` and `section_nonempty` use `value`. A minimum-word
+criterion gets proportional credit up to 100; the other checks score 100 or 0.
+The overall score is the weighted average of criterion scores. Any failed hard
+criterion prevents an automated pass regardless of the aggregate score. Soft
+criteria lower the aggregate score; a score below `rubric_minimum_score` also
+requires human review. Individual results and their deterministic explanations
+are included in `rubric`.
 
 The input budget measures the UTF-8 bytes of the validated evidence's compact
 JSON representation, including metadata and patches. A budget violation prevents
@@ -101,6 +130,10 @@ Report schema version `"1"` includes:
 - `outcome`: `skipped`, `reviewed`, or `needs_human_review`.
 - `route`: `no_review`, `standard`, `deep`, or `human`.
 - Reasons, coverage, optional decision, and executed review stages.
+- `pr_text`, with whether policy checks are enabled, whether they pass, and any
+  format issues.
+- `rubric`, with an optional weighted score, criterion scores/explanations,
+  failed hard blockers, failed soft criteria, and whether the rubric passes.
 - Deduplicated findings capped by policy and a unique `findings_omitted` count.
 
 Stage finding lists are also capped individually. Escalation examines the complete

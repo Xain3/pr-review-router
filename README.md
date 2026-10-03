@@ -63,6 +63,15 @@ prose `.md`/`.txt` changes. The mock reviewer produces synthetic findings for
 `MOCK_REVIEW_CONCERN` in added lines. All other changes remain uncertain. These
 rules demonstrate routing; they do not perform a semantic code review.
 
+Optional policy settings can also validate PR text before routing: require a
+Conventional Commits title and/or non-empty body sections such as `Summary` and
+`Testing`. These deterministic format checks are disabled by default; an
+invalid title or body is reported under `pr_text` and handed off before review.
+See the [PR-text examples](examples/pr-text/README.md) for a passing and failing
+fixture. They check structure only, not whether the description is accurate.
+For multiple weighted criteria, hard/soft blockers, and aggregate scores, see
+the [rubric examples](examples/rubric/README.md).
+
 Reports include commit identifiers, coverage issues, decision provenance, review
 stages, routing reasons, deduplicated findings, and the number of omitted findings.
 The `advisory_only` flag is always true.
