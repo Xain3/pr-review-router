@@ -1,61 +1,123 @@
-# Project Specification for pr-review-router
+# Mock-provider MVP specification
 
-## Overview
+## Purpose and scope
 
-The `pr-review-router` project is designed to provide a command-line interface (CLI) for managing pull request reviews. This document outlines the specifications for the project, detailing the requirements and expected behavior.
+Provide an offline CLI and a provider-independent engine for advisory PR review
+routing. Accept owner-supplied JSON evidence and optional TOML policy; produce
+validated JSON reports. The MVP uses deterministic mocks and makes no API calls.
 
-## Project Structure
+Real Jev/Typesafe decisions, OpenAI-compatible review adapters, GitHub evidence
+collection, PR comments, approval/merge operations, and a Docker Action are deferred.
 
-The project follows a structured layout to separate concerns and facilitate development. The key components of the project are as follows:
+## Evidence contract
 
-- **src/pr_review_router/**: This directory contains the main package code.
-  - **`__init__.py`**: Initializes the `pr_review_router` package. This file can be used to define package-level variables or import submodules.
-  - **`cli.py`**: Contains the command-line interface (CLI) logic for the project. It uses argparse to expose the `--help` and `--version` commands.
+All objects reject unknown fields and use strict types. Required evidence fields:
 
-- **tests/**: This directory contains unit tests for the project.
-  - **`test_cli.py`**: Contains unit tests for the CLI functionality. It tests the behavior of the CLI commands and ensures they work as expected.
+| Field | Meaning |
+| --- | --- |
+| `repository` | Nonempty repository identifier |
+| `number` | Positive integer PR number |
+| `base_sha`, `head_sha` | Nonempty supplied commit identifiers |
+| `title` | Nonempty PR title |
+| `files` | Changed-file list, with unique paths |
 
-- **docs/**: This directory contains documentation for the project.
-  - **`specification.md`**: This document outlines the specifications for the project, detailing the requirements and expected behavior.
-  - **`implementation-handoff.md`**: Provides the full implementation handoff details, including any necessary information for future development.
-  - **`scaffold-handoff.md`**: Contains the mini handoff for scaffolding the project, specifying the initial setup and structure.
+Optional `body` defaults to an empty string. `files_complete` defaults to true;
+collectors must set it to false when pagination or exports omit files. Each file
+requires `path`, `status` (`added`, `modified`, `removed`, or `renamed`), and
+nonnegative integer `additions`/`deletions`. Optional `patch` defaults to null and
+`patch_truncated` defaults to false.
 
-- **examples/**: This directory provides examples of how to use the project, including usage instructions and potential configurations.
-  - **`README.md`**: Provides examples of how to use the project.
+Patches use unified diff hunks, optionally preceded by file headers. Validate
+declared old/new hunk counts and aggregate added/deleted counts against the
+metadata. Support new files, removed files, multiple hunks, context lines, and
+the no-final-newline marker. Missing/binary patches, metadata-only changes,
+truncation, malformed hunks, and count disagreements require human review.
 
-- **.github/workflows/**: This directory contains configuration for GitHub Actions.
-  - **`checks.yml`**: Defines the GitHub Actions workflow for continuous integration checks. It specifies the steps to run tests and checks on pull requests and pushes to the main branch.
+Coverage means the supplied textual export passes these checks. It does not
+verify repository contents or prove that a collector supplied every changed file.
+No patch content is applied or executed.
 
-- **.editorconfig**: Contains coding style configurations, ensuring consistent formatting across different editors.
+## Policy
 
-- **.env.example**: Provides an example environment configuration with placeholder variables for API keys.
+The TOML file contains top-level fields; partial configurations use defaults.
 
-- **.gitignore**: Specifies files and directories to be ignored by Git, ensuring that sensitive or unnecessary files are not tracked.
+| Field | Default | Constraint |
+| --- | ---: | --- |
+| `skip_confidence` | 0.95 | Finite score in [0, 1] |
+| `review_confidence` | 0.85 | Finite score in [0, 1] |
+| `max_input_bytes` | 100000 | Positive integer |
+| `max_files` | 100 | Positive integer |
+| `max_findings` | 5 | Positive integer |
 
-- **.python-version**: Specifies the Python version required for the project, ensuring consistency across development environments.
+The input budget measures the UTF-8 bytes of the validated evidence's compact
+JSON representation, including metadata and patches. A budget violation prevents
+provider invocation; evidence is never silently truncated.
 
-- **CONTRIBUTING.md**: Outlines the guidelines for contributing to the project, including coding standards and submission processes.
+Threshold comparisons are inclusive. An unavailable confidence value is always
+zero and cannot authorize skipping or clearing review, even at a zero threshold.
 
-- **pyproject.toml**: The configuration file for the project, specifying dependencies, package information, and build settings.
+## Provider contracts and confidence
 
-- **README.md**: Contains the main documentation for the project, explaining its purpose, usage, and setup instructions.
+Decision providers return a recommendation (`skip_review`, `review`, or
+`needs_human_review`), confidence, reason, and provider identity. Review providers
+accept a `standard` or `deep` depth and return an outcome (`no_concerns`,
+`concerns`, or `uncertain`), confidence, summary, identity, and findings.
 
-- **uv.lock**: Locks the dependencies for the project, ensuring consistent installations across environments.
+Confidence records its score and provenance: `mock`, `self_reported`,
+`calibrated`, or `unavailable`. Calibrated scores require a calibration identifier.
+The router uses scores according to policy; it does not calibrate them or assume
+self-reported scores are probabilities.
 
-## Requirements
+Findings include a changed-file path, optional positive new-side line, severity
+(`low`, `medium`, `high`), title, and detail. Findings require a `concerns`
+outcome. Unknown file references and invalid provider responses fail closed.
+Line locations are supplied by providers; the engine does not validate their
+semantic correctness.
 
-1. **Python Version**: The project requires Python 3.12 or higher.
-2. **Dependencies**: The project will utilize `uv`, `Ruff`, `pytest`, and `codespell` as development dependencies.
-3. **Command-Line Interface**: The CLI must support the following commands:
-   - `--help`: Displays help information.
-   - `--version`: Displays the current version of the project.
+## Routing and reporting
 
-## Future Work
+Incomplete coverage goes directly to human review without provider calls.
+A decision that explicitly requests human review stops the pipeline. A
+`skip_review` decision at or above the skip threshold skips review.
 
-Future development will include:
-- Implementing providers and routing logic.
-- Integrating with pull request systems.
-- Adding support for paid API calls.
-- Developing a Docker Action for deployment.
+Other decisions start standard review; decision scores below the review threshold
+or with unavailable provenance start deep review. A `no_concerns` review at or
+above the review threshold completes the advisory review if no earlier review
+reported concerns. Otherwise standard review escalates to deep review, and
+unresolved deep review requires human review. Provider exceptions and malformed
+responses require human review; exception text is excluded from reports.
 
-This document serves as a foundational reference for the development of the `pr-review-router` project, ensuring that all team members are aligned on the project's goals and structure.
+Report schema version `"1"` includes:
+
+- `advisory_only: true`, repository, PR number, base/head identifiers.
+- `outcome`: `skipped`, `reviewed`, or `needs_human_review`.
+- `route`: `no_review`, `standard`, `deep`, or `human`.
+- Reasons, coverage, optional decision, and executed review stages.
+- Deduplicated findings capped by policy and a unique `findings_omitted` count.
+
+Stage finding lists are also capped individually. Escalation examines the complete
+provider results before capping. Findings from earlier stages cannot be silently
+discarded by a later clear response.
+
+## Mock behavior
+
+The decision mock skips only modified prose documentation where every changed line
+corrects a repeated adjacent word. Source files, additions/removals, changed
+formatting syntax, and other documentation changes are reviewed. This deliberately
+narrow rule is a demonstration and cannot establish semantic safety.
+
+The review mock reports a synthetic medium-severity concern when an added line
+contains `MOCK_REVIEW_CONCERN`. It clears recognized editorial corrections and
+returns uncertainty for everything else. Both depths use the same deterministic
+rules and clearly label confidence as mock-derived.
+
+## CLI and acceptance
+
+`pr-review-router review --input PATH [--config PATH] [--output PATH]` returns JSON.
+Help/version work without credentials. Successful advisory runs exit 0; invalid
+input/policy or I/O exits 2. File writes are atomic, and validation failures leave
+an existing report untouched. Evidence/policy cannot be overwritten by the report.
+
+A fresh checkout installs from `uv.lock`, passes Ruff, formatting, codespell,
+pytest, packaging, CLI smoke checks, and fresh-wheel execution without development
+dependencies or model credentials. CI is read-only and uses verified action pins.

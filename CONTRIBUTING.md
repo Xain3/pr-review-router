@@ -1,57 +1,34 @@
-# Contribution Guidelines for pr-review-router
+# Contributing
 
-Thank you for your interest in contributing to the `pr-review-router` project! We appreciate your help in making this project better. Please follow these guidelines to ensure a smooth contribution process.
+Use Python 3.12+ and uv. Create a feature branch, implement changes under
+`src/pr_review_router/`, and add meaningful behavior tests under `tests/`.
+Keep the [specification](docs/specification.md), examples, and README in sync with
+user-visible behavior.
 
-## How to Contribute
+## Checks
 
-1. **Fork the Repository**: Start by forking the repository to your own GitHub account.
+```sh
+uv sync --locked
+uv run ruff check .
+uv run ruff format --check .
+uv run codespell
+uv run pytest
+uv build
+uv run pr-review-router --help
+uv run pr-review-router --version
+uv run pr-review-router review --input examples/evidence.json --config examples/policy.toml
+```
 
-2. **Clone Your Fork**: Clone your forked repository to your local machine using:
-   ```
-   git clone https://github.com/your-username/pr-review-router.git
-   ```
+Use `uv run ruff format .` to format changes. Commit `uv.lock` whenever dependencies
+change. CI also exercises the installed wheel from a fresh environment.
 
-3. **Create a Branch**: Create a new branch for your feature or bug fix:
-   ```
-   git checkout -b feature/your-feature-name
-   ```
+Keep tests deterministic and offline; do not introduce credential requirements
+or paid inference into the default suite. Preserve confidence provenance, coverage
+checks, conservative escalation, advisory-only reports, and provider independence.
 
-4. **Make Changes**: Implement your changes in the codebase. Ensure that your code adheres to the project's coding standards.
+Never commit credentials, raw PR exports, or private reports. Use sanitized
+fixtures in `examples/` and ignored runtime output under `reports/`.
 
-5. **Run Tests**: Before submitting your changes, run the tests to ensure everything is working correctly:
-   ```
-   uv run pytest
-   ```
-
-6. **Commit Your Changes**: Commit your changes with a clear and descriptive message:
-   ```
-   git commit -m "Add a brief description of your changes"
-   ```
-
-7. **Push to Your Fork**: Push your changes to your forked repository:
-   ```
-   git push origin feature/your-feature-name
-   ```
-
-8. **Create a Pull Request**: Navigate to the original repository and create a pull request from your branch. Provide a detailed description of your changes and why they are necessary.
-
-## Coding Standards
-
-- Follow the PEP 8 style guide for Python code.
-- Write clear and concise commit messages.
-- Ensure that your code is well-documented and includes comments where necessary.
-
-## Testing
-
-- All new features should include tests.
-- Ensure that existing tests pass before submitting your pull request.
-
-## Issues and Feature Requests
-
-If you encounter any issues or have suggestions for new features, please open an issue in the repository. Provide as much detail as possible to help us understand the problem or request.
-
-## License
-
-By contributing to this project, you agree that your contributions will be licensed under the project's license (pending owner direction).
-
-Thank you for contributing to `pr-review-router`! We look forward to your contributions.
+Commit your work, push the feature branch, and open a PR describing the behavior
+change and checks actually run. Licensing is pending owner selection; do not
+select a license without owner direction.
