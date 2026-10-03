@@ -47,16 +47,18 @@ def _validate[Model: BaseModel](model: type[Model], raw: Any) -> Model:
 
 def _enforce[Model: BaseModel](model: type[Model], label: str, call: Callable[..., Any]) -> Model:
     """Validate a provider response; retry once in strict-schema mode if supported."""
+raw = call()
     try:
-        return _validate(model, call())
+        return _validate(model, raw)
     except ValidationError:
         pass
     try:
         supports = "strict_schema" in inspect.signature(call.func).parameters  # type: ignore[attr-defined]
     except (TypeError, ValueError, AttributeError):
         supports = False
+    raw = call(strict_schema=True) if supports else call()
     try:
-        return _validate(model, call(strict_schema=True) if supports else call())
+        return _validate(model, raw)
     except ValidationError as error:
         raise ProviderSchemaError(
             f"{label} response failed schema validation after retry ({_diagnostic(error)})"
