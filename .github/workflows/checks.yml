@@ -43,9 +43,14 @@ jobs:
         run: |
           uv run --no-sync pr-review-router --help
           uv run --no-sync pr-review-router --version
-          uv run --no-sync pr-review-router review --input examples/evidence.json --config examples/policy.toml --output reports/editorial.json
-          uv run --no-sync pr-review-router review --input examples/concern.json --output reports/concern.json
-          uv run --no-sync python -c 'import json; from pathlib import Path; a = json.loads(Path("reports/editorial.json").read_text()); b = json.loads(Path("reports/concern.json").read_text()); assert a["outcome"] == "skipped"; assert b["outcome"] == "needs_human_review"'
+          uv run --no-sync pr-review-router review --input examples/diff/evidence.json --config examples/diff/policy.toml --output reports/editorial.json
+          uv run --no-sync pr-review-router review --input examples/diff/concern.json --output reports/concern.json
+          uv run --no-sync pr-review-router review --input examples/pr-text/valid.json --config examples/pr-text/policy.toml --output reports/pr-text-valid.json
+          uv run --no-sync pr-review-router review --input examples/pr-text/invalid.json --config examples/pr-text/policy.toml --output reports/pr-text-invalid.json
+          uv run --no-sync pr-review-router review --input examples/rubric/valid.json --config examples/rubric/policy.toml --output reports/rubric-valid.json
+          uv run --no-sync pr-review-router review --input examples/rubric/soft_blocker.json --config examples/rubric/policy.toml --output reports/rubric-soft.json
+          uv run --no-sync pr-review-router review --input examples/rubric/hard_blocker.json --config examples/rubric/policy.toml --output reports/rubric-hard.json
+          uv run --no-sync python -c 'import json; from pathlib import Path; a = json.loads(Path("reports/editorial.json").read_text()); b = json.loads(Path("reports/concern.json").read_text()); c = json.loads(Path("reports/pr-text-valid.json").read_text()); d = json.loads(Path("reports/pr-text-invalid.json").read_text()); e = json.loads(Path("reports/rubric-valid.json").read_text()); f = json.loads(Path("reports/rubric-soft.json").read_text()); g = json.loads(Path("reports/rubric-hard.json").read_text()); assert a["outcome"] == "skipped"; assert b["outcome"] == "needs_human_review"; assert c["pr_text"]["valid"] is True; assert d["pr_text"]["valid"] is False; assert e["rubric"]["score"] == 100; assert f["rubric"]["score"] == 80 and f["rubric"]["passed"]; assert not g["rubric"]["passed"] and g["rubric"]["failed_hard_blockers"] == ["testing"]'
       - name: Validate installed wheel
         run: |
           uv venv /tmp/router-wheel
@@ -53,4 +58,4 @@ jobs:
           cd /tmp
           /tmp/router-wheel/bin/pr-review-router --help
           /tmp/router-wheel/bin/pr-review-router --version
-          /tmp/router-wheel/bin/pr-review-router review --input "$GITHUB_WORKSPACE/examples/evidence.json" --config "$GITHUB_WORKSPACE/examples/policy.toml"
+          /tmp/router-wheel/bin/pr-review-router review --input "$GITHUB_WORKSPACE/examples/diff/evidence.json" --config "$GITHUB_WORKSPACE/examples/diff/policy.toml"

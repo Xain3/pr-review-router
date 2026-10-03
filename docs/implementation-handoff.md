@@ -2,17 +2,19 @@
 
 The mock-provider MVP is implemented. Its contracts and behavior are documented
 in the [specification](specification.md); runnable inputs are in
-[examples](../examples/README.md).
+[diff-routing examples](../examples/diff/README.md) and
+[PR-text format examples](../examples/pr-text/README.md), plus
+[weighted rubric examples](../examples/rubric/README.md).
 
 ## Architecture
 
 | Module | Responsibility |
 | --- | --- |
 | `contracts.py` | Strict Pydantic evidence, confidence, decision, finding, and report models |
-| `config.py` | Default policy and validated TOML loading |
+| `config.py` | Default policy, validated TOML loading, and weighted rubric criterion contracts |
 | `patches.py` | Unified hunk parsing and line tracking |
 | `providers.py` | Replaceable decision/review protocols and deterministic mocks |
-| `engine.py` | Coverage preflight, threshold routing, escalation, and finding limits |
+| `engine.py` | Coverage, PR-text, and rubric preflight; threshold routing, escalation, and finding limits |
 | `cli.py` | Argument parsing, evidence loading, mock wiring, and JSON/file output |
 
 The engine receives provider instances; it contains no mock-specific decision
@@ -26,8 +28,10 @@ must reflect the adapter's actual source.
 
 ## Review invariants
 
-Coverage or budget gaps prevent provider calls. Provider failures cannot yield a
-clear advisory outcome, and exception messages do not enter reports.
+Coverage, budget, PR-text format, or rubric failures prevent provider calls.
+Hard rubric blockers always fail; soft criteria affect the weighted score and
+the configured overall minimum. Provider failures cannot yield a clear advisory
+outcome, and exception messages do not enter reports.
 Earlier review concerns are retained through escalation. Findings are deduplicated
 and limited only after routing decisions; the report records omitted findings.
 

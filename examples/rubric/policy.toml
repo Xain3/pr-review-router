@@ -1,0 +1,39 @@
+# Weighted PR-text rubric. Hard failures always hand off; soft failures affect
+# the weighted score and only hand off when the overall score is below 70.
+rubric_minimum_score = 70
+
+[[rubric_criteria]]
+criterion_id = "summary"
+description = "The description explains the change."
+field = "body"
+check = "section_nonempty"
+value = "Summary"
+weight = 3
+blocker = "hard"
+
+[[rubric_criteria]]
+criterion_id = "testing"
+description = "The description records validation."
+field = "body"
+check = "section_nonempty"
+value = "Testing"
+weight = 3
+blocker = "hard"
+
+[[rubric_criteria]]
+criterion_id = "title-detail"
+description = "The title gives a useful amount of detail."
+field = "title"
+check = "min_words"
+minimum_words = 4
+weight = 2
+blocker = "soft"
+
+[[rubric_criteria]]
+criterion_id = "risk-context"
+description = "The description mentions risk."
+field = "body"
+check = "contains"
+value = "Risk:"
+weight = 2
+blocker = "soft"

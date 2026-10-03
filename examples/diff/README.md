@@ -3,8 +3,8 @@
 These files contain fictional, sanitized evidence and require no credentials.
 
 ```sh
-uv run pr-review-router review --input examples/evidence.json --config examples/policy.toml
-uv run pr-review-router review --input examples/concern.json --output reports/concern.json
+uv run pr-review-router review --input examples/diff/evidence.json --config examples/diff/policy.toml
+uv run pr-review-router review --input examples/diff/concern.json --output reports/concern.json
 ```
 
 - `evidence.json`: correcting a duplicate word in prose documentation returns
@@ -24,7 +24,7 @@ review before any provider is called.
 
 Every result is advisory and labels mock confidence explicitly. CLI status 0
 means report generation succeeded, including human handoffs. It does not imply
-approval. See the [specification](../docs/specification.md) for the complete schema.
+approval. See the [specification](../../docs/specification.md) for the complete schema.
 
 Store private evidence and generated reports outside version control. The
 `reports/` directory is ignored; these sanitized fixtures remain tracked.

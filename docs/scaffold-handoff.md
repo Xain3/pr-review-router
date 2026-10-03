@@ -64,7 +64,7 @@ uv run pr-review-router --help
 uv run pr-review-router --version
 ```
 
-Document the same commands in README/CONTRIBUTING, plus `uv run ruff format .` for local formatting. Explain the advisory project's future purpose, link the specification, and state that review functionality is not implemented. Put a short explanation of future sanitized inputs in `examples/README.md`; do not supply pretend production configuration.
+Document the same commands in README/CONTRIBUTING, plus `uv run ruff format .` for local formatting. Explain the advisory project's future purpose, link the specification, and state that review functionality is not implemented. Put a short explanation of sanitized inputs in `examples/diff/README.md`; do not supply pretend production configuration.
 
 Test CLI help/version through the actual entry point, including successful exits and agreement with package metadata. Validate packaging by installing the built wheel in a temporary environment and running help/version without development dependencies. All checks must work without model credentials or paid/network inference. Dependency installation may require network access.
 

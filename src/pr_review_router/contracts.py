@@ -96,8 +96,34 @@ class Coverage(Contract):
     issues: list[str] = Field(default_factory=list)
 
 
+class PRTextValidation(Contract):
+    enabled: bool
+    valid: bool
+    issues: list[str] = Field(default_factory=list)
+
+
+class RubricCriterionResult(Contract):
+    criterion_id: Text
+    score: Annotated[float, Field(ge=0, le=100, allow_inf_nan=False)]
+    weight: Annotated[int, Field(gt=0)]
+    blocker: Literal["hard", "soft"]
+    pass_score: Annotated[float, Field(ge=0, le=100, allow_inf_nan=False)]
+    passed: bool
+    explanation: Text
+
+
+class RubricEvaluation(Contract):
+    enabled: bool
+    score: Annotated[float, Field(ge=0, le=100, allow_inf_nan=False)] | None = None
+    minimum_score: Annotated[float, Field(ge=0, le=100, allow_inf_nan=False)]
+    passed: bool
+    failed_hard_blockers: list[str] = Field(default_factory=list)
+    failed_soft_criteria: list[str] = Field(default_factory=list)
+    criteria: list[RubricCriterionResult] = Field(default_factory=list)
+
+
 class ReviewReport(Contract):
-    schema_version: Literal["1"] = "1"
+    schema_version: Literal["2"] = "2"
     advisory_only: Literal[True] = True
     repository: Text
     number: Annotated[int, Field(gt=0)]
@@ -107,6 +133,8 @@ class ReviewReport(Contract):
     route: Literal["no_review", "standard", "deep", "human"]
     reasons: list[str]
     coverage: Coverage
+    pr_text: PRTextValidation
+    rubric: RubricEvaluation
     decision: Decision | None = None
     reviews: list[ReviewStage] = Field(default_factory=list)
     findings: list[Finding] = Field(default_factory=list)
