@@ -36,7 +36,22 @@ def parse_patch(patch: str) -> list[Hunk]:
         if line == "\\ No newline at end of file":
             continue
         if not hunks:
-            if line.startswith(("diff --git ", "index ", "--- ", "+++ ")):
+            if line.startswith(
+                (
+                    "diff --git ",
+                    "index ",
+                    "--- ",
+                    "+++ ",
+                    "new file mode ",
+                    "deleted file mode ",
+                    "old mode ",
+                    "new mode ",
+                    "similarity index ",
+                    "dissimilarity index ",
+                    "rename from ",
+                    "rename to ",
+                )
+            ):
                 continue
             raise ValueError("unsupported diff content")
         if not line or line[0] not in " +-":
