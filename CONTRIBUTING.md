@@ -16,15 +16,16 @@ uv run pytest
 uv build
 uv run pr-review-router --help
 uv run pr-review-router --version
-uv run pr-review-router review --input examples/evidence.json --config examples/policy.toml
+uv run pr-review-router review --input examples/diff/evidence.json --config examples/diff/policy.toml
 ```
 
 Use `uv run ruff format .` to format changes. Commit `uv.lock` whenever dependencies
 change. CI also exercises the installed wheel from a fresh environment.
 
 Keep tests deterministic and offline; do not introduce credential requirements
-or paid inference into the default suite. Preserve confidence provenance, coverage
-checks, conservative escalation, advisory-only reports, and provider independence.
+or paid inference into the default suite. Preserve confidence provenance,
+coverage checks, conservative escalation, advisory-only reports, and provider
+independence.
 
 Never commit credentials, raw PR exports, or private reports. Use sanitized
 fixtures in `examples/` and ignored runtime output under `reports/`.

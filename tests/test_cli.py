@@ -50,7 +50,7 @@ def test_version_without_package_metadata(monkeypatch):
 
 
 def test_stdout_review_without_credentials():
-    completed = cli("review", "--input", ROOT / "examples/evidence.json")
+    completed = cli("review", "--input", ROOT / "examples/diff/evidence.json")
     assert completed.returncode == 0
     report = json.loads(completed.stdout)
     assert report["outcome"] == "skipped"
@@ -63,7 +63,13 @@ def test_policy_and_private_output_file(tmp_path):
     policy.write_text("skip_confidence = 1.0\n", encoding="utf-8")
     output = tmp_path / "reports" / "report.json"
     completed = cli(
-        "review", "--input", ROOT / "examples/evidence.json", "--config", policy, "--output", output
+        "review",
+        "--input",
+        ROOT / "examples/diff/evidence.json",
+        "--config",
+        policy,
+        "--output",
+        output,
     )
     assert completed.returncode == 0
     assert completed.stdout == ""
@@ -76,7 +82,7 @@ def test_policy_and_private_output_file(tmp_path):
 
 
 def test_human_handoff_is_an_advisory_success():
-    completed = cli("review", "--input", ROOT / "examples/concern.json")
+    completed = cli("review", "--input", ROOT / "examples/diff/concern.json")
     assert completed.returncode == 0
     report = json.loads(completed.stdout)
     assert report["outcome"] == "needs_human_review"
@@ -106,7 +112,7 @@ def test_invalid_evidence_fails_without_output_or_input_leak(tmp_path, content):
 def test_invalid_policy_is_a_usage_error(tmp_path, content):
     policy = tmp_path / "policy.toml"
     policy.write_text(content, encoding="utf-8")
-    completed = cli("review", "--input", ROOT / "examples/evidence.json", "--config", policy)
+    completed = cli("review", "--input", ROOT / "examples/diff/evidence.json", "--config", policy)
     assert completed.returncode == 2
     assert completed.stdout == ""
 
@@ -120,7 +126,7 @@ def test_missing_file_is_a_usage_error(tmp_path):
 @pytest.mark.parametrize("target", ["evidence", "policy"])
 def test_output_cannot_overwrite_inputs(tmp_path, target):
     input_path = tmp_path / "evidence.json"
-    original = (ROOT / "examples/evidence.json").read_text(encoding="utf-8")
+    original = (ROOT / "examples/diff/evidence.json").read_text(encoding="utf-8")
     input_path.write_text(original, encoding="utf-8")
     policy = tmp_path / "policy.toml"
     policy.write_text("max_findings = 2\n", encoding="utf-8")
