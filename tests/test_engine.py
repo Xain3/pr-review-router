@@ -1,4 +1,5 @@
 import json
+from typing import Literal
 
 import pytest
 from pydantic import ValidationError
@@ -8,9 +9,18 @@ from pr_review_router.contracts import Confidence, Decision, Finding, ReviewRepo
 from pr_review_router.engine import review_pull_request
 from pr_review_router.providers import MockDecisionProvider, MockReviewProvider
 
+Source = Literal["mock", "self_reported", "calibrated", "unavailable"]
+Recommendation = Literal["skip_review", "review", "needs_human_review"]
+Outcome = Literal["no_concerns", "concerns", "uncertain"]
+
 
 class ScriptedDecision:
-    def __init__(self, recommendation="review", value=0.99, source="mock"):
+    def __init__(
+        self,
+        recommendation: Recommendation = "review",
+        value: float = 0.99,
+        source: Source = "mock",
+    ):
         self.calls = 0
         self.decision = Decision(
             recommendation=recommendation,
@@ -34,7 +44,12 @@ class ScriptedReview:
         return next(self.results)
 
 
-def result(outcome="no_concerns", value=0.99, findings=None, source="mock"):
+def result(
+    outcome: Outcome = "no_concerns",
+    value: float = 0.99,
+    findings: list[Finding] | None = None,
+    source: Source = "mock",
+):
     return ReviewResult(
         outcome=outcome,
         confidence=Confidence(value=value, source=source),
@@ -62,6 +77,7 @@ def test_editorial_example_skips_and_report_round_trips(evidence):
     assert report.outcome == "skipped"
     assert report.route == "no_review"
     assert report.coverage.complete
+    assert report.decision is not None
     assert report.decision.confidence.source == "mock"
     assert report.reviews == []
     assert ReviewReport.model_validate_json(report.model_dump_json()) == report

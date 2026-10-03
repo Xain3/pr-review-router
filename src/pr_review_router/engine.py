@@ -1,5 +1,7 @@
 """Provider-independent advisory routing; incomplete evidence fails closed."""
 
+from typing import Literal
+
 from .config import Policy
 from .contracts import (
     Coverage,
@@ -81,7 +83,10 @@ def review_pull_request(
     reviews: list[ReviewStage] = []
     reasons = list(coverage.issues)
 
-    def report(outcome: str, route: str) -> ReviewReport:
+    def report(
+        outcome: Literal["skipped", "reviewed", "needs_human_review"],
+        route: Literal["no_review", "standard", "deep", "human"],
+    ) -> ReviewReport:
         findings = _findings(reviews)
         # Cap both the summary and nested stage findings in the exported report.
         exported = [
