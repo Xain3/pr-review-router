@@ -76,6 +76,8 @@ def test_editorial_example_skips_and_report_round_trips(evidence):
         ({"patch_truncated": True}, "truncated"),
         ({"patch": "@@ -1,2 +1,2 @@\n-old\n+new\n"}, "incomplete"),
         ({"patch": "@@ -1 +1 @@\n-old\n+new\n+extra\n"}, "invalid"),
+        ({"patch": "@@ -0 +1 @@\n-old\n+new\n"}, "invalid"),
+        ({"patch": "@@ -1 +0 @@\n-old\n+new\n"}, "invalid"),
         ({"additions": 2}, "disagree"),
         ({"patch": "Binary files differ"}, "invalid"),
         ({"patch": "@@ -1 +1 @@\n unchanged\n", "additions": 0, "deletions": 0}, "no textual"),
