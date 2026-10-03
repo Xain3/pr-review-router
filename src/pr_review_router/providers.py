@@ -37,8 +37,17 @@ class ProviderSchemaError(ValueError):
 
 
 def _diagnostic(error: ValidationError) -> str:
+    def mask(part: object) -> str:
+        if isinstance(part, int):
+            return str(part)
+        if isinstance(part, str):
+            if re.fullmatch(r"[a-z_][a-z0-9_]*", part):
+                return part
+            return "<redacted>"
+        return "<redacted>"
+
     return "; ".join(
-        f"{'.'.join(str(part) for part in item['loc']) or '<root>'}: {item['type']}"
+        f"{'.'.join(mask(part) for part in item['loc']) or '<root>'}: {item['type']}"
         for item in error.errors(include_input=False, include_url=False)[:5]
     )
 
