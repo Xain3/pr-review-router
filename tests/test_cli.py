@@ -43,6 +43,7 @@ def test_help_and_version():
 
 def test_version_without_package_metadata(monkeypatch):
     def missing_distribution(_name):
+        _ = _name
         raise PackageNotFoundError
 
     monkeypatch.setattr(cli_module, "version", missing_distribution)

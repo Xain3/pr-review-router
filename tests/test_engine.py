@@ -29,7 +29,8 @@ class ScriptedDecision:
             provider="test-decision",
         )
 
-    def decide(self, evidence):
+    def decide(self, _evidence):
+        _ = _evidence
         self.calls += 1
         return self.decision
 
@@ -39,7 +40,8 @@ class ScriptedReview:
         self.results = iter(results)
         self.depths = []
 
-    def review(self, evidence, *, depth):
+    def review(self, _evidence, *, depth):
+        _ = _evidence
         self.depths.append(depth)
         return next(self.results)
 
@@ -447,11 +449,13 @@ def test_finding_on_unknown_file_fails_closed(evidence):
 @pytest.mark.parametrize("stage", ["decision", "standard", "deep"])
 def test_provider_errors_do_not_leak_private_details(evidence, stage):
     class BrokenDecision:
-        def decide(self, evidence):
+        def decide(self, _evidence):
+            _ = _evidence
             raise RuntimeError("PRIVATE_CREDENTIAL")
 
     class BrokenReview:
-        def review(self, evidence, *, depth):
+        def review(self, _evidence, *, depth):
+            _ = _evidence
             if depth == stage:
                 raise RuntimeError("PRIVATE_CREDENTIAL")
             return result("uncertain")
@@ -468,7 +472,8 @@ def test_provider_errors_do_not_leak_private_details(evidence, stage):
 
 def test_malformed_provider_response_requires_human(evidence):
     class InvalidDecision:
-        def decide(self, evidence):
+        def decide(self, _evidence):
+            _ = _evidence
             return {"recommendation": "skip_review", "confidence": 1.0}
 
     report = run(evidence, decision=InvalidDecision())
@@ -563,7 +568,9 @@ class RawReview:
         self.payloads = iter(payloads)
         self.strict = []
 
-    def review(self, evidence, *, depth, strict_schema=False):
+    def review(self, _evidence, *, depth, strict_schema=False):
+        _ = _evidence
+        _ = depth
         self.strict.append(strict_schema)
         return next(self.payloads)
 
@@ -613,7 +620,9 @@ def test_retry_works_without_strict_mode_support(evidence):
         def __init__(self):
             self.calls = 0
 
-        def review(self, evidence, *, depth):
+        def review(self, _evidence, *, depth):
+            _ = _evidence
+            _ = depth
             self.calls += 1
             return {"outcome": "bad"} if self.calls == 1 else GOOD_REVIEW
 
@@ -625,7 +634,8 @@ def test_retry_works_without_strict_mode_support(evidence):
 
 def test_schema_diagnostics_exclude_input_values(evidence):
     class Leaky:
-        def decide(self, evidence):
+        def decide(self, _evidence):
+            _ = _evidence
             return {"recommendation": "PRIVATE_VALUE", "confidence": 1.0}
 
     report = run(evidence, decision=Leaky())
