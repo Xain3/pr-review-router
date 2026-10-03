@@ -1,0 +1,3 @@
+# Validate the PR title and require populated description sections.
+title_format = "conventional_commit"
+required_body_sections = ["Summary", "Testing"]

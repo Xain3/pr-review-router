@@ -1,0 +1,19 @@
+{
+  "repository": "example/project",
+  "number": 51,
+  "base_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "head_sha": "dddddddddddddddddddddddddddddddddddddddd",
+  "title": "docs(guide): fix a duplicate word",
+  "body": "## Summary\nCorrect a repeated word in the guide.\n\n## Testing\nReviewed the rendered documentation.\n",
+  "files_complete": true,
+  "files": [
+    {
+      "path": "docs/usage.md",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "patch": "@@ -1,3 +1,3 @@\n Read this guide before starting.\n-Read the the guide before starting.\n+Read the guide before starting.\n Continue with the next section.\n",
+      "patch_truncated": false
+    }
+  ]
+}
