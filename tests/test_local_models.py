@@ -484,3 +484,33 @@ def test_metrics_use_uncapped_findings_and_original_unsafe_skip():
     summary = summarize_evaluation(corpus, [metrics])
     assert summary["label_status"] == "provisional"
     assert summary["totals"]["unsafe_skip_recommendations"] == 1
+
+
+def test_mock_metrics_are_independent_of_report_finding_cap():
+    corpus, _, _ = load_corpus(LOCAL / "corpus.json")
+    case = corpus.cases[2]
+    metrics_by_cap = []
+    results = []
+    for max_findings in (1, 2):
+        evidence = fixture_evidence("planted-defect")
+        evidence.files[0].additions = 2
+        evidence.files[0].deletions = 0
+        evidence.files[0].patch = (
+            "@@ -0,0 +1,2 @@\n"
+            "+MOCK_REVIEW_CONCERN unsupported\n"
+            "+MOCK_REVIEW_CONCERN planted defect\n"
+        )
+        result = run_experiment(
+            evidence,
+            Policy(max_findings=max_findings),
+            ProvidersConfig(),
+        )
+        results.append(result)
+        metrics_by_cap.append(evaluate_case(case, result))
+
+    assert [len(result.report.findings) for result in results] == [1, 2]
+    assert metrics_by_cap[0]["missed_planted_defects"] == 0
+    assert metrics_by_cap[0]["missed_concerns"] == metrics_by_cap[1]["missed_concerns"] == []
+    assert (
+        metrics_by_cap[0]["unsupported_findings"] == metrics_by_cap[1]["unsupported_findings"] == 1
+    )

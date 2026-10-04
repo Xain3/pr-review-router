@@ -23,6 +23,31 @@ from .providers import MockDecisionProvider, MockReviewProvider
 from .transport import Session, Tape, fingerprint
 
 
+class _CapturingMockReviewProvider:
+    """Retain complete mock responses before the engine applies report limits."""
+
+    def __init__(self, provider: MockReviewProvider) -> None:
+        """Wrap the mock reviewer and initialize its response capture.
+
+        :param provider: Deterministic mock reviewer used by the engine.
+        """
+        self.provider = provider
+        self.responses: list[dict[str, Any]] = []
+
+    def review(
+        self, evidence: PullRequestEvidence, *, depth: Literal["standard", "deep"]
+    ) -> ReviewResult:
+        """Capture one complete mock response and return it unchanged.
+
+        :param evidence: Validated PR evidence.
+        :param depth: Review depth requested by the engine.
+        :returns: The mock review result.
+        """
+        result = self.provider.review(evidence, depth=depth)
+        self.responses.append({"depth": depth, "result": result.model_dump(mode="json")})
+        return result
+
+
 class ExperimentResult:
     """Keep the unchanged advisory report separate from experiment-only artifacts."""
 
@@ -80,11 +105,12 @@ def run_experiment(
         if isinstance(config.decision, DecisionSettings)
         else MockDecisionProvider()
     )
-    reviewer = (
-        OllamaReviewProvider(config.review, session)
-        if isinstance(config.review, ReviewSettings)
-        else MockReviewProvider()
-    )
+    mock_reviewer = None
+    if isinstance(config.review, ReviewSettings):
+        reviewer = OllamaReviewProvider(config.review, session)
+    else:
+        mock_reviewer = _CapturingMockReviewProvider(MockReviewProvider())
+        reviewer = mock_reviewer
     shadow = ShadowDecisionProvider(decision)
     start = time.monotonic()
     try:
@@ -109,6 +135,8 @@ def run_experiment(
             ),
             "review": reviewer.diagnostics()
             if isinstance(reviewer, OllamaReviewProvider)
+            else {"responses": mock_reviewer.responses}
+            if mock_reviewer
             else None,
             "request_seconds": sum(item.elapsed_seconds for item in session.exchanges),
             "run_seconds": time.monotonic() - start,
