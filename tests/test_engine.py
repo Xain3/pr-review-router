@@ -10,7 +10,7 @@ from pr_review_router.engine import review_pull_request
 from pr_review_router.providers import MockDecisionProvider, MockReviewProvider
 
 Source = Literal["mock", "self_reported", "calibrated", "unavailable"]
-Recommendation = Literal["skip_review", "review", "needs_human_review"]
+Recommendation = Literal["skip_review", "review", "needs_human_review", "accept", "reject"]
 Outcome = Literal["no_concerns", "concerns", "uncertain"]
 
 pytestmark = pytest.mark.unit
@@ -80,7 +80,7 @@ def test_editorial_example_skips_and_report_round_trips(evidence):
     report = run(evidence)
     assert report.outcome == "skipped"
     assert report.route == "no_review"
-    assert report.schema_version == "2"
+    assert report.schema_version == "3"
     assert report.coverage.complete
     assert not report.pr_text.enabled
     assert report.pr_text.valid
@@ -679,3 +679,119 @@ def test_schema_diagnostics_exclude_input_values(evidence):
     assert report.outcome == "needs_human_review"
     assert "PRIVATE_VALUE" not in report.model_dump_json()
     assert any("recommendation" in reason for reason in report.reasons)
+
+
+@pytest.mark.parametrize("recommendation", ["accept", "reject"])
+@pytest.mark.parametrize(
+    ("enabled", "value", "source", "direct"),
+    [
+        (True, 0.95, "mock", True),
+        (False, 0.99, "mock", False),
+        (True, 0.94, "mock", False),
+        (True, 0.0, "unavailable", False),
+    ],
+)
+def test_direct_permissions_and_thresholds(
+    evidence, recommendation, enabled, value, source, direct
+):
+    policy = Policy(
+        allow_direct_acceptance=enabled if recommendation == "accept" else False,
+        allow_direct_rejection=enabled if recommendation == "reject" else False,
+    )
+    reviewer = ScriptedReview(result())
+    report = run(evidence, policy, ScriptedDecision(recommendation, value, source), reviewer)
+    expected = "accepted" if recommendation == "accept" else "rejected"
+    assert report.outcome == (expected if direct else "reviewed")
+    assert reviewer.depths == ([] if direct else ["standard"] if value >= 0.85 else ["deep"])
+
+
+@pytest.mark.parametrize("depth", ["standard", "deep"])
+@pytest.mark.parametrize("outcome", ["concerns", "uncertain", "no_concerns"])
+def test_feedback_is_nonblocking_at_any_confidence(evidence, depth, outcome):
+    reviewer = ScriptedReview(result(outcome, 0, source="unavailable"))
+    report = run(
+        evidence,
+        Policy(review_behavior="feedback", feedback_depth=depth),
+        ScriptedDecision(value=0, source="unavailable"),
+        reviewer,
+    )
+    assert report.outcome == "feedback"
+    assert report.route == "feedback"
+    assert reviewer.depths == [depth]
+
+
+def test_accepted_feedback_preserves_concerns_and_caps(evidence):
+    findings = [finding(title="First"), finding(title="Second")]
+    report = run(
+        evidence,
+        Policy(allow_direct_acceptance=True, acceptance_feedback=True, max_findings=1),
+        ScriptedDecision("accept"),
+        ScriptedReview(result("concerns", findings=findings)),
+    )
+    assert report.outcome == "accepted"
+    assert report.route == "feedback"
+    assert report.findings == findings[:1]
+    assert report.findings_omitted == 1
+    assert report.reviews[0].result.findings == findings[:1]
+
+
+@pytest.mark.parametrize(
+    "failure", ["coverage", "text", "decision", "review", "human", "escalation"]
+)
+def test_no_human_policy_blocks_unresolved_routes(evidence, failure):
+    policy = Policy(unresolved_outcome="rejected", review_behavior="feedback")
+    decider = ScriptedDecision("accept" if failure == "review" else "review")
+    reviewer = ScriptedReview()
+    if failure == "coverage":
+        evidence.files_complete = False
+    elif failure == "text":
+        policy.required_body_sections = ["Testing"]
+    elif failure == "decision":
+        decider.decision = {}
+    elif failure == "human":
+        decider = ScriptedDecision("needs_human_review")
+    elif failure == "review":
+        policy.allow_direct_acceptance = True
+        policy.acceptance_feedback = True
+    elif failure == "escalation":
+        policy.review_behavior = "escalate"
+        reviewer = ScriptedReview(result("uncertain"), result("uncertain"))
+    report = run(evidence, policy, decider, reviewer)
+    assert report.outcome == "rejected"
+    assert report.route == "blocked"
+    if failure in {"coverage", "text"}:
+        assert decider.calls == 0
+        assert reviewer.depths == []
+
+
+@pytest.mark.parametrize("recommendation", ["accept", "reject"])
+def test_unavailable_direct_confidence_cannot_pass_zero_threshold(evidence, recommendation):
+    report = run(
+        evidence,
+        Policy(
+            allow_direct_acceptance=True,
+            allow_direct_rejection=True,
+            acceptance_confidence=0,
+            rejection_confidence=0,
+            review_behavior="feedback",
+        ),
+        ScriptedDecision(recommendation, 0, "unavailable"),
+        ScriptedReview(result()),
+    )
+    assert report.outcome == "feedback"
+
+
+def test_combined_hard_rubric_failure_blocks_before_decider(evidence):
+    from pathlib import Path
+
+    from pr_review_router.config import load_policy
+
+    policy = load_policy(Path(__file__).resolve().parents[1] / "examples/direct/combined.toml")
+    policy.required_body_sections = []
+    evidence.title = "feat: demonstrate direct acceptance"
+    decider = ScriptedDecision("accept")
+    report = run(evidence, policy, decider, ScriptedReview())
+    assert report.pr_text.valid
+    assert report.rubric.failed_hard_blockers == ["testing"]
+    assert report.outcome == "rejected"
+    assert decider.calls == 0

@@ -211,3 +211,34 @@ def test_rubric_examples(fixture, score, passed, hard_failures, soft_failures):
     assert rubric["passed"] is passed
     assert rubric["failed_hard_blockers"] == hard_failures
     assert rubric["failed_soft_criteria"] == soft_failures
+
+
+@pytest.mark.parametrize(
+    ("fixture", "policy", "outcome", "route", "reviews", "findings"),
+    [
+        ("accept", "policy", "accepted", "direct", 0, 0),
+        ("reject", "policy", "rejected", "direct", 0, 0),
+        ("feedback", "policy", "feedback", "feedback", 1, 1),
+        ("accept_feedback", "combined", "accepted", "feedback", 1, 1),
+    ],
+)
+@pytest.mark.integration
+def test_direct_examples(fixture, policy, outcome, route, reviews, findings):
+    completed = cli(
+        "review",
+        "--input",
+        ROOT / f"examples/direct/{fixture}.json",
+        "--config",
+        ROOT / f"examples/direct/{policy}.toml",
+    )
+    assert completed.returncode == 0, completed.stderr
+    report = json.loads(completed.stdout)
+    assert report["schema_version"] == "3"
+    assert report["advisory_only"] is True
+    assert report["outcome"] == outcome
+    assert report["route"] == route
+    assert len(report["reviews"]) == reviews
+    assert len(report["findings"]) == findings
+    if policy == "combined":
+        assert report["pr_text"]["enabled"] and report["pr_text"]["valid"]
+        assert report["rubric"]["enabled"] and report["rubric"]["passed"]
