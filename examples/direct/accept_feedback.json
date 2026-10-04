@@ -1,0 +1,17 @@
+{
+  "repository": "example/project",
+  "number": 53,
+  "base_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "head_sha": "cccccccccccccccccccccccccccccccccccccccc",
+  "title": "feat(demo): demonstrate accept feedback routing",
+  "files": [
+    {
+      "path": "demo.py",
+      "status": "added",
+      "additions": 2,
+      "deletions": 0,
+      "patch": "@@ -0,0 +1,2 @@\n+# MOCK_DECISION_ACCEPT\n+# MOCK_REVIEW_CONCERN\n"
+    }
+  ],
+  "body": "## Summary\nDemonstrate configurable direct routing.\n\n## Testing\nRun the offline fixture.\n"
+}

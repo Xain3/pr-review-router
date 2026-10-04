@@ -6,6 +6,11 @@ in the [specification](specification.md); runnable inputs are in
 [PR-text format examples](../examples/pr-text/README.md), plus
 [weighted rubric examples](../examples/rubric/README.md).
 
+Optional [direct-routing examples](../examples/direct/README.md) now demonstrate
+independent acceptance/rejection permissions and thresholds, feedback depth/mode,
+acceptance with feedback, and unresolved human-handoff versus blocking policy.
+The report contract is version 3. Default policy preserves existing routing.
+
 ## Architecture
 
 In this document and the code, **decision provider** means the component that
@@ -34,7 +39,7 @@ require separate models for those depths.
 
 Responses are validated by `request_decision`/`request_review` in `providers.py`:
 malformed output gets one retry (passing `strict_schema=True` when the adapter
-accepts it), then fails closed to human review with value-free diagnostics. Confidence provenance
+accepts it), then fails closed according to `unresolved_outcome` with value-free diagnostics. Confidence provenance
 must reflect the adapter's actual source.
 
 ## Review invariants
@@ -48,7 +53,8 @@ and limited only after routing decisions; the report records omitted findings.
 
 The mock review provider's `deep` response demonstrates the depth interface but
 is not a stronger model or a second model role. Substantive changes remain
-uncertain at both depths and require human review.
+uncertain at both depths. Default escalating policy requires human review;
+feedback policy reports the uncertainty without requiring a human step.
 
 ## Development and verification
 

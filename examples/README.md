@@ -14,6 +14,7 @@ depths, not separate provider roles. See the
 
 | Directory | What it demonstrates | Detailed guide |
 | --- | --- | --- |
+| [`direct/`](direct/README.md) | Configurable direct decider acceptance/rejection, non-blocking reviewer feedback, and combined text/rubric gates. | [Direct-routing examples](direct/README.md) |
 | [`diff/`](diff/README.md) | Patch-coverage validation and review routing, from skipping a narrow documentation edit to escalating a synthetic concern for human review. | [Diff-review examples](diff/README.md) |
 | [`pr-text/`](pr-text/README.md) | Optional Conventional Commits title and non-empty `Summary` and `Testing` section checks, including passing and failing inputs. | [PR-text examples](pr-text/README.md) |
 | [`rubric/`](rubric/README.md) | Weighted title/body criteria, hard and soft blockers, and the resulting aggregate score and routing behavior. | [Rubric examples](rubric/README.md) |
@@ -37,7 +38,8 @@ uv run pr-review-router review --input examples/rubric/hard_blocker.json --confi
 
 The CLI prints JSON reports to stdout unless `--output` is specified. A
 successful command means a report was generated; inspect its `outcome` to see
-whether the evidence was skipped, reviewed, or handed off for human review.
+whether the evidence was skipped, reviewed, handed off for human review,
+accepted, rejected, or returned as non-blocking feedback.
 These examples use deterministic mock providers and checks, not a substantive
 code reviewer. Their reports are advisory and never approve or merge a pull
 request.

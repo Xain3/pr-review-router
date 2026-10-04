@@ -1,0 +1,10 @@
+# Each behavior can be enabled independently; existing routing defaults are unchanged.
+allow_direct_acceptance = true
+allow_direct_rejection = true
+acceptance_confidence = 0.95
+rejection_confidence = 0.95
+review_behavior = "feedback"
+feedback_depth = "standard"
+acceptance_feedback = false
+# Incomplete evidence, failed gates/providers, and explicit human requests block.
+unresolved_outcome = "rejected"
