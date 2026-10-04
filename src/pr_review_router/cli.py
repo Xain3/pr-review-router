@@ -96,6 +96,11 @@ def _parse_args(
     )
     evaluate.add_argument("--providers-config", type=Path, required=True)
     evaluate.add_argument("--config", type=Path, help="Existing routing policy TOML.")
+    evaluate.add_argument(
+        "--assessment-rubric",
+        type=Path,
+        help="Alternative rubric TOML evaluated against the same corpus labels.",
+    )
     evaluate.add_argument("--output-dir", type=Path, default=Path("reports/evaluation"))
     evaluate.add_argument("--replay-dir", type=Path, help="Directory of CASE_ID.tape.json files.")
     evaluate.add_argument(
@@ -172,7 +177,9 @@ def _evaluate(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
     try:
         policy = load_policy(args.config)
         corpus, evidence, sources = load_corpus(args.corpus)
-        rubric, review_texts, rubric_sources = load_corpus_rubric(args.corpus, corpus)
+        rubric, review_texts, rubric_sources = load_corpus_rubric(
+            args.corpus, corpus, rubric_path=args.assessment_rubric
+        )
     except (OSError, ValueError):
         parser.error("could not read valid UTF-8 corpus, evidence, or policy")
     config = _provider_inputs(args.providers_config, policy, parser)

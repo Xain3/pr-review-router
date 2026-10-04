@@ -148,7 +148,11 @@ The [six-criterion PR and review rubric](examples/rubric-review/README.md)
 evaluates title format, Summary structure, meaningful rationale, description
 coverage of the diff, supplied-review coverage, and relevant testing. It shows
 blocking failures, suggestions, uncertainty, and all-pass advisory skip/approval
-recommendations while preserving shadow mode.
+recommendations while preserving shadow mode. Semantic criteria support `choice`,
+`noul`, and ordinal `score` questions with explicit experimental numeric bands.
+Run `uv run python examples/rubric-review/compare.py` to compare all three formats
+against identical labels with offline replay; `--live --record` explicitly uses
+local models and saves recordings under `reports/`.
 
 ```sh
 uv run pr-review-router evaluate --corpus examples/rubric-review/corpus.json --providers-config examples/local-models/replay.toml --replay-dir examples/rubric-review/recordings --output-dir reports/rubric-review-replay

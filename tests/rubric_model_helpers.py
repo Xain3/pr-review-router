@@ -32,16 +32,41 @@ class RubricServer(SyntheticServer):
         self.decision_calls += 1
         payload = json.loads(request.content)
         answers = {}
-        for identifier in payload["questions"]:
+        for identifier, question in payload["questions"].items():
             choice = self.statuses.get(identifier, "passed")
             probabilities = dict.fromkeys(["passed", "failed", "uncertain"], 0.005)
             probabilities[choice] = 0.99
-            answers[identifier] = {
-                "type": "choice",
-                "choice": choice,
-                "confidence": 0.985,
-                "probabilities": probabilities,
-            }
+            if question["type"] == "choice":
+                answers[identifier] = {
+                    "type": "choice",
+                    "choice": choice,
+                    "confidence": 0.985,
+                    "probabilities": probabilities,
+                }
+            elif question["type"] == "noul":
+                answers[identifier] = {
+                    "type": "noul",
+                    "noul": {"passed": 0.99, "failed": 0.01, "uncertain": 0.5}[choice],
+                }
+            else:
+                levels = question["criteria"]
+                score = {
+                    "passed": len(levels) - 1,
+                    "failed": 0,
+                    "uncertain": (len(levels) - 1) / 2,
+                }[choice]
+                distribution = dict.fromkeys(map(str, range(len(levels))), 0.0)
+                low = int(score)
+                distribution[str(low)] = 1 - (score - low)
+                if score > low:
+                    distribution[str(low + 1)] = score - low
+                answers[identifier] = {
+                    "type": "score",
+                    "score": float(score),
+                    "confidence": 0.99,
+                    "legend": dict(enumerate(levels)),
+                    "probabilities": distribution,
+                }
         return httpx.Response(
             200,
             json={

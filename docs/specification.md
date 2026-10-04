@@ -296,10 +296,33 @@ entire PR evidence and separately supplied review are untrusted state data;
 criterion instructions are separate. Document/review coverage is not proof of
 code correctness, and review-provider responsibilities remain unchanged.
 
-Semantic criteria are batched as typed choices (`passed`, `failed`, `uncertain`)
-through `/v1/systemone`. Native response validation requires exactly the asked
-criterion IDs and labels. Native scores are retained but task confidence remains
-unavailable. Missing review text makes review-target criteria unavailable;
+Semantic criteria are batched through `/v1/systemone`. Each criterion selects
+`question_type`: `choice` (default), `noul`, or `score`. Choices return `passed`,
+`failed`, or `uncertain`. Numeric criteria require explicit finite
+`fail_threshold` and `pass_threshold`, with `0 <= fail < pass` within the native
+range. Values at or below fail map to failed, values at or above pass map to
+passed, and intermediate values require human assessment. Noul ranges from 0
+to 1; score requires 2–10 distinct ordered `levels` and ranges from 0 to the
+last level index. Higher values must mean greater criterion satisfaction.
+Formal checks cannot use numeric types. Choices cannot configure numeric
+thresholds or levels, and noul cannot configure score levels.
+
+Native response validation requires exactly the asked criterion IDs and types,
+and exact choice labels or configured score legends/probability labels. Score
+values outside the configured scale are invalid. Numeric thresholds are
+experimental policy bands, not task calibration. A middle score may mean
+partial satisfaction; it is mapped to human assessment without claiming model
+uncertainty. Noul is a native probability of the configured proposition, not a
+validated probability of a correct PR decision. Native typed answers are retained
+per criterion in artifacts and evaluation summaries, alongside mapped statuses.
+`--assessment-rubric` evaluates an alternative rubric against the same corpus
+evidence, supplied reviews, and reference labels; its path is protected from
+output replacement. The example comparison runner evaluates choice, noul, and
+score variants with identical labels, using offline replay by default and local
+inference only with `--live`. Rubric-specific request latency and schema-failure
+counts exclude follow-up reviewer calls; total pipeline metrics still include
+them. Replay durations are recorded HTTP timings, not current model latency.
+Native scores are retained but task confidence remains unavailable. Missing review text makes review-target criteria unavailable;
 context truncation or unrecovered provider/schema errors cannot yield approval.
 The complete request, including supplied review and rubric instructions, must
 fit the policy input budget before any model/metadata request. Existing engine

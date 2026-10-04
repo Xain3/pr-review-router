@@ -179,6 +179,12 @@ def run_experiment(
             "report": report.model_dump(mode="json"),
         }
         if rubric_provider:
+            artifact["rubric_request_seconds"] = sum(
+                item.elapsed_seconds
+                for item in session.exchanges
+                if item.request.url.endswith("/v1/systemone")
+            )
+            artifact["rubric_schema_failures"] = decision.schema_failures
             artifact["assessment_rubric"] = rubric_provider.artifact().model_dump(mode="json")
             artifact["assessment_rubric_config"] = rubric.model_dump(mode="json")
             artifact["supplied_review"] = review_text
@@ -363,10 +369,22 @@ def evaluate_case(case: EvaluationCase, result: ExperimentResult) -> dict[str, A
             "blockers": assessment.get("blockers", []),
             "suggestions": assessment.get("suggestions", []),
             "criteria": statuses,
+            "native_answers": {
+                item["criterion_id"]: item.get("native_answer")
+                for item in assessment.get("criteria", [])
+                if item.get("native_answer") is not None
+            },
+            "question_types": {
+                item["criterion_id"]: item.get("question_type", "choice")
+                for item in artifact.get("assessment_rubric_config", {}).get("criteria", [])
+                if item["check"] == "semantic"
+            },
             "skip_recommended": assessment.get("skip_recommended", False),
             "approval_recommended": assessment.get("approval_recommended", False),
             "automation_authorized": False,
         }
+        metrics["rubric_request_seconds"] = artifact.get("rubric_request_seconds", 0.0)
+        metrics["rubric_schema_failures"] = artifact.get("rubric_schema_failures", 0)
         metrics["rubric_criterion_mismatches"] = len(mismatches)
         metrics["rubric_recommendation_mismatches"] = int(not recommendation_matches)
         metrics["rubric_blocks"] = int(assessment.get("recommendation") == "block")
@@ -385,12 +403,13 @@ def evaluate_case(case: EvaluationCase, result: ExperimentResult) -> dict[str, A
 
 
 def load_corpus_rubric(
-    path: Path, corpus: Corpus
+    path: Path, corpus: Corpus, *, rubric_path: Path | None = None
 ) -> tuple[AssessmentRubric | None, list[str], list[Path]]:
     """Load and validate rubric and supplied reviews before any inference or output.
 
     :param path: Corpus path defining the allowed input directory.
     :param corpus: Validated corpus with optional rubric and review paths.
+    :param rubric_path: Explicit alternative rubric, keeping evidence and labels fixed.
     :returns: Rubric, review texts in case order, and additional protected input paths.
     :raises ValueError: If paths escape the corpus directory or labels differ from the rubric.
     :raises OSError: If an input cannot be read.
@@ -411,11 +430,17 @@ def load_corpus_rubric(
         sources.append(resolved)
         return resolved
 
-    rubric = (
-        load_assessment_rubric(source(corpus.assessment_rubric))
-        if corpus.assessment_rubric
-        else None
-    )
+    if rubric_path is not None:
+        if corpus.assessment_rubric is None:
+            raise ValueError("an alternative rubric requires an existing rubric corpus")
+        sources.append(rubric_path.resolve())
+        rubric = load_assessment_rubric(rubric_path)
+    else:
+        rubric = (
+            load_assessment_rubric(source(corpus.assessment_rubric))
+            if corpus.assessment_rubric
+            else None
+        )
     texts = []
     for case in corpus.cases:
         texts.append(source(case.review).read_text(encoding="utf-8") if case.review else "")
@@ -444,6 +469,8 @@ def summarize_evaluation(corpus: Corpus, results: list[dict[str, Any]]) -> dict[
     )
     if any("rubric" in result for result in results):
         counts += (
+            "rubric_request_seconds",
+            "rubric_schema_failures",
             "rubric_criterion_mismatches",
             "rubric_recommendation_mismatches",
             "unsafe_rubric_approvals",
