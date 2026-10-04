@@ -4,9 +4,13 @@ These files contain fictional, sanitized evidence and require no credentials.
 
 ## Diff-review pipeline
 
-The router validates patch coverage before calling any provider. A sound
-editorial change can be skipped; uncertain decisions or review results escalate
-through deeper review, with unresolved concerns handed to a human.
+The router validates patch coverage before calling any provider. The decision
+provider recommends whether to skip, review, or hand off; the review provider
+assesses the diff and reports concerns or uncertainty. These are provider roles,
+not necessarily separate underlying models. The same review provider interface
+receives either `standard` or `deep` depth. A sound editorial change can be
+skipped; uncertain results escalate to deep review, with unresolved concerns
+handed to a human.
 
 ```mermaid
 flowchart TD

@@ -8,6 +8,28 @@ The included providers are deterministic demonstration rules. Their confidence
 scores have `source: "mock"` and are not calibrated probabilities. Substantive
 changes require human review because the mocks cannot assess their correctness.
 
+## Terminology and roles
+
+The engine has two provider roles. A **decision provider** (`DecisionProvider`)
+reads the PR evidence and recommends whether to skip review, start review, or
+hand the PR to a person. It chooses a route; it does not assess whether the
+change is correct. A **review provider** (`ReviewProvider`) assesses the diff
+and returns `no_concerns`, `concerns`, or `uncertain`, with findings when
+appropriate.
+
+The **router** is the engine that validates evidence, applies policy thresholds,
+calls the providers in order, and escalates unresolved results. PR-title/body
+format checks and the optional rubric are deterministic policy checks that run
+before providers; they are not model roles and do not establish whether a
+description accurately describes the diff. A **human reviewer** handles cases
+the automated route cannot safely resolve.
+
+“Provider” names the integration interface, not necessarily the technology
+behind it: a future provider may use a model, while the current CLI wires in
+offline mocks. `standard` and `deep` are review depths passed to the same review
+provider interface, not two different model roles. In this MVP, both provider
+roles are mocks and cannot perform a substantive code review.
+
 ## Install and run
 
 Use Python 3.12+ and [uv](https://docs.astral.sh/uv/).
@@ -53,15 +75,17 @@ report's `outcome`, rather than treating CLI success as permission to merge.
    empty evidence; and exceeded input/file budgets go directly to human review.
 2. A validated decision can skip review only at the policy's skip threshold.
    A decision that explicitly requests human review stops the pipeline.
-3. Other decisions run standard review. Low or unavailable decision confidence
-   starts directly at deep review.
-4. Uncertainty, concerns, or low review confidence trigger deep review. Unresolved
-   concerns, uncertainty, or provider failures require human review.
+3. Any other recommendation enters review. Low or unavailable decision
+   confidence starts review at deep depth; otherwise it starts at standard
+   depth.
+4. Uncertainty, concerns, or low review confidence trigger deep review.
+   Unresolved concerns, uncertainty, or provider failures require a human
+   reviewer.
 
 The mock decision provider recognizes only duplicate-word corrections in simple
-prose `.md`/`.txt` changes. The mock reviewer produces synthetic findings for
-`MOCK_REVIEW_CONCERN` in added lines. All other changes remain uncertain. These
-rules demonstrate routing; they do not perform a semantic code review.
+prose `.md`/`.txt` changes. The mock review provider produces synthetic findings
+for `MOCK_REVIEW_CONCERN` in added lines. All other changes remain uncertain.
+These rules demonstrate routing; they do not perform a semantic code review.
 
 Optional policy settings can also validate PR text before routing: require a
 Conventional Commits title and/or non-empty body sections such as `Summary` and
@@ -72,9 +96,10 @@ fixture. They check structure only, not whether the description is accurate.
 For multiple weighted criteria, hard/soft blockers, and aggregate scores, see
 the [rubric examples](examples/rubric/README.md).
 
-Reports include commit identifiers, coverage issues, decision provenance, review
-stages, routing reasons, deduplicated findings, and the number of omitted findings.
-The `advisory_only` flag is always true.
+Reports include commit identifiers, coverage issues, the decision-provider
+recommendation and confidence provenance, review stages and results, routing
+reasons, deduplicated findings, and the number of omitted findings. The
+`advisory_only` flag is always true.
 
 ## Development checks
 

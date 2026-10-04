@@ -5,6 +5,11 @@ exported pull request evidence and produces an advisory report. Run commands
 from the repository root after installing the project with `uv sync --locked`.
 No provider credentials or inference network access are required.
 
+The project uses **decision provider** for the route recommender and
+**review provider** for the diff assessor. `standard` and `deep` are review
+depths, not separate provider roles. See the
+[terminology and roles guide](../README.md#terminology-and-roles).
+
 ## Example sets
 
 | Directory | What it demonstrates | Detailed guide |

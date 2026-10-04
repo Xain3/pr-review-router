@@ -88,7 +88,27 @@ provider invocation; evidence is never silently truncated.
 Threshold comparisons are inclusive. An unavailable confidence value is always
 zero and cannot authorize skipping or clearing review, even at a zero threshold.
 
-## Provider contracts and confidence
+## Provider roles, contracts, and confidence
+
+Use **decision provider** and **review provider** as the names for the two
+provider roles (rather than using “decider” and “evaluator” interchangeably).
+They describe responsibilities, not necessarily separate underlying models:
+
+| Term | Responsibility | Output |
+| --- | --- | --- |
+| Decision provider (`DecisionProvider`) | Recommends whether to skip review, begin review, or hand off to a human. It chooses a route; it does not assess whether the diff is correct. | `Decision`: recommendation, confidence, reason, and provider identity |
+| Review provider (`ReviewProvider`) | Assesses the diff at the requested review depth. | `ReviewResult`: outcome, confidence, summary, provider identity, and findings |
+
+The engine/router validates evidence, applies policy checks and thresholds,
+sequences provider calls, and escalates unresolved results; it is not a model.
+Optional PR-text checks and rubric scoring are deterministic policy gates that
+run before providers, not additional provider roles. A human reviewer handles
+cases the automated route cannot resolve.
+
+`standard` and `deep` are depth values passed to the review provider interface.
+They are not two separate provider roles or necessarily different models. The
+MVP uses one mock decision provider and one mock review provider; its `deep`
+mock demonstrates the same interface and is not a stronger model.
 
 Decision providers return a recommendation (`skip_review`, `review`, or
 `needs_human_review`), confidence, reason, and provider identity. Review providers
@@ -117,15 +137,16 @@ semantic correctness.
 ## Routing and reporting
 
 Incomplete coverage goes directly to human review without provider calls.
-A decision that explicitly requests human review stops the pipeline. A
-`skip_review` decision at or above the skip threshold skips review.
+A decision-provider recommendation of `needs_human_review` stops the pipeline.
+A `skip_review` recommendation at or above the skip threshold skips review.
 
-Other decisions start standard review; decision scores below the review threshold
-or with unavailable provenance start deep review. A `no_concerns` review at or
-above the review threshold completes the advisory review if no earlier review
-reported concerns. Otherwise standard review escalates to deep review, and
-unresolved deep review requires human review. Provider exceptions and malformed
-responses require human review; exception text is excluded from reports.
+Other recommendations start review. Decision scores below the review threshold
+or with unavailable provenance start at deep depth; otherwise review starts at
+standard depth. A `no_concerns` result at or above the review threshold
+completes the advisory review if no earlier review reported concerns. Otherwise
+standard review escalates to deep review, and unresolved deep review requires
+human review. Provider exceptions and malformed responses require human review;
+exception text is excluded from reports.
 
 Report schema version `"2"` includes:
 
