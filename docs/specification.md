@@ -88,6 +88,35 @@ provider invocation; evidence is never silently truncated.
 Threshold comparisons are inclusive. An unavailable confidence value is always
 zero and cannot authorize skipping or clearing review, even at a zero threshold.
 
+## Optional direct and feedback routing
+
+All options are independent and compose with coverage, PR-text and rubric gates.
+See [runnable direct examples](../examples/direct/README.md).
+
+| Policy field | Default | Values / meaning |
+| --- | --- | --- |
+| `allow_direct_acceptance` | false | Enable `accept` decision recommendations |
+| `allow_direct_rejection` | false | Enable `reject` decision recommendations |
+| `acceptance_confidence` | 0.95 | Inclusive finite score in [0, 1] |
+| `rejection_confidence` | 0.95 | Inclusive finite score in [0, 1] |
+| `review_behavior` | `"escalate"` | `"escalate"` or `"feedback"` |
+| `feedback_depth` | `"standard"` | `"standard"` or `"deep"` |
+| `acceptance_feedback` | false | Collect non-blocking review after direct acceptance |
+| `unresolved_outcome` | `"needs_human_review"` | Human handoff or `"rejected"` with route `"blocked"` |
+
+Enabled confident direct rejection stops before review. Direct acceptance stops
+unless acceptance feedback is enabled. Disabled/low-confidence direct decisions
+continue to review; unavailable confidence never permits direct decisions.
+Feedback runs once at the configured depth, retains findings, and completes
+regardless of reviewer outcome/confidence without escalation. It yields `feedback`
+or preserves `accepted` after acceptance; feedback alone does not accept a PR.
+Unresolved policy applies to failed gates, incomplete evidence, provider errors,
+explicit human requests, and unresolved escalating review. A failed feedback
+provider also follows unresolved policy. No failure can yield acceptance.
+Existing skip recommendations and thresholds still apply before review.
+All routes remain advisory and CLI successful report generation still exits 0;
+consumers must enforce rejected outcomes as blocking.
+
 ## Provider roles, contracts, and confidence
 
 Use **decision provider** and **review provider** as the names for the two
@@ -110,8 +139,8 @@ They are not two separate provider roles or necessarily different models. The
 MVP uses one mock decision provider and one mock review provider; its `deep`
 mock demonstrates the same interface and is not a stronger model.
 
-Decision providers return a recommendation (`skip_review`, `review`, or
-`needs_human_review`), confidence, reason, and provider identity. Review providers
+Decision providers return a recommendation (`skip_review`, `review`,
+`needs_human_review`, `accept`, or `reject`), confidence, reason, and provider identity. Review providers
 accept a `standard` or `deep` depth and return an outcome (`no_concerns`,
 `concerns`, or `uncertain`), confidence, summary, identity, and findings.
 
@@ -136,7 +165,7 @@ semantic correctness.
 
 ## Routing and reporting
 
-Incomplete coverage goes directly to human review without provider calls.
+With the default policy, incomplete coverage goes directly to human review without provider calls.
 A decision-provider recommendation of `needs_human_review` stops the pipeline.
 A `skip_review` recommendation at or above the skip threshold skips review.
 
@@ -148,11 +177,11 @@ standard review escalates to deep review, and unresolved deep review requires
 human review. Provider exceptions and malformed responses require human review;
 exception text is excluded from reports.
 
-Report schema version `"2"` includes:
+Report schema version `"3"` includes:
 
 - `advisory_only: true`, repository, PR number, base/head identifiers.
-- `outcome`: `skipped`, `reviewed`, or `needs_human_review`.
-- `route`: `no_review`, `standard`, `deep`, or `human`.
+- `outcome`: `skipped`, `reviewed`, `needs_human_review`, `accepted`, `rejected`, or `feedback`.
+- `route`: `no_review`, `standard`, `deep`, `human`, `direct`, `feedback`, or `blocked`.
 - Reasons, coverage, optional decision, and executed review stages.
 - `pr_text`, with whether policy checks are enabled, whether they pass, and any
   format issues.
@@ -160,16 +189,20 @@ Report schema version `"2"` includes:
   failed hard blockers, failed soft criteria, and whether the rubric passes.
 - Deduplicated findings capped by policy and a unique `findings_omitted` count.
 
-Version 2 adds the `pr_text` and `rubric` fields and is incompatible with version
-1. Reports emit version 2, and the version 2 contract rejects version 1 payloads;
-consumers handling stored version 1 reports must retain a version 1 parser or
-migrate those reports before validating them with the current contract.
+Version 3 adds direct decisions and feedback outcomes/routes; its contract rejects
+older schema versions. Consumers of stored reports must retain an older parser
+or migrate those reports before validation.
 
 Stage finding lists are also capped individually. Escalation examines the complete
 provider results before capping. Findings from earlier stages cannot be silently
 discarded by a later clear response.
 
 ## Mock behavior
+
+Added-line `MOCK_DECISION_ACCEPT` / `MOCK_DECISION_REJECT` markers return synthetic
+direct decisions with mock confidence 0.99. Rejection wins if both occur. Policy
+must enable direct decisions to honor them; otherwise routing continues to review.
+
 
 The decision mock skips only modified prose documentation where every changed line
 corrects a repeated adjacent word. Source files, additions/removals, changed

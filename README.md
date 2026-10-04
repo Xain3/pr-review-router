@@ -5,14 +5,14 @@ It accepts exported PR evidence, checks patch coverage, selects a review path,
 and emits a structured JSON report. Reports never approve, merge, or change a PR.
 
 The included providers are deterministic demonstration rules. Their confidence
-scores have `source: "mock"` and are not calibrated probabilities. Substantive
-changes require human review because the mocks cannot assess their correctness.
+scores have `source: "mock"` and are not calibrated probabilities. The mocks cannot assess substantive correctness. Default routing hands such
+changes to humans; optional direct/feedback policies demonstrate other routes.
 
 ## Terminology and roles
 
 The engine has two provider roles. A **decision provider** (`DecisionProvider`)
 reads the PR evidence and recommends whether to skip review, start review, or
-hand the PR to a person. It chooses a route; it does not assess whether the
+hand the PR to a person, or directly accept/reject when enabled by policy. It chooses a route; it does not assess whether the
 change is correct. A **review provider** (`ReviewProvider`) assesses the diff
 and returns `no_concerns`, `concerns`, or `uncertain`, with findings when
 appropriate.
@@ -115,6 +115,13 @@ Reports include commit identifiers, coverage issues, the decision-provider
 recommendation and confidence provenance, review stages and results, routing
 reasons, deduplicated findings, and the number of omitted findings. The
 `advisory_only` flag is always true.
+
+Optional [direct-routing examples](examples/direct/README.md) demonstrate blocking
+decider rejection, non-blocking reviewer feedback, direct decider acceptance,
+and acceptance followed by feedback. Each behavior is independently configurable
+and can combine with PR-text/rubric gates. Defaults preserve the existing routes.
+Reports use schema version 3; acceptance/rejection remain advisory signals for
+consumers and never change a PR.
 
 ## Development checks
 

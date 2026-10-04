@@ -1,0 +1,24 @@
+# Each behavior can be enabled independently; existing routing defaults are unchanged.
+allow_direct_acceptance = true
+allow_direct_rejection = true
+acceptance_confidence = 0.95
+rejection_confidence = 0.95
+review_behavior = "feedback"
+feedback_depth = "standard"
+acceptance_feedback = true
+# Incomplete evidence, failed gates/providers, and explicit human requests block.
+unresolved_outcome = "rejected"
+
+# These checks run before the decision provider, alongside coverage validation.
+title_format = "conventional_commit"
+required_body_sections = ["Summary", "Testing"]
+rubric_minimum_score = 70
+
+[[rubric_criteria]]
+criterion_id = "testing"
+description = "Require a populated testing section."
+field = "body"
+check = "section_nonempty"
+value = "Testing"
+blocker = "hard"
+weight = 1
