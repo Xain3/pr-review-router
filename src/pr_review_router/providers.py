@@ -42,6 +42,7 @@ class ProviderSchemaError(ValueError):
 
 def _diagnostic(error: ValidationError) -> str:
     """Format safe schema diagnostics without exposing untrusted input values."""
+
     def mask(part: object) -> str:
         if isinstance(part, int):
             return str(part)
