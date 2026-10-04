@@ -55,8 +55,9 @@ jobs:
         run: uv build
       - name: Validate installed wheel
         run: |
+          uv export --locked --no-dev --no-emit-project --no-hashes --output-file /tmp/router-wheel-constraints.txt
           uv venv /tmp/router-wheel
-          uv pip install --python /tmp/router-wheel/bin/python dist/*.whl
+          uv pip install --python /tmp/router-wheel/bin/python --constraint /tmp/router-wheel-constraints.txt dist/*.whl
           cd /tmp
           /tmp/router-wheel/bin/pr-review-router --help
           /tmp/router-wheel/bin/pr-review-router --version

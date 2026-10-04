@@ -31,6 +31,7 @@ uv run pr-review-router evaluate --corpus examples/local-models/corpus.json --pr
 
 Use `uv run ruff format .` to format changes. Commit `uv.lock` whenever dependencies
 change. CI also exercises the installed wheel from a fresh environment.
+Wheel validation uses runtime dependency constraints exported from the same lockfile.
 
 Keep tests deterministic and offline; do not introduce credential requirements
 or paid inference into the default suite. Preserve confidence provenance,

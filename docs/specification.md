@@ -304,3 +304,4 @@ an existing report untouched. Evidence/policy cannot be overwritten by the repor
 A fresh checkout installs from `uv.lock`, passes Ruff, formatting, codespell,
 pytest, packaging, CLI smoke checks, and fresh-wheel execution without development
 dependencies or model credentials. CI is read-only and uses verified action pins.
+Fresh-wheel runtime dependencies are constrained by `uv.lock` for reproducible replay.
