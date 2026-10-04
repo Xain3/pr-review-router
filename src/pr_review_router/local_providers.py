@@ -145,16 +145,19 @@ class _LocalProvider:
         self._version: str | None = None
         self.schema_failures = 0
 
-    def validate_json[Model: BaseModel](self, model: type[Model], content: str) -> Model:
+    def validate_json[Model: BaseModel](
+        self, model: type[Model], content: str, *, context: dict[str, Any] | None = None
+    ) -> Model:
         """Validate wire text while counting failed schema attempts for evaluation.
 
         :param model: Strict response schema to validate against.
         :param content: Bounded response JSON text.
+        :param context: Optional schema-specific validation context.
         :returns: Validated model instance.
         :raises ValidationError: If the response fails validation.
         """
         try:
-            return model.model_validate_json(content)
+            return model.model_validate_json(content, context=context)
         except ValidationError:
             self.schema_failures += 1
             raise

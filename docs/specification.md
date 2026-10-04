@@ -276,6 +276,59 @@ HTTP calls. Outputs are individually atomic/private; earlier case files can
 remain after a later failure, and summary is written only after completion.
 See [configuration and runnable commands](../examples/local-models/README.md).
 
+## Formal and semantic assessment rubric examples
+
+An evaluation corpus can optionally name `assessment_rubric`, a relative TOML
+path, and each case can supply a `review` path to UTF-8 review text. These inputs
+must stay beneath the corpus directory and cannot be overwritten by outputs.
+Rubric reference labels require a status for every configured criterion and an
+expected recommendation. Existing corpora without these fields retain their
+behavior and recording fingerprints.
+
+This experiment rubric is distinct from deterministic `Policy.rubric_criteria`.
+It configures unique criterion IDs, descriptions, failure actions (`block` or
+`suggest`), improvement messages, and checks (`conventional_title`,
+`body_section`, or `semantic`). Formal checks reuse existing title/section
+validators. A formal blocker prevents all HTTP calls and leaves semantic
+criteria explicitly unassessed. Semantic criteria carry instructions and a
+description/review target and use the configured Ollaya decision adapter. The
+entire PR evidence and separately supplied review are untrusted state data;
+criterion instructions are separate. Document/review coverage is not proof of
+code correctness, and review-provider responsibilities remain unchanged.
+
+Semantic criteria are batched as typed choices (`passed`, `failed`, `uncertain`)
+through `/v1/systemone`. Native response validation requires exactly the asked
+criterion IDs and labels. Native scores are retained but task confidence remains
+unavailable. Missing review text makes review-target criteria unavailable;
+context truncation or unrecovered provider/schema errors cannot yield approval.
+The complete request, including supplied review and rubric instructions, must
+fit the policy input budget before any model/metadata request. Existing engine
+preflight still prevents every provider call for incomplete evidence.
+
+Known failed blocking criteria yield `block`; otherwise any uncertain criterion
+yields `needs_human_review`; otherwise failed suggestion criteria yield
+`suggest_changes`; only all passed criteria yield `skip_and_approve`. Results
+include criterion statuses/sources, blockers, configured suggestions, and
+`skip_recommended` / `approval_recommended`. Advice is always `advisory_only`
+with `automation_authorized: false`. There is no aggregate threshold that can
+cancel a blocking failure, and task confidence is never invented.
+
+The rubric decision provider requests human review for blockers/uncertainty,
+normal review for suggestions, and skip for all-pass advice. Existing shadow
+mode records the original skip and continues reviewing. Report schema version 3
+is unchanged; rubric advice is saved under `assessment_rubric` in experiment
+artifacts and summaries. It cannot override coverage or unresolved review and
+never approves or changes a PR. Policy direct decisions remain disabled.
+
+Rubric configuration, actual prompt/schema contents and revisions, and complete
+supplied review text join the fingerprint only for rubric experiments. Native
+normalization uses the existing single schema retry. Evaluation compares each
+criterion status and recommendation with independent reference labels, counting
+blockers, suggestions, skip/approval advice, mismatches, and unsafe approval
+recommendations. Reference-label edits alone do not require fresh inference.
+See the [nine-case, six-criterion examples](../examples/rubric-review/README.md).
+Labels remain provisional and offline tapes explicitly synthetic.
+
 ## Mock behavior
 
 Added-line `MOCK_DECISION_ACCEPT` / `MOCK_DECISION_REJECT` markers return synthetic

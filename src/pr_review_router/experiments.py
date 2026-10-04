@@ -8,6 +8,14 @@ from typing import Annotated, Any, Literal
 import httpx
 from pydantic import Field, field_validator, model_validator
 
+from .assessment_rubric import (
+    AssessmentRubric,
+    Recommendation,
+    RubricDecisionProvider,
+    Status,
+    load_assessment_rubric,
+    rubric_versions,
+)
 from .config import Policy
 from .contracts import Contract, Decision, PullRequestEvidence, ReviewReport, ReviewResult, Text
 from .engine import review_pull_request
@@ -71,6 +79,8 @@ def run_experiment(
     replay: Path | None = None,
     record: bool = False,
     http_transport: httpx.AsyncBaseTransport | None = None,
+    rubric: AssessmentRubric | None = None,
+    review_text: str = "",
 ) -> ExperimentResult:
     """Execute independent providers in shadow mode, preserving engine preflight gates.
 
@@ -80,6 +90,8 @@ def run_experiment(
     :param replay: Optional exact offline HTTP recording.
     :param record: Whether to return a tape for explicit recording refresh.
     :param http_transport: Optional injectable transport for offline tests.
+    :param rubric: Optional formal and semantic evidence rubric for the decision provider.
+    :param review_text: Supplied review text assessed by an optional rubric.
     :returns: Advisory report plus separate experiment artifacts.
     :raises ValueError: If direct decisions are enabled or replay and recording are combined.
     """
@@ -87,18 +99,25 @@ def run_experiment(
         raise ValueError("local experiments require direct acceptance and rejection to be disabled")
     if replay and record:
         raise ValueError("recording and replay are mutually exclusive")
-    experiment_fingerprint = fingerprint(
-        {
-            "experiment_version": 1,
-            "providers": config.model_dump(mode="json"),
-            "policy": policy.model_dump(mode="json"),
-            "evidence": evidence.model_dump(mode="json"),
-            "adapters": adapter_versions(),
-            "decision_schema": Decision.model_json_schema(),
-            "review_schema": ReviewResult.model_json_schema(),
-            "report_schema": ReviewReport.model_json_schema(),
+    if rubric and not isinstance(config.decision, DecisionSettings):
+        raise ValueError("semantic rubric experiments require an Ollaya decision provider")
+    fingerprint_inputs = {
+        "experiment_version": 1,
+        "providers": config.model_dump(mode="json"),
+        "policy": policy.model_dump(mode="json"),
+        "evidence": evidence.model_dump(mode="json"),
+        "adapters": adapter_versions(),
+        "decision_schema": Decision.model_json_schema(),
+        "review_schema": ReviewResult.model_json_schema(),
+        "report_schema": ReviewReport.model_json_schema(),
+    }
+    if rubric:
+        fingerprint_inputs["assessment_rubric"] = {
+            "config": rubric.model_dump(mode="json"),
+            "review_text": review_text,
+            "versions": rubric_versions(),
         }
-    )
+    experiment_fingerprint = fingerprint(fingerprint_inputs)
     session = Session(experiment_fingerprint, replay=replay, http_transport=http_transport)
     decision = (
         OllayaDecisionProvider(config.decision, session)
@@ -111,7 +130,14 @@ def run_experiment(
     else:
         mock_reviewer = _CapturingMockReviewProvider(MockReviewProvider())
         reviewer = mock_reviewer
-    shadow = ShadowDecisionProvider(decision)
+    rubric_provider = (
+        RubricDecisionProvider(
+            decision, rubric, review_text, max_input_bytes=policy.max_input_bytes
+        )
+        if rubric
+        else None
+    )
+    shadow = ShadowDecisionProvider(rubric_provider or decision)
     start = time.monotonic()
     try:
         report = review_pull_request(evidence, policy, shadow, reviewer)
@@ -152,6 +178,12 @@ def run_experiment(
             ),
             "report": report.model_dump(mode="json"),
         }
+        if rubric_provider:
+            artifact["assessment_rubric"] = rubric_provider.artifact().model_dump(mode="json")
+            artifact["assessment_rubric_config"] = rubric.model_dump(mode="json")
+            artifact["supplied_review"] = review_text
+            artifact["rubric_prompt_version"] = rubric_versions()["prompt_version"]
+            artifact["rubric_revision"] = fingerprint(rubric_versions())
         return ExperimentResult(report, artifact, session.recording() if record else None)
     finally:
         session.close()
@@ -166,6 +198,13 @@ class ExpectedConcern(Contract):
     description: Text
 
 
+class RubricExpectations(Contract):
+    """Reference rubric advice and individual criterion labels, separate from responses."""
+
+    recommendation: Recommendation
+    criteria: dict[str, Status]
+
+
 class Expectations(Contract):
     """Reference routes and supported concern locations, independent of model output."""
 
@@ -173,14 +212,18 @@ class Expectations(Contract):
         min_length=1
     )
     concerns: list[ExpectedConcern] = Field(default_factory=list)
+    rubric: RubricExpectations | None = None
 
 
 class EvaluationCase(Contract):
     """One sanitized evaluation case referencing evidence beneath the corpus directory."""
 
     case_id: Text
-    category: Literal["editorial", "correct_code", "planted_defect", "ambiguous", "incomplete"]
+    category: Literal[
+        "editorial", "correct_code", "planted_defect", "ambiguous", "incomplete", "rubric"
+    ]
     evidence: Text
+    review: Text | None = None
     expectations: Expectations
 
     @field_validator("case_id")
@@ -203,6 +246,7 @@ class Corpus(Contract):
     corpus_version: Literal[1] = 1
     label_status: Literal["provisional", "human_reviewed"] = "provisional"
     cases: list[EvaluationCase] = Field(min_length=1)
+    assessment_rubric: Text | None = None
 
     @model_validator(mode="after")
     def unique_cases(self) -> "Corpus":
@@ -214,6 +258,10 @@ class Corpus(Contract):
         identifiers = [case.case_id for case in self.cases]
         if len(set(identifiers)) != len(identifiers):
             raise ValueError("corpus case identifiers must be unique")
+        if self.assessment_rubric is None and any(
+            case.review is not None or case.expectations.rubric is not None for case in self.cases
+        ):
+            raise ValueError("review inputs and rubric labels require an assessment rubric")
         return self
 
 
@@ -278,7 +326,7 @@ def evaluate_case(case: EvaluationCase, result: ExperimentResult) -> dict[str, A
         for concern in case.expectations.concerns
         if concern.concern_id not in matched
     ]
-    return {
+    metrics = {
         "case_id": case.case_id,
         "category": case.category,
         "original_recommendation": recommendation,
@@ -298,6 +346,84 @@ def evaluate_case(case: EvaluationCase, result: ExperimentResult) -> dict[str, A
         "request_seconds": artifact["request_seconds"],
         "outcome": result.report.outcome,
     }
+    if case.expectations.rubric:
+        expected = case.expectations.rubric
+        assessment = artifact.get("assessment_rubric", {})
+        statuses = {item["criterion_id"]: item["status"] for item in assessment.get("criteria", [])}
+        mismatches = [
+            identifier
+            for identifier, status in expected.criteria.items()
+            if statuses.get(identifier) != status
+        ]
+        recommendation_matches = assessment.get("recommendation") == expected.recommendation
+        metrics["rubric"] = {
+            "recommendation": assessment.get("recommendation"),
+            "recommendation_matches_reference": recommendation_matches,
+            "criterion_mismatches": mismatches,
+            "blockers": assessment.get("blockers", []),
+            "suggestions": assessment.get("suggestions", []),
+            "criteria": statuses,
+            "skip_recommended": assessment.get("skip_recommended", False),
+            "approval_recommended": assessment.get("approval_recommended", False),
+            "automation_authorized": False,
+        }
+        metrics["rubric_criterion_mismatches"] = len(mismatches)
+        metrics["rubric_recommendation_mismatches"] = int(not recommendation_matches)
+        metrics["rubric_blocks"] = int(assessment.get("recommendation") == "block")
+        metrics["rubric_suggestions"] = len(assessment.get("suggestions", []))
+        metrics["rubric_skip_approval_recommendations"] = int(
+            assessment.get("approval_recommended", False)
+        )
+        metrics["unsafe_rubric_approvals"] = int(
+            assessment.get("approval_recommended", False)
+            and (
+                expected.recommendation != "skip_and_approve"
+                or any(status != "passed" for status in expected.criteria.values())
+            )
+        )
+    return metrics
+
+
+def load_corpus_rubric(
+    path: Path, corpus: Corpus
+) -> tuple[AssessmentRubric | None, list[str], list[Path]]:
+    """Load and validate rubric and supplied reviews before any inference or output.
+
+    :param path: Corpus path defining the allowed input directory.
+    :param corpus: Validated corpus with optional rubric and review paths.
+    :returns: Rubric, review texts in case order, and additional protected input paths.
+    :raises ValueError: If paths escape the corpus directory or labels differ from the rubric.
+    :raises OSError: If an input cannot be read.
+    """
+    root = path.resolve().parent
+    sources = []
+
+    def source(relative: str) -> Path:
+        """Resolve one additional input without leaving the corpus directory.
+
+        :param relative: Relative rubric or supplied-review path.
+        :returns: Protected source path beneath the corpus directory.
+        :raises ValueError: If the path escapes that directory.
+        """
+        resolved = (root / relative).resolve()
+        if not resolved.is_relative_to(root):
+            raise ValueError("rubric and review paths must stay beneath the corpus directory")
+        sources.append(resolved)
+        return resolved
+
+    rubric = (
+        load_assessment_rubric(source(corpus.assessment_rubric))
+        if corpus.assessment_rubric
+        else None
+    )
+    texts = []
+    for case in corpus.cases:
+        texts.append(source(case.review).read_text(encoding="utf-8") if case.review else "")
+        if case.expectations.rubric:
+            ids = {criterion.criterion_id for criterion in rubric.criteria}
+            if set(case.expectations.rubric.criteria) != ids:
+                raise ValueError("reference rubric labels must cover every configured criterion")
+    return rubric, texts, sources
 
 
 def summarize_evaluation(corpus: Corpus, results: list[dict[str, Any]]) -> dict[str, Any]:
@@ -316,11 +442,20 @@ def summarize_evaluation(corpus: Corpus, results: list[dict[str, Any]]) -> dict[
         "transport_failures",
         "request_seconds",
     )
+    if any("rubric" in result for result in results):
+        counts += (
+            "rubric_criterion_mismatches",
+            "rubric_recommendation_mismatches",
+            "unsafe_rubric_approvals",
+            "rubric_blocks",
+            "rubric_suggestions",
+            "rubric_skip_approval_recommendations",
+        )
     return {
         "evaluation_version": 1,
         "label_status": corpus.label_status,
         "case_count": len(results),
-        "totals": {name: sum(result[name] for result in results) for name in counts},
+        "totals": {name: sum(result.get(name, 0) for result in results) for name in counts},
         "cases": results,
         "reference_labels": corpus.model_dump(mode="json"),
         "limitations": (

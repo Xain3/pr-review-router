@@ -144,6 +144,16 @@ human-reviewed labels are needed to assess model quality. Ollaya routing
 confidence remains unavailable until task calibration; reviewer confidence is
 self-reported.
 
+The [six-criterion PR and review rubric](examples/rubric-review/README.md)
+evaluates title format, Summary structure, meaningful rationale, description
+coverage of the diff, supplied-review coverage, and relevant testing. It shows
+blocking failures, suggestions, uncertainty, and all-pass advisory skip/approval
+recommendations while preserving shadow mode.
+
+```sh
+uv run pr-review-router evaluate --corpus examples/rubric-review/corpus.json --providers-config examples/local-models/replay.toml --replay-dir examples/rubric-review/recordings --output-dir reports/rubric-review-replay
+```
+
 ## Development checks
 
 ```sh

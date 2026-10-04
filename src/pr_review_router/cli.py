@@ -17,6 +17,7 @@ from .engine import review_pull_request
 from .experiments import (
     evaluate_case,
     load_corpus,
+    load_corpus_rubric,
     run_experiment,
     summarize_evaluation,
 )
@@ -171,9 +172,12 @@ def _evaluate(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
     try:
         policy = load_policy(args.config)
         corpus, evidence, sources = load_corpus(args.corpus)
+        rubric, review_texts, rubric_sources = load_corpus_rubric(args.corpus, corpus)
     except (OSError, ValueError):
         parser.error("could not read valid UTF-8 corpus, evidence, or policy")
     config = _provider_inputs(args.providers_config, policy, parser)
+    if rubric and config.decision.backend != "ollaya":
+        parser.error("semantic rubric evaluation requires an Ollaya decision provider")
     replay_paths = [
         args.replay_dir / f"{case.case_id}.tape.json" if args.replay_dir else None
         for case in corpus.cases
@@ -188,12 +192,22 @@ def _evaluate(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
     _protect_paths(
         parser,
         output_paths,
-        [args.corpus, args.config, args.providers_config, *sources, *replay_paths],
+        [args.corpus, args.config, args.providers_config, *sources, *rubric_sources, *replay_paths],
     )
     metrics = []
     try:
-        for case, item, replay in zip(corpus.cases, evidence, replay_paths, strict=True):
-            result = run_experiment(item, policy, config, replay=replay, record=args.record)
+        for case, item, replay, review_text in zip(
+            corpus.cases, evidence, replay_paths, review_texts, strict=True
+        ):
+            result = run_experiment(
+                item,
+                policy,
+                config,
+                replay=replay,
+                record=args.record,
+                rubric=rubric,
+                review_text=review_text,
+            )
             _write_report(
                 args.output_dir / f"{case.case_id}.report.json",
                 result.report.model_dump_json(indent=2) + "\n",

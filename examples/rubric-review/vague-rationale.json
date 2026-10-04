@@ -1,0 +1,24 @@
+{
+  "repository": "example/rubric-review",
+  "number": 104,
+  "base_sha": "sanitized-base",
+  "head_sha": "sanitized-vague-rationale",
+  "title": "fix(average): handle empty input and raise the batch limit",
+  "body": "## Summary\nReturn zero for empty input in average(), and raise MAX_BATCH_ITEMS from 100 to 250.\n\n## Rationale\nThese changes make things better.\n\n## Testing\nThe validation plan covers empty and ordinary averages, acceptance of 250 items,\nand rejection of 251 items. These tests are described here, not executed by this fixture.\n",
+  "files": [
+    {
+      "path": "average.py",
+      "status": "modified",
+      "additions": 2,
+      "deletions": 0,
+      "patch": "@@ -1,2 +1,4 @@\n def average(values):\n+    if not values:\n+        return 0\n     return sum(values) / len(values)\n"
+    },
+    {
+      "path": "settings.py",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "patch": "@@ -1 +1 @@\n-MAX_BATCH_ITEMS = 100\n+MAX_BATCH_ITEMS = 250\n"
+    }
+  ]
+}
