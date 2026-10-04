@@ -11,7 +11,7 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
-from .config import Policy, load_policy
+from .config import Policy, load_policy, resolve_config_path
 from .contracts import PullRequestEvidence
 from .engine import review_pull_request
 from .providers import MockDecisionProvider, MockReviewProvider
@@ -49,7 +49,9 @@ def _parse_args(
     )
     review.add_argument("--input", type=Path, required=True, help="PR evidence JSON file.")
     review.add_argument(
-        "--config", type=Path, help="Routing policy TOML file (defaults if omitted)."
+        "--config",
+        type=Path,
+        help="Routing policy TOML file (overrides PR_REVIEW_ROUTER_CONFIG).",
     )
     review.add_argument(
         "--output", type=Path, help="Write JSON report to a file instead of stdout."
@@ -58,6 +60,10 @@ def _parse_args(
     if args.command is None:
         parser.print_help()
         return None
+    try:
+        args.config = resolve_config_path(args.config)
+    except ValueError as error:
+        parser.error(str(error))
     if args.output and args.output.resolve() in {
         args.input.resolve(),
         args.config.resolve() if args.config else None,

@@ -64,6 +64,21 @@ is given. File output creates parent directories and replaces the destination
 atomically; POSIX files are private to their owner. Input and policy paths cannot
 be used as the output destination.
 
+Policy defaults are read from the packaged
+[defaults.toml](src/pr_review_router/defaults.toml); model defaults remain as
+hardcoded fallbacks for settings omitted from a config file. Set
+`PR_REVIEW_ROUTER_CONFIG` to select a config file when `--config` is not given.
+For individual policy settings, use `PR_REVIEW_ROUTER_<SETTING>` with the
+setting name uppercased, such as `PR_REVIEW_ROUTER_SKIP_CONFIDENCE=0.9` or
+`PR_REVIEW_ROUTER_REQUIRED_BODY_SECTIONS='["Summary", "Testing"]'`.
+Environment values override the selected TOML file. Strings may be given
+unquoted; arrays and other structured values use JSON syntax. An explicit
+`--config` takes precedence over `PR_REVIEW_ROUTER_CONFIG`, and a supplied
+config file replaces—not merges with—the packaged defaults. Omitted CLI options
+do not override configuration. Invalid values produce a usage error instead of
+silently falling back. Per-setting policy flags are not currently exposed by
+the CLI.
+
 Exit status is 0 for every successful advisory report, including
 `needs_human_review`. Invalid evidence, policy, arguments, or file I/O produce
 status 2 and a concise diagnostic on stderr. Consumers should inspect the
