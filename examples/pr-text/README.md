@@ -7,6 +7,29 @@ These examples apply explicit PR-text rules through a TOML policy:
 - The description must contain non-empty level-two `## Summary` and
   `## Testing` sections.
 
+## PR-text validation pipeline
+
+Text checks run before provider review and do not replace patch-coverage
+validation. Any format failure is reported and handed off without calling a
+provider; passing checks continue through the common diff-review route.
+
+```mermaid
+flowchart TD
+    A["PR evidence and PR-text policy"] --> B["Check Conventional Commits title"]
+    B --> C["Check required non-empty body sections"]
+    C --> D{"All configured text checks pass?"}
+    D -- No --> H["Human handoff before provider calls"]
+    D -- Yes --> E{"Patch coverage complete and within budgets?"}
+    E -- No --> H
+    E -- Yes --> F["Continue through the diff-review pipeline"]
+    F --> G["Valid example: mock recognizes editorial correction"]
+    G --> I["Skipped; no review"]
+```
+
+`invalid.json` fails both its title-format check and its empty `## Testing`
+section, so it is handed off early. `valid.json` passes these checks and its
+narrow editorial change is skipped by the offline mock.
+
 Run both examples with the same policy:
 
 ```sh

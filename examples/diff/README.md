@@ -2,6 +2,43 @@
 
 These files contain fictional, sanitized evidence and require no credentials.
 
+## Diff-review pipeline
+
+The router validates patch coverage before calling any provider. A sound
+editorial change can be skipped; uncertain decisions or review results escalate
+through deeper review, with unresolved concerns handed to a human.
+
+```mermaid
+flowchart TD
+    A["PR evidence and policy"] --> B{"Coverage complete and within budgets?"}
+    B -- No --> H["Human handoff; no providers called"]
+    B -- Yes --> C{"PR-text checks and rubric pass?"}
+    C -- No --> H
+    C -- Yes --> D["Decision provider"]
+    D -- "Provider failure" --> H
+    D --> E{"Decision requests human review?"}
+    E -- Yes --> H
+    E -- No --> F{"Skip requested at or above skip threshold?"}
+    F -- Yes --> S["Skipped; no review"]
+    F -- No --> G{"Decision confidence low or unavailable?"}
+    G -- Yes --> X["Deep review"]
+    G -- No --> R["Standard review"]
+    R -- "Provider failure" --> H
+    R --> J{"Clear and review confidence meets threshold?"}
+    J -- Yes --> K["Reviewed; standard route"]
+    J -- No --> X
+    X -- "Provider failure" --> H
+    X --> L{"Clear, confidence sufficient, and no earlier concerns?"}
+    L -- Yes --> M["Reviewed; deep route"]
+    L -- No --> H
+```
+
+In this example, `evidence.json` follows the skip path. `concern.json` has a
+synthetic finding at both review depths and ends in a human handoff. PR-text
+and rubric checks are optional policy gates; their example pipelines are
+documented in [PR-text examples](../pr-text/README.md) and
+[rubric examples](../rubric/README.md).
+
 ```sh
 uv run pr-review-router review --input examples/diff/evidence.json --config examples/diff/policy.toml
 uv run pr-review-router review --input examples/diff/concern.json --output reports/concern.json
