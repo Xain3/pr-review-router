@@ -225,8 +225,10 @@ def review_pull_request(
         )
 
     def report(
-        outcome: Literal["skipped", "reviewed", "needs_human_review"],
-        route: Literal["no_review", "standard", "deep", "human"],
+        outcome: Literal[
+            "skipped", "reviewed", "needs_human_review", "accepted", "rejected", "feedback"
+        ],
+        route: Literal["no_review", "standard", "deep", "human", "direct", "feedback", "blocked"],
     ) -> ReviewReport:
         findings = _findings(reviews)
         # Cap both the summary and nested stage findings in the exported report.
@@ -257,20 +259,46 @@ def review_pull_request(
             findings_omitted=max(0, len(findings) - policy.max_findings),
         )
 
-    if not coverage.complete or not pr_text.valid or not rubric.passed:
+    def unresolved() -> ReviewReport:
+        if policy.unresolved_outcome == "rejected":
+            reasons.append("Policy blocks unresolved evidence or routing without a human handoff.")
+            return report("rejected", "blocked")
         return report("needs_human_review", "human")
+
+    if not coverage.complete or not pr_text.valid or not rubric.passed:
+        return unresolved()
     try:
         decision = request_decision(decision_provider, evidence)
     except ProviderSchemaError as error:
         reasons.append(f"Decision provider failed schema validation: {error}")
-        return report("needs_human_review", "human")
+        return unresolved()
     except Exception:
         # Never include provider exception text: it can contain credentials or PR content.
         reasons.append("Decision provider failed or returned an invalid response.")
-        return report("needs_human_review", "human")
+        return unresolved()
     reasons.append(decision.reason)
     if decision.recommendation == "needs_human_review":
-        return report("needs_human_review", "human")
+        return unresolved()
+    accepted = False
+    if decision.recommendation in {"accept", "reject"}:
+        accepting = decision.recommendation == "accept"
+        enabled = policy.allow_direct_acceptance if accepting else policy.allow_direct_rejection
+        threshold = policy.acceptance_confidence if accepting else policy.rejection_confidence
+        if (
+            enabled
+            and decision.confidence.source != "unavailable"
+            and decision.confidence.value >= threshold
+        ):
+            if not accepting:
+                return report("rejected", "direct")
+            if not policy.acceptance_feedback:
+                return report("accepted", "direct")
+            accepted = True
+        else:
+            reasons.append(
+                "Direct decision is disabled or does not meet its confidence threshold; continuing to review."
+            )
+
     if (
         decision.recommendation == "skip_review"
         and decision.confidence.value >= policy.skip_confidence
@@ -283,13 +311,16 @@ def review_pull_request(
     ):
         reasons.append("Decision confidence does not meet the skip threshold.")
 
+    feedback = accepted or policy.review_behavior == "feedback"
     depths = ("standard", "deep")
-    if (
+    if not feedback and (
         decision.confidence.value < policy.review_confidence
         or decision.confidence.source == "unavailable"
     ):
         reasons.append("Decision uncertainty requires deep review.")
         depths = ("deep",)
+    if feedback:
+        depths = (policy.feedback_depth,)
     for depth in depths:
         try:
             result = request_review(review_provider, evidence, depth=depth)
@@ -298,12 +329,15 @@ def review_pull_request(
                 raise ValueError("finding references an unknown file")
         except ProviderSchemaError as error:
             reasons.append(f"{depth.capitalize()} review failed schema validation: {error}")
-            return report("needs_human_review", "human")
+            return unresolved()
         except Exception:
             reasons.append(f"{depth.capitalize()} review failed or returned an invalid response.")
-            return report("needs_human_review", "human")
+            return unresolved()
         reviews.append(ReviewStage(depth=depth, result=result))
         reasons.append(result.summary)
+        if feedback:
+            reasons.append("Reviewer feedback is non-blocking; no human handoff is required.")
+            return report("accepted" if accepted else "feedback", "feedback")
         if (
             result.outcome == "no_concerns"
             and result.confidence.value >= policy.review_confidence
@@ -312,4 +346,4 @@ def review_pull_request(
         ):
             return report("reviewed", depth)
         reasons.append(f"{depth.capitalize()} review requires escalation.")
-    return report("needs_human_review", "human")
+    return unresolved()

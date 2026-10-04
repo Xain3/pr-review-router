@@ -1,0 +1,17 @@
+{
+  "repository": "example/project",
+  "number": 50,
+  "base_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "head_sha": "cccccccccccccccccccccccccccccccccccccccc",
+  "title": "feat(demo): demonstrate accept routing",
+  "files": [
+    {
+      "path": "demo.py",
+      "status": "added",
+      "additions": 1,
+      "deletions": 0,
+      "patch": "@@ -0,0 +1,1 @@\n+# MOCK_DECISION_ACCEPT\n"
+    }
+  ],
+  "body": "## Summary\nDemonstrate configurable direct routing.\n\n## Testing\nRun the offline fixture.\n"
+}

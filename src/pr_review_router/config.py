@@ -38,6 +38,14 @@ class RubricCriterion(Contract):
 
 
 class Policy(Contract):
+    allow_direct_acceptance: bool = False
+    allow_direct_rejection: bool = False
+    acceptance_confidence: Probability = 0.95
+    rejection_confidence: Probability = 0.95
+    review_behavior: Literal["escalate", "feedback"] = "escalate"
+    feedback_depth: Literal["standard", "deep"] = "standard"
+    acceptance_feedback: bool = False
+    unresolved_outcome: Literal["needs_human_review", "rejected"] = "needs_human_review"
     skip_confidence: Probability = 0.95
     review_confidence: Probability = 0.85
     max_input_bytes: Annotated[int, Field(gt=0)] = 100_000

@@ -155,6 +155,23 @@ def _editorial(evidence: PullRequestEvidence) -> bool:
 
 class MockDecisionProvider:
     def decide(self, evidence: PullRequestEvidence) -> Decision:
+        markers = {
+            marker
+            for file in evidence.files
+            for hunk in parse_patch(file.patch or "")
+            for _, content in hunk.added
+            for marker in ("MOCK_DECISION_REJECT", "MOCK_DECISION_ACCEPT")
+            if marker in content
+        }
+        # Rejection wins if both synthetic markers are present.
+        if markers:
+            rejecting = "MOCK_DECISION_REJECT" in markers
+            return Decision(
+                recommendation="reject" if rejecting else "accept",
+                confidence=Confidence(value=0.99, source="mock"),
+                reason="Explicit synthetic marker requests a direct mock decision.",
+                provider="mock-decision",
+            )
         if _editorial(evidence):
             return Decision(
                 recommendation="skip_review",

@@ -55,7 +55,7 @@ class Confidence(Contract):
 
 
 class Decision(Contract):
-    recommendation: Literal["skip_review", "review", "needs_human_review"]
+    recommendation: Literal["skip_review", "review", "needs_human_review", "accept", "reject"]
     confidence: Confidence
     reason: Text
     provider: Text
@@ -123,14 +123,16 @@ class RubricEvaluation(Contract):
 
 
 class ReviewReport(Contract):
-    schema_version: Literal["2"] = "2"
+    schema_version: Literal["3"] = "3"
     advisory_only: Literal[True] = True
     repository: Text
     number: Annotated[int, Field(gt=0)]
     base_sha: Text
     head_sha: Text
-    outcome: Literal["skipped", "reviewed", "needs_human_review"]
-    route: Literal["no_review", "standard", "deep", "human"]
+    outcome: Literal[
+        "skipped", "reviewed", "needs_human_review", "accepted", "rejected", "feedback"
+    ]
+    route: Literal["no_review", "standard", "deep", "human", "direct", "feedback", "blocked"]
     reasons: list[str]
     coverage: Coverage
     pr_text: PRTextValidation
