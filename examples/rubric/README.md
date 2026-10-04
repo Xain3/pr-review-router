@@ -1,10 +1,13 @@
 # Rubric-based PR-text examples
 
 This set demonstrates multiple weighted criteria rather than a single format
-gate. The policy scores each criterion from 0–100, multiplies by its weight,
-then calculates a weighted average. A failed hard blocker always requires a
-human handoff. Soft failures are reported and reduce the score; the PR is handed
-off if the aggregate falls below `rubric_minimum_score`.
+gate. Rubric scoring is a deterministic policy check, not a model/provider
+role: it evaluates configured title/body text before any provider is called and
+does not assess whether that text accurately describes the diff. The policy
+scores each criterion from 0–100, multiplies by its weight, then calculates a
+weighted average. A failed hard blocker always requires a human handoff. Soft
+failures are reported and reduce the score; the PR is handed off if the
+aggregate falls below `rubric_minimum_score`.
 
 ## Rubric evaluation pipeline
 
@@ -47,7 +50,8 @@ uv run pr-review-router review --input examples/rubric/hard_blocker.json --confi
 Supported deterministic checks are `non_empty`, `min_words`, `contains`, and
 `section_nonempty`. These inspect only supplied title/body text; they do not
 judge semantic accuracy or whether the description matches the diff. They are
-an offline mock for exercising rubric-based routing, not an AI evaluator.
+an offline mock for exercising rubric-based routing, not an AI system that
+judges the change itself.
 
 Each report includes `rubric.score`, `rubric.minimum_score`, individual
 criterion scores and explanations, failed hard blockers, and failed soft

@@ -8,6 +8,13 @@ in the [specification](specification.md); runnable inputs are in
 
 ## Architecture
 
+In this document and the code, **decision provider** means the component that
+recommends a route, while **review provider** means the component that assesses
+the diff. These are provider interfaces, not a promise of two distinct
+underlying models. The engine is the router; it applies deterministic gates and
+thresholds. `standard` and `deep` identify review depth, not different provider
+roles.
+
 | Module | Responsibility |
 | --- | --- |
 | `contracts.py` | Strict Pydantic evidence, confidence, decision, finding, and report models |
@@ -18,9 +25,13 @@ in the [specification](specification.md); runnable inputs are in
 | `cli.py` | Argument parsing, evidence loading, mock wiring, and JSON/file output |
 
 The engine receives provider instances; it contains no mock-specific decision
-rules and does not depend on provider transport SDKs. To integrate a real adapter,
-implement `DecisionProvider.decide(evidence)` or
-`ReviewProvider.review(evidence, *, depth)`, returning the normalized contracts.
+rules and does not depend on provider transport SDKs. To integrate a real
+decision adapter, implement `DecisionProvider.decide(evidence)` and return the
+normalized `Decision` contract. To integrate a real review adapter, implement
+`ReviewProvider.review(evidence, *, depth)` and return `ReviewResult`. The review
+adapter receives `standard` or `deep` as a depth argument; the engine does not
+require separate models for those depths.
+
 Responses are validated by `request_decision`/`request_review` in `providers.py`:
 malformed output gets one retry (passing `strict_schema=True` when the adapter
 accepts it), then fails closed to human review with value-free diagnostics. Confidence provenance
@@ -35,8 +46,9 @@ outcome, and exception messages do not enter reports.
 Earlier review concerns are retained through escalation. Findings are deduplicated
 and limited only after routing decisions; the report records omitted findings.
 
-The mocked deeper review demonstrates the interface but is not a stronger model.
-Substantive changes remain uncertain at both depths and require human review.
+The mock review provider's `deep` response demonstrates the depth interface but
+is not a stronger model or a second model role. Substantive changes remain
+uncertain at both depths and require human review.
 
 ## Development and verification
 
