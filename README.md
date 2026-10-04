@@ -83,12 +83,21 @@ uv sync --locked
 uv run ruff check .
 uv run ruff format --check .
 uv run codespell
+# Full suite (all test categories)
 uv run pytest
+# Individual test categories
+uv run pytest -m smoke
+uv run pytest -m integration
+uv run pytest -m unit
 uv build
 uv run pr-review-router --help
 uv run pr-review-router --version
 uv run pr-review-router review --input examples/diff/evidence.json --config examples/diff/policy.toml
 ```
+
+Smoke tests check basic CLI startup and a minimal review; integration tests
+exercise CLI behavior across inputs, policies, and report output; unit tests
+cover isolated engine and patch-parsing logic. CI runs each category separately.
 
 Use `uv run ruff format .` to format edits. CI also validates an installed wheel
 in a fresh virtual environment.

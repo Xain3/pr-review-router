@@ -13,6 +13,8 @@ Source = Literal["mock", "self_reported", "calibrated", "unavailable"]
 Recommendation = Literal["skip_review", "review", "needs_human_review"]
 Outcome = Literal["no_concerns", "concerns", "uncertain"]
 
+pytestmark = pytest.mark.unit
+
 
 class ScriptedDecision:
     def __init__(
