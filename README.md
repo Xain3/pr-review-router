@@ -150,6 +150,8 @@ coverage of the diff, supplied-review coverage, and relevant testing. It shows
 blocking failures, suggestions, uncertainty, and all-pass advisory skip/approval
 recommendations while preserving shadow mode. Semantic criteria support `choice`,
 `noul`, and ordinal `score` questions with explicit experimental numeric bands.
+Assessment rubrics accept JSON or TOML through the same validated contract;
+JSON examples are available for every question format.
 Run `uv run python examples/rubric-review/compare.py` to compare all three formats
 against identical labels with offline replay; `--live --record` explicitly uses
 local models and saves recordings under `reports/`.

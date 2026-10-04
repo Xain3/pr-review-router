@@ -39,7 +39,7 @@ def main() -> None:
             "--providers-config",
             str(config),
             "--assessment-rubric",
-            str(root / ("rubric.toml" if kind == "choice" else f"rubric-{kind}.toml")),
+            str(root / ("rubric.json" if kind == "choice" else f"rubric-{kind}.json")),
             "--output-dir",
             str(args.output_dir / kind),
         ]

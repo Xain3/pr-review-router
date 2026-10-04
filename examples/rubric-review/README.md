@@ -123,9 +123,9 @@ live model runs and human-reviewed labels are needed to evaluate quality.
 ## Compare choice, noul, and score
 
 The same criterion IDs, evidence, reviews, and provisional reference labels can
-be evaluated with different native question formats. `rubric.toml` uses choices;
-`rubric-noul.toml` uses proposition probabilities; `rubric-score.toml` uses four
-ordered satisfaction levels. `rubric-mixed.toml` demonstrates scores for rationale
+be evaluated with different native question formats. `rubric.json` uses choices;
+`rubric-noul.json` uses proposition probabilities; `rubric-score.json` uses four
+ordered satisfaction levels. `rubric-mixed.json` demonstrates scores for rationale
 and testing with noul for description/review coverage.
 
 ```sh
@@ -145,7 +145,7 @@ uv run python examples/rubric-review/compare.py \
 # Select a different rubric directly while keeping the corpus labels fixed.
 uv run pr-review-router evaluate \
   --corpus examples/rubric-review/corpus.json \
-  --assessment-rubric examples/rubric-review/rubric-noul.toml \
+  --assessment-rubric examples/rubric-review/rubric-noul.json \
   --providers-config examples/local-models/replay.toml \
   --replay-dir examples/rubric-review/recordings-noul \
   --output-dir reports/rubric-noul-replay
@@ -185,3 +185,38 @@ The expanded rubric schema/prompt version required explicitly refreshing the
 synthetic rubric tapes; original non-rubric local-model tapes remain unchanged.
 
 The question shapes follow [Ollaya's API reference](https://ollaya.dev/docs/api#questions).
+
+## JSON and TOML rubric files
+
+Rubrics accept both formats through the same validation and routing contract.
+Files ending in `.json` (case insensitive) use JSON; other paths retain the
+existing TOML parser. Each JSON example has an equivalent TOML example. The
+comparison runner uses JSON, while the original corpus retains its TOML reference.
+Either format works in a corpus's `assessment_rubric` field or through
+`--assessment-rubric`. Policy/provider files continue to use TOML.
+
+The rubric file is a configuration document with a top-level `criteria` array,
+including actions, thresholds, and formal checks. It is converted into native
+question JSON when calling Ollaya; the file is not a raw `/v1/systemone` payload.
+For example, this JSON criterion requests a native noul assessment:
+
+```json
+{
+  "rubric_version": 1,
+  "criteria": [{
+    "criterion_id": "rationale",
+    "description": "The description explains why every substantive change is needed.",
+    "check": "semantic",
+    "question_type": "noul",
+    "instructions": "Compare the stated rationale with every supplied patch.",
+    "action": "block",
+    "suggestion": "Explain why each substantive change is needed.",
+    "fail_threshold": 0.2,
+    "pass_threshold": 0.8
+  }]
+}
+```
+
+Equivalent JSON and TOML rubrics produce the same validated contents, requests,
+and recording fingerprints. Switching between formats does not require new
+inference or refreshing tapes. Changing actual criterion settings still does.

@@ -99,7 +99,7 @@ def _parse_args(
     evaluate.add_argument(
         "--assessment-rubric",
         type=Path,
-        help="Alternative rubric TOML evaluated against the same corpus labels.",
+        help="Alternative rubric JSON or TOML evaluated against the same corpus labels.",
     )
     evaluate.add_argument("--output-dir", type=Path, default=Path("reports/evaluation"))
     evaluate.add_argument("--replay-dir", type=Path, help="Directory of CASE_ID.tape.json files.")

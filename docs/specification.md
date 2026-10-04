@@ -278,12 +278,19 @@ See [configuration and runnable commands](../examples/local-models/README.md).
 
 ## Formal and semantic assessment rubric examples
 
-An evaluation corpus can optionally name `assessment_rubric`, a relative TOML
-path, and each case can supply a `review` path to UTF-8 review text. These inputs
+An evaluation corpus can optionally name `assessment_rubric`, a relative JSON
+or TOML path, and each case can supply a `review` path to UTF-8 review text. These inputs
 must stay beneath the corpus directory and cannot be overwritten by outputs.
 Rubric reference labels require a status for every configured criterion and an
 expected recommendation. Existing corpora without these fields retain their
-behavior and recording fingerprints.
+behavior and recording fingerprints. The loader selects JSON for a `.json`
+suffix (case insensitive) and otherwise retains TOML parsing for existing paths.
+Both formats use identical Pydantic validation. Fingerprints use the validated
+rubric contents, so changing only the serialization format does not invalidate
+HTTP recordings. This applies to assessment rubrics, including explicit
+`--assessment-rubric` overrides; policy and provider configuration retain TOML.
+The rubric document includes routing actions and thresholds in addition to the
+semantic questions sent to the decision provider.
 
 This experiment rubric is distinct from deterministic `Policy.rubric_criteria`.
 It configures unique criterion IDs, descriptions, failure actions (`block` or
@@ -322,7 +329,8 @@ score variants with identical labels, using offline replay by default and local
 inference only with `--live`. Rubric-specific request latency and schema-failure
 counts exclude follow-up reviewer calls; total pipeline metrics still include
 them. Replay durations are recorded HTTP timings, not current model latency.
-Native scores are retained but task confidence remains unavailable. Missing review text makes review-target criteria unavailable;
+Native scores are retained but task confidence remains unavailable. Missing
+review text makes review-target criteria unavailable;
 context truncation or unrecovered provider/schema errors cannot yield approval.
 The complete request, including supplied review and rubric instructions, must
 fit the policy input budget before any model/metadata request. Existing engine

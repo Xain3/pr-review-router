@@ -1,5 +1,6 @@
 """Experiment-only formal and semantic rubric assessment for advisory routing."""
 
+import json
 import tomllib
 from pathlib import Path
 from typing import Annotated, Literal
@@ -103,14 +104,16 @@ class AssessmentRubric(Contract):
 
 
 def load_assessment_rubric(path: Path) -> AssessmentRubric:
-    """Load a TOML assessment rubric for an evaluation corpus.
+    """Load a JSON or TOML assessment rubric for an evaluation corpus.
 
-    :param path: Rubric configuration path.
+    :param path: Rubric configuration path; a .json suffix selects JSON.
     :returns: Validated formal and semantic criteria.
     :raises OSError: If the rubric cannot be read.
-    :raises ValueError: If TOML or criteria are invalid.
+    :raises ValueError: If the document or criteria are invalid.
     """
-    return AssessmentRubric.model_validate(tomllib.loads(path.read_text(encoding="utf-8")))
+    content = path.read_text(encoding="utf-8")
+    data = json.loads(content) if path.suffix.lower() == ".json" else tomllib.loads(content)
+    return AssessmentRubric.model_validate(data)
 
 
 class CriterionAssessment(Contract):
