@@ -95,6 +95,7 @@ in a fresh virtual environment.
 
 See the [specification](docs/specification.md),
 [implementation handoff](docs/implementation-handoff.md),
+[examples overview](examples/README.md),
 [diff-routing examples](examples/diff/README.md),
 [PR-text examples](examples/pr-text/README.md), and
 [contribution guide](CONTRIBUTING.md).
