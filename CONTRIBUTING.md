@@ -33,3 +33,12 @@ fixtures in `examples/` and ignored runtime output under `reports/`.
 Commit your work, push the feature branch, and open a PR describing the behavior
 change and checks actually run. Licensing is pending owner selection; do not
 select a license without owner direction.
+
+## Commits
+
+Use [Conventional Commits](https://www.conventionalcommits.org/) for commit
+messages, in the form `type(scope): description`; the scope is optional. Keep
+the description concise and imperative. When the purpose or impact is not
+straightforward, include a commit body explaining the rationale and summarizing
+the changes. Clearly report breaking changes with `!` after the type or scope
+and a `BREAKING CHANGE:` footer describing the incompatibility.
