@@ -1,0 +1,3 @@
+# Substitute another installed review model if needed.
+FROM qwen3.5:2b
+PARAMETER num_ctx 32768

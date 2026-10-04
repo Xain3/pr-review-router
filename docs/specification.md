@@ -1,12 +1,13 @@
-# Mock-provider MVP specification
+# Advisory router specification
 
 ## Purpose and scope
 
 Provide an offline CLI and a provider-independent engine for advisory PR review
 routing. Accept owner-supplied JSON evidence and optional TOML policy; produce
-validated JSON reports. The MVP uses deterministic mocks and makes no API calls.
+validated JSON reports. The default mode uses deterministic mocks and makes no
+API calls. Explicit local experiments use separately configured model adapters.
 
-Real Jev/Typesafe decisions, OpenAI-compatible review adapters, GitHub evidence
+Hosted Jev/TypeSafe decisions and review adapters, GitHub evidence
 collection, PR comments, approval/merge operations, and a Docker Action are deferred.
 
 ## Evidence contract
@@ -197,6 +198,84 @@ Stage finding lists are also capped individually. Escalation examines the comple
 provider results before capping. Findings from earlier stages cannot be silently
 discarded by a later clear response.
 
+## Local model experiments and replay
+
+`review --providers-config PATH` selects providers separately from policy TOML
+and its environment overrides. Without this option the default mock behavior
+remains. Each role independently selects `mock`, or `ollaya` for decisions and
+`ollama` for review. Local adapters require an explicit installed model and a
+loopback HTTP(S) origin without embedded credentials. Authenticated, hosted,
+and cloud/remote models remain deferred. The router does not manage models.
+
+Ollaya uses `POST /v1/systemone` with complete evidence and a choice among
+`skip_review`, `review`, and `needs_human_review`. Context overflow or explicit
+truncation fails closed. Reasons deterministically describe the selected label.
+Native confidence/probabilities are retained separately; routing confidence is
+`unavailable` until identifiable task calibration exists. Upstream model
+calibration alone does not establish PR-routing calibration.
+
+Ollama uses `POST /v1/chat/completions`, separate instructions and untrusted
+evidence messages, JSON-schema output, and configurable generation settings.
+Model content contains outcome, numeric confidence, summary, and findings.
+Adapter code supplies identity and `self_reported` confidence provenance.
+Existing response and changed-file validation applies. Refusal, incomplete
+generation, a different answering model, or invalid output fails closed.
+Standard/deep use distinct prompts and output budgets with the same model;
+they do not constitute independent corroboration.
+
+Before review generation `/api/show` must report explicit `num_ctx` matching
+provider `context_tokens`. UTF-8 request/schema/template bytes, framing headroom,
+and reserved output tokens must fit configured and architectural context
+limits. This conservative check assumes byte-fallback tokenization and ordinary
+templates; custom tokenizer/template adoption requires verification. It may
+reject inputs that would fit after tokenization. Evidence is never silently
+summarized or truncated. Model version/digest inspection happens lazily after
+engine preflight, so failed gates prevent all HTTP calls.
+
+HTTP requests have a total deadline and bounded bodies, ignore system proxies,
+and do not redirect or automatically retry. The existing boundary catches schema
+errors from adapter normalization as well as returned payloads and retries once
+with `strict_schema=True`. Raw provider errors never enter advisory reports.
+
+Experiments require `shadow_skips = true` and reject policies enabling direct
+acceptance or rejection. A wrapper retains original validated decisions and
+turns skip recommendations into review requests with an explicit reason, outside
+the engine. Report schema remains version 3. Separate artifacts contain original
+and native decisions, uncapped reviews, model metadata, generation settings,
+prompt/schema revision, usage, timing, and schema/transport failure counts.
+
+`review` supports `--record PATH`, `--replay PATH`, and `--experiment-output PATH`
+only with provider configuration. Artifact output defaults to
+`reports/experiment-PR_NUMBER-HEAD_HASH.json`. Explicit recording writes a
+version-1 tape containing origin, experiment fingerprint, and ordered HTTP
+request/response or failure exchanges, including retry sequences. Private
+runtime artifacts belong under ignored `reports/`; inspect and sanitize tapes
+before committing them. Recording and replay are mutually exclusive.
+
+Replay opens no HTTP client. Fingerprints cover provider/model settings, policy,
+evidence, actual prompt contents/versions, and schemas. Every request and its
+position must match. Header/request mismatches and missing/unused exchanges
+produce status 2, even if the engine caught a replay exception and escalated.
+There is no live fallback or implicit refresh.
+
+`evaluate --corpus PATH --providers-config PATH [--config PATH]` runs validated
+cases and writes per-case reports/artifacts and `summary.json` beneath
+`--output-dir` (default `reports/evaluation`). `--record` writes case tapes;
+`--replay-dir PATH` replays them. Corpus version 1 requires unique safe case IDs,
+relative evidence paths beneath the corpus directory, categories, reference
+routes, and expected concern anchors. Label status distinguishes provisional
+from human-reviewed labels. Initial examples/tapes are explicitly provisional
+and synthetic and do not claim model reviews.
+
+Metrics count unsafe original skips, missed planted defects, findings unmatched
+by reference anchors, human handoffs, schema/transport failures, and request
+latency. Path/optional-line matching of uncapped native findings is a proxy
+requiring human assessment. Replay uses recorded timing and does not assess
+current model quality or speed. Preflight handoffs have no provider decision or
+HTTP calls. Outputs are individually atomic/private; earlier case files can
+remain after a later failure, and summary is written only after completion.
+See [configuration and runnable commands](../examples/local-models/README.md).
+
 ## Mock behavior
 
 Added-line `MOCK_DECISION_ACCEPT` / `MOCK_DECISION_REJECT` markers return synthetic
@@ -216,7 +295,8 @@ rules and clearly label confidence as mock-derived.
 
 ## CLI and acceptance
 
-`pr-review-router review --input PATH [--config PATH] [--output PATH]` returns JSON.
+`pr-review-router review --input PATH [--config PATH] [--output PATH]` returns JSON
+with mocks unless explicit provider configuration is supplied.
 Help/version work without credentials. Successful advisory runs exit 0; invalid
 input/policy or I/O exits 2. File writes are atomic, and validation failures leave
 an existing report untouched. Evidence/policy cannot be overwritten by the report.

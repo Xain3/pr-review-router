@@ -1,0 +1,12 @@
+{
+  "repository": "example/evaluation",
+  "number": 5,
+  "base_sha": "sanitized-base",
+  "head_sha": "sanitized-incomplete",
+  "title": "fix: change an unavailable binary",
+  "body": "The export cannot provide a textual patch.",
+  "files": [{
+    "path": "icon.bin", "status": "modified", "additions": 0, "deletions": 0,
+    "patch": null
+  }]
+}

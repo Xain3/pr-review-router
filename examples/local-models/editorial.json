@@ -1,0 +1,12 @@
+{
+  "repository": "example/evaluation",
+  "number": 1,
+  "base_sha": "sanitized-base",
+  "head_sha": "sanitized-editorial",
+  "title": "docs: remove a repeated word",
+  "body": "Sanitized editorial example.",
+  "files": [{
+    "path": "guide.md", "status": "modified", "additions": 1, "deletions": 1,
+    "patch": "@@ -1 +1 @@\n-Read the the guide.\n+Read the guide.\n"
+  }]
+}

@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "An advisory tool for routing pull request reviews."
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = ["pydantic>=2.10,<3"]
+dependencies = ["pydantic>=2.10,<3", "httpx>=0.28,<1"]
 
 [project.scripts]
 pr-review-router = "pr_review_router.cli:main"

@@ -1,0 +1,21 @@
+# Independent local provider selections; change names to match your inventory.
+shadow_skips = true
+
+[decision]
+backend = "ollaya"
+endpoint = "http://localhost:11435"
+model = "winnow:e4b"
+timeout_seconds = 120.0
+
+[review]
+backend = "ollama"
+endpoint = "http://localhost:11434"
+# Create this alias from the supplied Modelfile before running live experiments.
+model = "pr-review-local:latest"
+context_tokens = 32768
+standard_max_tokens = 1024
+deep_max_tokens = 2048
+temperature = 0.0
+seed = 0
+reasoning_effort = "none"
+timeout_seconds = 120.0

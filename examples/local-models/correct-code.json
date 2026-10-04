@@ -1,0 +1,12 @@
+{
+  "repository": "example/evaluation",
+  "number": 2,
+  "base_sha": "sanitized-base",
+  "head_sha": "sanitized-correct",
+  "title": "fix: handle empty input before division",
+  "body": "The helper returns zero for an empty sequence. Other inputs keep the same behavior.",
+  "files": [{
+    "path": "average.py", "status": "modified", "additions": 2, "deletions": 0,
+    "patch": "@@ -1,2 +1,4 @@\n def average(values):\n+    if not values:\n+        return 0\n     return sum(values) / len(values)\n"
+  }]
+}

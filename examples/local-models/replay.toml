@@ -1,0 +1,13 @@
+# Synthetic wire fixtures, deliberately separate from live model configuration.
+shadow_skips = true
+
+[decision]
+backend = "ollaya"
+endpoint = "http://localhost:11435"
+model = "fixture-decision:latest"
+
+[review]
+backend = "ollama"
+endpoint = "http://localhost:11434"
+model = "fixture-review:latest"
+context_tokens = 32768

@@ -1,4 +1,4 @@
-"""Offline CLI for validated evidence and structured advisory reports."""
+"""CLI for offline routing, explicit local experiments, and HTTP replay."""
 
 import argparse
 import json
@@ -14,7 +14,15 @@ from pydantic import ValidationError
 from .config import Policy, load_policy, resolve_config_path
 from .contracts import PullRequestEvidence
 from .engine import review_pull_request
+from .experiments import (
+    evaluate_case,
+    load_corpus,
+    run_experiment,
+    summarize_evaluation,
+)
+from .provider_config import ProvidersConfig, load_providers_config
 from .providers import MockDecisionProvider, MockReviewProvider
+from .transport import ReplayMismatch, fingerprint
 
 
 def _get_version() -> str:
@@ -62,7 +70,7 @@ def _parse_args(
     parser.add_argument("--version", action="version", version=f"%(prog)s {_get_version()}")
     commands = parser.add_subparsers(dest="command")
     review = commands.add_parser(
-        "review", help="Review evidence using deterministic offline mocks."
+        "review", help="Route evidence with offline mocks or explicitly configured local models."
     )
     review.add_argument("--input", type=Path, required=True, help="PR evidence JSON file.")
     review.add_argument(
@@ -73,6 +81,25 @@ def _parse_args(
     review.add_argument(
         "--output", type=Path, help="Write JSON report to a file instead of stdout."
     )
+    review.add_argument("--providers-config", type=Path, help="Separate provider settings TOML.")
+    review.add_argument(
+        "--replay", type=Path, help="Replay an exact HTTP tape without network calls."
+    )
+    review.add_argument("--record", type=Path, help="Explicitly write/refresh a live HTTP tape.")
+    review.add_argument(
+        "--experiment-output", type=Path, help="Write experiment provenance (default: reports/)."
+    )
+    evaluate = commands.add_parser("evaluate", help="Evaluate a labeled corpus with local models.")
+    evaluate.add_argument(
+        "--corpus", type=Path, required=True, help="Sanitized labeled corpus JSON."
+    )
+    evaluate.add_argument("--providers-config", type=Path, required=True)
+    evaluate.add_argument("--config", type=Path, help="Existing routing policy TOML.")
+    evaluate.add_argument("--output-dir", type=Path, default=Path("reports/evaluation"))
+    evaluate.add_argument("--replay-dir", type=Path, help="Directory of CASE_ID.tape.json files.")
+    evaluate.add_argument(
+        "--record", action="store_true", help="Explicitly refresh tapes in the output directory."
+    )
     args = parser.parse_args(argv)
     if args.command is None:
         parser.print_help()
@@ -81,12 +108,115 @@ def _parse_args(
         args.config = resolve_config_path(args.config)
     except ValueError as error:
         parser.error(str(error))
-    if args.output and args.output.resolve() in {
-        args.input.resolve(),
-        args.config.resolve() if args.config else None,
-    }:
-        parser.error("--output must differ from the evidence and policy paths")
+    if args.command == "review":
+        if not args.providers_config and (args.record or args.replay or args.experiment_output):
+            parser.error("experiment options require --providers-config")
+        if args.record and args.replay:
+            parser.error("--record and --replay are mutually exclusive")
+        _protect_paths(
+            parser,
+            [args.output, args.record, args.experiment_output],
+            [args.input, args.config, args.providers_config, args.replay],
+        )
+    elif args.record and args.replay_dir:
+        parser.error("--record and --replay-dir are mutually exclusive")
     return args
+
+
+def _protect_paths(
+    parser: argparse.ArgumentParser,
+    outputs: list[Path | None],
+    inputs: list[Path | None],
+) -> None:
+    """Reject output collisions and source replacement before any model calls.
+
+    :param parser: Argument parser used for a concise usage diagnostic.
+    :param outputs: All proposed output paths.
+    :param inputs: Protected evidence, policy, provider, label, and recording paths.
+    :raises SystemExit: If outputs collide or would overwrite an input.
+    """
+    targets = [path.resolve() for path in outputs if path is not None]
+    sources = {path.resolve() for path in inputs if path is not None}
+    if len(targets) != len(set(targets)) or sources.intersection(targets):
+        parser.error("output paths must differ from each other and from evidence and policy inputs")
+
+
+def _provider_inputs(
+    path: Path, policy: Policy, parser: argparse.ArgumentParser
+) -> ProvidersConfig:
+    """Validate explicit provider selection and the local experiment policy.
+
+    :param path: Provider TOML path.
+    :param policy: Existing policy to enforce experiment restrictions against.
+    :param parser: CLI diagnostic parser.
+    :returns: Validated independent provider configuration.
+    :raises SystemExit: If configuration cannot be read or violates experiment restrictions.
+    """
+    if policy.allow_direct_acceptance or policy.allow_direct_rejection:
+        parser.error("local experiments require direct acceptance and rejection to be disabled")
+    try:
+        return load_providers_config(path)
+    except (OSError, ValueError):
+        parser.error("could not read valid UTF-8 provider configuration")
+
+
+def _evaluate(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
+    """Run a validated corpus and export individual artifacts plus aggregate metrics.
+
+    :param args: Parsed evaluation arguments.
+    :param parser: CLI diagnostic parser.
+    :returns: Zero for completed advisory evaluation, regardless of model quality.
+    :raises SystemExit: If inputs, replay, or output paths fail validation.
+    """
+    try:
+        policy = load_policy(args.config)
+        corpus, evidence, sources = load_corpus(args.corpus)
+    except (OSError, ValueError):
+        parser.error("could not read valid UTF-8 corpus, evidence, or policy")
+    config = _provider_inputs(args.providers_config, policy, parser)
+    replay_paths = [
+        args.replay_dir / f"{case.case_id}.tape.json" if args.replay_dir else None
+        for case in corpus.cases
+    ]
+    output_paths = [args.output_dir / "summary.json"]
+    for case in corpus.cases:
+        output_paths.extend(
+            args.output_dir / f"{case.case_id}.{suffix}.json" for suffix in ("report", "experiment")
+        )
+        if args.record:
+            output_paths.append(args.output_dir / f"{case.case_id}.tape.json")
+    _protect_paths(
+        parser,
+        output_paths,
+        [args.corpus, args.config, args.providers_config, *sources, *replay_paths],
+    )
+    metrics = []
+    try:
+        for case, item, replay in zip(corpus.cases, evidence, replay_paths, strict=True):
+            result = run_experiment(item, policy, config, replay=replay, record=args.record)
+            _write_report(
+                args.output_dir / f"{case.case_id}.report.json",
+                result.report.model_dump_json(indent=2) + "\n",
+            )
+            _write_report(
+                args.output_dir / f"{case.case_id}.experiment.json",
+                json.dumps(result.artifact, indent=2) + "\n",
+            )
+            if result.tape:
+                _write_report(
+                    args.output_dir / f"{case.case_id}.tape.json",
+                    result.tape.model_dump_json(indent=2) + "\n",
+                )
+            metrics.append(evaluate_case(case, result))
+        summary = summarize_evaluation(corpus, metrics)
+        summary["mode"] = "replay" if args.replay_dir else "live"
+        _write_report(args.output_dir / "summary.json", json.dumps(summary, indent=2) + "\n")
+        sys.stdout.write(json.dumps(summary, indent=2) + "\n")
+    except ReplayMismatch:
+        parser.error("replay does not match this experiment; refresh recordings explicitly")
+    except (OSError, ValueError):
+        parser.error("could not read replay or write evaluation outputs")
+    return 0
 
 
 def _load_inputs(
@@ -121,7 +251,7 @@ def _load_inputs(
 
 
 def main(argv: list[str] | None = None) -> int:
-    """Run the offline review command and emit its advisory JSON report.
+    """Run advisory routing or an explicitly configured local evaluation.
 
     :param argv: Optional argument list; defaults to the process command line.
     :returns: Process exit status, with zero for a successful command.
@@ -131,10 +261,38 @@ def main(argv: list[str] | None = None) -> int:
     args = _parse_args(parser, argv)
     if args is None:
         return 0
+    if args.command == "evaluate":
+        return _evaluate(args, parser)
     policy, evidence = _load_inputs(args.input, args.config, parser)
-    report = review_pull_request(evidence, policy, MockDecisionProvider(), MockReviewProvider())
+    result = None
+    if args.providers_config:
+        config = _provider_inputs(args.providers_config, policy, parser)
+        # Derive a safe default name even when supplied commit identifiers contain path syntax.
+        artifact_path = args.experiment_output or Path(
+            f"reports/experiment-{evidence.number}-{fingerprint(evidence.head_sha)[:12]}.json"
+        )
+        _protect_paths(
+            parser,
+            [args.output, args.record, artifact_path],
+            [args.input, args.config, args.providers_config, args.replay],
+        )
+        try:
+            result = run_experiment(
+                evidence, policy, config, replay=args.replay, record=bool(args.record)
+            )
+        except ReplayMismatch:
+            parser.error("replay does not match this experiment; refresh recordings explicitly")
+        except (OSError, ValueError):
+            parser.error("could not read a valid replay recording")
+        report = result.report
+    else:
+        report = review_pull_request(evidence, policy, MockDecisionProvider(), MockReviewProvider())
     content = report.model_dump_json(indent=2) + "\n"
     try:
+        if result:
+            _write_report(artifact_path, json.dumps(result.artifact, indent=2) + "\n")
+            if args.record and result.tape:
+                _write_report(args.record, result.tape.model_dump_json(indent=2) + "\n")
         if args.output:
             _write_report(args.output, content)
         else:
