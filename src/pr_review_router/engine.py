@@ -29,6 +29,7 @@ _FENCED_CODE_START = re.compile(r"^ {0,3}(`{3,}|~{3,})")
 
 
 def assess_coverage(evidence: PullRequestEvidence, policy: Policy) -> Coverage:
+    """Check that every changed file has a complete, metadata-consistent patch."""
     issues = []
     valid = 0
     size = len(evidence.model_dump_json().encode("utf-8"))
@@ -69,6 +70,11 @@ def assess_coverage(evidence: PullRequestEvidence, policy: Policy) -> Coverage:
 
 
 def _has_nonempty_body_section(body: str, section: str) -> bool:
+    """Check for meaningful section content while ignoring Markdown headings.
+
+    Fenced code counts as content, but headings inside a fence cannot start or
+    end a section.
+    """
     lines = []
     fence: tuple[str, int] | None = None
     for line in body.splitlines():
@@ -99,6 +105,7 @@ def _has_nonempty_body_section(body: str, section: str) -> bool:
 
 
 def assess_pr_text(evidence: PullRequestEvidence, policy: Policy) -> PRTextValidation:
+    """Apply configured title-format and required-body-section checks."""
     issues = []
     if policy.title_format == "conventional_commit" and not _CONVENTIONAL_COMMIT_TITLE.fullmatch(
         evidence.title
@@ -117,6 +124,7 @@ def assess_pr_text(evidence: PullRequestEvidence, policy: Policy) -> PRTextValid
 def _criterion_score(
     criterion: RubricCriterion, evidence: PullRequestEvidence
 ) -> tuple[float, str]:
+    """Score one configured text check on the rubric's 0–100 scale."""
     text = getattr(evidence, criterion.field)
     if criterion.check == "non_empty":
         passed = bool(text.strip())
@@ -150,6 +158,7 @@ def _criterion_score(
 
 
 def assess_pr_text_rubric(evidence: PullRequestEvidence, policy: Policy) -> RubricEvaluation:
+    """Score configured rubric criteria and determine whether routing may proceed."""
     if not policy.rubric_criteria:
         return RubricEvaluation(
             enabled=False,
@@ -192,6 +201,7 @@ def assess_pr_text_rubric(evidence: PullRequestEvidence, policy: Policy) -> Rubr
 
 
 def _findings(reviews: list[ReviewStage]) -> list[Finding]:
+    """Collect findings once each, preserving their first-seen review order."""
     unique: list[Finding] = []
     seen: set[tuple[str, int | None, str, str, str]] = set()
     for stage in reviews:
@@ -209,6 +219,11 @@ def review_pull_request(
     decision_provider: DecisionProvider,
     review_provider: ReviewProvider,
 ) -> ReviewReport:
+    """Route validated evidence through decision and review providers.
+
+    Incomplete evidence, failed checks, and provider errors fail closed. Review
+    concerns are retained during escalation, and every result remains advisory.
+    """
     coverage = assess_coverage(evidence, policy)
     pr_text = assess_pr_text(evidence, policy)
     rubric = assess_pr_text_rubric(evidence, policy)
@@ -230,6 +245,7 @@ def review_pull_request(
         ],
         route: Literal["no_review", "standard", "deep", "human", "direct", "feedback", "blocked"],
     ) -> ReviewReport:
+        """Build a report with both top-level and per-stage findings bounded."""
         findings = _findings(reviews)
         # Cap both the summary and nested stage findings in the exported report.
         exported = [
@@ -260,6 +276,7 @@ def review_pull_request(
         )
 
     def unresolved() -> ReviewReport:
+        """Apply the configured outcome when evidence or routing is unresolved."""
         if policy.unresolved_outcome == "rejected":
             reasons.append("Policy blocks unresolved evidence or routing without a human handoff.")
             return report("rejected", "blocked")

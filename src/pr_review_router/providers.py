@@ -21,10 +21,14 @@ ReviewPayload = ReviewResult | dict[str, Any] | str | bytes | bytearray
 
 
 class DecisionProvider(Protocol):
+    """Interface for a provider that recommends a routing decision."""
+
     def decide(self, evidence: PullRequestEvidence) -> DecisionPayload: ...
 
 
 class ReviewProvider(Protocol):
+    """Interface for a provider that reviews evidence at a requested depth."""
+
     def review(self, evidence: PullRequestEvidence, *, depth: Depth) -> ReviewPayload: ...
 
 
@@ -37,6 +41,7 @@ class ProviderSchemaError(ValueError):
 
 
 def _diagnostic(error: ValidationError) -> str:
+    """Format safe schema diagnostics without exposing untrusted input values."""
     def mask(part: object) -> str:
         if isinstance(part, int):
             return str(part)
@@ -53,13 +58,14 @@ def _diagnostic(error: ValidationError) -> str:
 
 
 def _validate[Model: BaseModel](model: type[Model], raw: Any) -> Model:
+    """Validate a provider payload supplied as JSON text or a Python value."""
     if isinstance(raw, str | bytes | bytearray):
         return model.model_validate_json(raw)
     return model.model_validate(raw)
 
 
 def _enforce[Model: BaseModel](model: type[Model], label: str, call: Callable[..., Any]) -> Model:
-    """Validate a provider response; retry once in strict-schema mode if supported."""
+    """Validate provider output, retrying once with strict-schema mode when supported."""
     raw = call()
     try:
         return _validate(model, raw)
@@ -79,18 +85,26 @@ def _enforce[Model: BaseModel](model: type[Model], label: str, call: Callable[..
 
 
 def request_decision(provider: DecisionProvider, evidence: PullRequestEvidence) -> Decision:
-    """Single boundary for decision output; raises ProviderSchemaError when invalid."""
+    """Validate decision output at the provider boundary.
+
+    Raises ``ProviderSchemaError`` when the response remains invalid after retry.
+    """
     return _enforce(Decision, "Decision", _Call(provider.decide, evidence))
 
 
 def request_review(
     provider: ReviewProvider, evidence: PullRequestEvidence, *, depth: Depth
 ) -> ReviewResult:
-    """Single boundary for review output; raises ProviderSchemaError when invalid."""
+    """Validate review output at the provider boundary.
+
+    Raises ``ProviderSchemaError`` when the response remains invalid after retry.
+    """
     return _enforce(ReviewResult, "Review", _Call(provider.review, evidence, depth=depth))
 
 
 class _Call:
+    """Bind provider arguments while allowing retry-only keyword arguments."""
+
     def __init__(self, func: Callable[..., Any], *args: Any, **kwargs: Any) -> None:
         self.func, self.args, self.kwargs = func, args, kwargs
 
@@ -154,6 +168,8 @@ def _editorial(evidence: PullRequestEvidence) -> bool:
 
 
 class MockDecisionProvider:
+    """Deterministic offline decision provider for examples and smoke tests."""
+
     def decide(self, evidence: PullRequestEvidence) -> Decision:
         markers = {
             marker
@@ -188,6 +204,8 @@ class MockDecisionProvider:
 
 
 class MockReviewProvider:
+    """Deterministic offline reviewer that recognizes explicit fixture markers."""
+
     def review(self, evidence: PullRequestEvidence, *, depth: Depth) -> ReviewResult:
         findings = []
         for file in evidence.files:

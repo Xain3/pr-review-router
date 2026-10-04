@@ -10,10 +10,14 @@ Count = Annotated[int, Field(ge=0)]
 
 
 class Contract(BaseModel):
+    """Base for strict, closed-schema data exchanged by the router."""
+
     model_config = ConfigDict(extra="forbid", strict=True, revalidate_instances="always")
 
 
 class ChangedFile(Contract):
+    """One changed path and its exported diff metadata."""
+
     path: Text
     status: Literal["added", "modified", "removed", "renamed"]
     additions: Count
@@ -23,6 +27,8 @@ class ChangedFile(Contract):
 
 
 class PullRequestEvidence(Contract):
+    """Pull request text and file patches supplied to the review pipeline."""
+
     repository: Text
     number: Annotated[int, Field(gt=0)]
     base_sha: Text
@@ -34,6 +40,7 @@ class PullRequestEvidence(Contract):
 
     @model_validator(mode="after")
     def unique_paths(self) -> Self:
+        """Reject duplicate paths so patch coverage and finding checks stay unambiguous."""
         paths = [file.path for file in self.files]
         if len(paths) != len(set(paths)):
             raise ValueError("changed file paths must be unique")
@@ -41,12 +48,15 @@ class PullRequestEvidence(Contract):
 
 
 class Confidence(Contract):
+    """A confidence value paired with provenance; unavailable confidence is zero."""
+
     value: Probability
     source: Literal["mock", "self_reported", "calibrated", "unavailable"]
     calibration_id: Text | None = None
 
     @model_validator(mode="after")
     def calibration_provenance(self) -> Self:
+        """Require provenance for calibrated scores and constrain unavailable scores."""
         if self.source == "calibrated" and self.calibration_id is None:
             raise ValueError("calibrated confidence requires a calibration_id")
         if self.source == "unavailable" and self.value != 0:
@@ -55,6 +65,8 @@ class Confidence(Contract):
 
 
 class Decision(Contract):
+    """A provider's routing recommendation and its rationale."""
+
     recommendation: Literal["skip_review", "review", "needs_human_review", "accept", "reject"]
     confidence: Confidence
     reason: Text
@@ -62,6 +74,8 @@ class Decision(Contract):
 
 
 class Finding(Contract):
+    """A review concern tied to a changed file and, optionally, a line."""
+
     path: Text
     line: Annotated[int, Field(gt=0)] | None = None
     severity: Literal["low", "medium", "high"]
@@ -70,6 +84,8 @@ class Finding(Contract):
 
 
 class ReviewResult(Contract):
+    """One provider review result; findings are valid only for concerns."""
+
     outcome: Literal["no_concerns", "concerns", "uncertain"]
     confidence: Confidence
     summary: Text
@@ -78,17 +94,22 @@ class ReviewResult(Contract):
 
     @model_validator(mode="after")
     def findings_match_outcome(self) -> Self:
+        """Keep findings consistent with the declared review outcome."""
         if self.findings and self.outcome != "concerns":
             raise ValueError("findings require the concerns outcome")
         return self
 
 
 class ReviewStage(Contract):
+    """The result of one review pass at a specified depth."""
+
     depth: Literal["standard", "deep"]
     result: ReviewResult
 
 
 class Coverage(Contract):
+    """Patch coverage summary and any reasons evidence is incomplete."""
+
     complete: bool
     files_total: Count
     files_with_valid_patches: Count
@@ -97,12 +118,16 @@ class Coverage(Contract):
 
 
 class PRTextValidation(Contract):
+    """Outcome of optional deterministic pull request text checks."""
+
     enabled: bool
     valid: bool
     issues: list[str] = Field(default_factory=list)
 
 
 class RubricCriterionResult(Contract):
+    """Score and pass/blocker metadata for one configured rubric criterion."""
+
     criterion_id: Text
     score: Annotated[float, Field(ge=0, le=100, allow_inf_nan=False)]
     weight: Annotated[int, Field(gt=0)]
@@ -113,6 +138,8 @@ class RubricCriterionResult(Contract):
 
 
 class RubricEvaluation(Contract):
+    """Aggregate rubric score, pass status, and criterion-level results."""
+
     enabled: bool
     score: Annotated[float, Field(ge=0, le=100, allow_inf_nan=False)] | None = None
     minimum_score: Annotated[float, Field(ge=0, le=100, allow_inf_nan=False)]
@@ -123,6 +150,8 @@ class RubricEvaluation(Contract):
 
 
 class ReviewReport(Contract):
+    """Advisory-only routing outcome with evidence checks and review results."""
+
     schema_version: Literal["3"] = "3"
     advisory_only: Literal[True] = True
     repository: Text

@@ -39,6 +39,8 @@ FALLBACK_POLICY_RUBRIC_MINIMUM_SCORE = 70
 
 
 class RubricCriterion(Contract):
+    """A weighted check applied to the pull request title or body."""
+
     criterion_id: Text
     description: Text
     field: Literal["title", "body"]
@@ -51,6 +53,7 @@ class RubricCriterion(Contract):
 
     @model_validator(mode="after")
     def check_arguments(self) -> "RubricCriterion":
+        """Ensure each check receives only the arguments it understands."""
         if self.check == "min_words":
             if self.minimum_words is None or self.value is not None:
                 raise ValueError("min_words requires minimum_words and forbids value")
@@ -65,6 +68,8 @@ class RubricCriterion(Contract):
 
 
 class Policy(Contract):
+    """Validated routing thresholds, limits, text checks, and rubric settings."""
+
     allow_direct_acceptance: bool = FALLBACK_POLICY_ALLOW_DIRECT_ACCEPTANCE
     allow_direct_rejection: bool = FALLBACK_POLICY_ALLOW_DIRECT_REJECTION
     acceptance_confidence: Probability = FALLBACK_POLICY_ACCEPTANCE_CONFIDENCE
@@ -88,6 +93,7 @@ class Policy(Contract):
     @field_validator("rubric_criteria")
     @classmethod
     def unique_rubric_criteria(cls, criteria: list[RubricCriterion]) -> list[RubricCriterion]:
+        """Keep criterion IDs unique for unambiguous result reporting."""
         ids = [criterion.criterion_id for criterion in criteria]
         if len(ids) != len(set(ids)):
             raise ValueError("rubric criterion IDs must be unique")
@@ -96,6 +102,7 @@ class Policy(Contract):
     @field_validator("required_body_sections")
     @classmethod
     def validate_body_sections(cls, sections: list[str]) -> list[str]:
+        """Require unique, nonempty single-line section names."""
         if any(
             not section.strip() or section != section.strip() or "\n" in section or "\r" in section
             for section in sections
@@ -107,6 +114,7 @@ class Policy(Contract):
 
 
 def resolve_config_path(path: Path | None, environ: Mapping[str, str] | None = None) -> Path | None:
+    """Choose an explicit policy path before the environment-selected path."""
     if path is not None:
         return path
     environment = os.environ if environ is None else environ
@@ -122,6 +130,7 @@ def load_policy(
     path: Path | None,
     environ: Mapping[str, str] | None = None,
 ) -> Policy:
+    """Load packaged defaults or a TOML policy, then apply per-setting overrides."""
     if path is None:
         contents = files("pr_review_router").joinpath("defaults.toml").read_text(encoding="utf-8")
     else:

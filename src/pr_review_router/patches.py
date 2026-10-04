@@ -8,6 +8,8 @@ _HEADER = re.compile(r"^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@.*$")
 
 @dataclass
 class Hunk:
+    """Parsed diff hunk, retaining changed lines and their new-file line numbers."""
+
     removed: list[str] = field(default_factory=list)
     added: list[tuple[int, str]] = field(default_factory=list)
     lines: list[tuple[str, str]] = field(default_factory=list)
@@ -15,7 +17,11 @@ class Hunk:
 
 
 def parse_patch(patch: str) -> list[Hunk]:
-    """Require complete hunk counts. File headers are optional in exported patches."""
+    """Parse unified diff hunks and require their declared old/new line counts.
+
+    File headers are optional. Unsupported content and truncated or inconsistent
+    hunks raise ``ValueError`` rather than being treated as complete evidence.
+    """
     hunks: list[Hunk] = []
     old_remaining = new_remaining = 0
     new_line = 0
@@ -61,6 +67,7 @@ def parse_patch(patch: str) -> list[Hunk]:
             old_remaining -= 1
         if prefix in " +":
             new_remaining -= 1
+        # Reject overlong hunks immediately; any remaining counts are checked at EOF.
         if old_remaining < 0 or new_remaining < 0:
             raise ValueError("diff hunk exceeds declared counts")
         if prefix == "-":

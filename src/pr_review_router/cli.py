@@ -18,6 +18,7 @@ from .providers import MockDecisionProvider, MockReviewProvider
 
 
 def _get_version() -> str:
+    """Return the installed distribution version, or a source-checkout fallback."""
     try:
         return version("pr-review-router")
     except PackageNotFoundError:
@@ -25,6 +26,7 @@ def _get_version() -> str:
 
 
 def _write_report(path: Path, content: str) -> None:
+    """Write a report atomically so an interrupted write preserves the old file."""
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = None
     try:
@@ -42,6 +44,7 @@ def _write_report(path: Path, content: str) -> None:
 def _parse_args(
     parser: argparse.ArgumentParser, argv: list[str] | None = None
 ) -> argparse.Namespace | None:
+    """Parse CLI options and reject output paths that would overwrite inputs."""
     parser.add_argument("--version", action="version", version=f"%(prog)s {_get_version()}")
     commands = parser.add_subparsers(dest="command")
     review = commands.add_parser(
@@ -77,6 +80,7 @@ def _load_inputs(
     config_path: Path | None,
     parser: argparse.ArgumentParser,
 ) -> tuple[Policy, PullRequestEvidence]:
+    """Load and validate policy/evidence while keeping diagnostics concise."""
     try:
         policy = load_policy(config_path)
         data = json.loads(input_path.read_text(encoding="utf-8"))
@@ -96,6 +100,7 @@ def _load_inputs(
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Run the offline review command and emit its advisory JSON report."""
     parser = argparse.ArgumentParser(description="Advisory pull request review router.")
     args = _parse_args(parser, argv)
     if args is None:
