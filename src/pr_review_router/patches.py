@@ -21,6 +21,10 @@ def parse_patch(patch: str) -> list[Hunk]:
 
     File headers are optional. Unsupported content and truncated or inconsistent
     hunks raise ``ValueError`` rather than being treated as complete evidence.
+
+    :param patch: Unified diff text, optionally including file headers.
+    :returns: Parsed hunks with changed lines and new-file line numbers.
+    :raises ValueError: If content is unsupported or any hunk is incomplete.
     """
     hunks: list[Hunk] = []
     old_remaining = new_remaining = 0

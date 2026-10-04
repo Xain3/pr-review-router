@@ -40,7 +40,11 @@ class PullRequestEvidence(Contract):
 
     @model_validator(mode="after")
     def unique_paths(self) -> Self:
-        """Reject duplicate paths so patch coverage and finding checks stay unambiguous."""
+        """Reject duplicate paths so patch coverage and finding checks stay unambiguous.
+
+        :returns: This evidence after successful validation.
+        :raises ValueError: If multiple changed-file entries have the same path.
+        """
         paths = [file.path for file in self.files]
         if len(paths) != len(set(paths)):
             raise ValueError("changed file paths must be unique")
@@ -56,7 +60,11 @@ class Confidence(Contract):
 
     @model_validator(mode="after")
     def calibration_provenance(self) -> Self:
-        """Require provenance for calibrated scores and constrain unavailable scores."""
+        """Require provenance for calibrated scores and constrain unavailable scores.
+
+        :returns: This confidence value after successful validation.
+        :raises ValueError: If calibrated or unavailable confidence is inconsistent.
+        """
         if self.source == "calibrated" and self.calibration_id is None:
             raise ValueError("calibrated confidence requires a calibration_id")
         if self.source == "unavailable" and self.value != 0:
@@ -94,7 +102,11 @@ class ReviewResult(Contract):
 
     @model_validator(mode="after")
     def findings_match_outcome(self) -> Self:
-        """Keep findings consistent with the declared review outcome."""
+        """Keep findings consistent with the declared review outcome.
+
+        :returns: This review result after successful validation.
+        :raises ValueError: If findings are present without a concerns outcome.
+        """
         if self.findings and self.outcome != "concerns":
             raise ValueError("findings require the concerns outcome")
         return self

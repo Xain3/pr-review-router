@@ -53,7 +53,11 @@ class RubricCriterion(Contract):
 
     @model_validator(mode="after")
     def check_arguments(self) -> "RubricCriterion":
-        """Ensure each check receives only the arguments it understands."""
+        """Ensure each check receives only the arguments it understands.
+
+        :returns: This criterion after successful validation.
+        :raises ValueError: If the check's configured arguments are inconsistent.
+        """
         if self.check == "min_words":
             if self.minimum_words is None or self.value is not None:
                 raise ValueError("min_words requires minimum_words and forbids value")
@@ -93,7 +97,12 @@ class Policy(Contract):
     @field_validator("rubric_criteria")
     @classmethod
     def unique_rubric_criteria(cls, criteria: list[RubricCriterion]) -> list[RubricCriterion]:
-        """Keep criterion IDs unique for unambiguous result reporting."""
+        """Keep criterion IDs unique for unambiguous result reporting.
+
+        :param criteria: Configured rubric criteria to validate.
+        :returns: The criteria when all IDs are unique.
+        :raises ValueError: If any criterion ID appears more than once.
+        """
         ids = [criterion.criterion_id for criterion in criteria]
         if len(ids) != len(set(ids)):
             raise ValueError("rubric criterion IDs must be unique")
@@ -102,7 +111,12 @@ class Policy(Contract):
     @field_validator("required_body_sections")
     @classmethod
     def validate_body_sections(cls, sections: list[str]) -> list[str]:
-        """Require unique, nonempty single-line section names."""
+        """Require unique, nonempty single-line section names.
+
+        :param sections: Required pull request body section names.
+        :returns: The section names when they are valid and unique.
+        :raises ValueError: If a name is empty, multiline, untrimmed, or duplicated.
+        """
         if any(
             not section.strip() or section != section.strip() or "\n" in section or "\r" in section
             for section in sections
@@ -114,7 +128,13 @@ class Policy(Contract):
 
 
 def resolve_config_path(path: Path | None, environ: Mapping[str, str] | None = None) -> Path | None:
-    """Choose an explicit policy path before the environment-selected path."""
+    """Choose an explicit policy path before the environment-selected path.
+
+    :param path: Explicit policy path, if supplied.
+    :param environ: Optional environment mapping used when no path is explicit.
+    :returns: Selected policy path, or ``None`` when no path is configured.
+    :raises ValueError: If the configuration environment variable is empty.
+    """
     if path is not None:
         return path
     environment = os.environ if environ is None else environ
@@ -130,7 +150,15 @@ def load_policy(
     path: Path | None,
     environ: Mapping[str, str] | None = None,
 ) -> Policy:
-    """Load packaged defaults or a TOML policy, then apply per-setting overrides."""
+    """Load packaged defaults or a TOML policy, then apply per-setting overrides.
+
+    :param path: Optional TOML policy path; ``None`` selects packaged defaults.
+    :param environ: Optional environment mapping for per-setting overrides.
+    :returns: Validated routing policy.
+    :raises OSError: If a policy file cannot be read.
+    :raises tomllib.TOMLDecodeError: If the policy contains invalid TOML.
+    :raises pydantic.ValidationError: If policy values fail validation.
+    """
     if path is None:
         contents = files("pr_review_router").joinpath("defaults.toml").read_text(encoding="utf-8")
     else:

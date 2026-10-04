@@ -23,13 +23,26 @@ ReviewPayload = ReviewResult | dict[str, Any] | str | bytes | bytearray
 class DecisionProvider(Protocol):
     """Interface for a provider that recommends a routing decision."""
 
-    def decide(self, evidence: PullRequestEvidence) -> DecisionPayload: ...
+    def decide(self, evidence: PullRequestEvidence) -> DecisionPayload:
+        """Recommend how the pull request should be routed.
+
+        :param evidence: Validated pull request metadata and file patches.
+        :returns: Decision model or a payload accepted by the decision validator.
+        """
+        ...
 
 
 class ReviewProvider(Protocol):
     """Interface for a provider that reviews evidence at a requested depth."""
 
-    def review(self, evidence: PullRequestEvidence, *, depth: Depth) -> ReviewPayload: ...
+    def review(self, evidence: PullRequestEvidence, *, depth: Depth) -> ReviewPayload:
+        """Review pull request evidence at the requested depth.
+
+        :param evidence: Validated pull request metadata and file patches.
+        :param depth: Review depth requested by the routing engine.
+        :returns: Review model or a payload accepted by the review validator.
+        """
+        ...
 
 
 class ProviderSchemaError(ValueError):
@@ -41,9 +54,18 @@ class ProviderSchemaError(ValueError):
 
 
 def _diagnostic(error: ValidationError) -> str:
-    """Format safe schema diagnostics without exposing untrusted input values."""
+    """Format safe schema diagnostics without exposing untrusted input values.
+
+    :param error: Pydantic validation error to summarize.
+    :returns: Bounded diagnostic text containing field locations and error types.
+    """
 
     def mask(part: object) -> str:
+        """Redact unsafe validation-location components.
+
+        :param part: Validation path component to render safely.
+        :returns: Safe string representation or a redaction marker.
+        """
         if isinstance(part, int):
             return str(part)
         if isinstance(part, str):
@@ -59,14 +81,27 @@ def _diagnostic(error: ValidationError) -> str:
 
 
 def _validate[Model: BaseModel](model: type[Model], raw: Any) -> Model:
-    """Validate a provider payload supplied as JSON text or a Python value."""
+    """Validate a provider payload supplied as JSON text or a Python value.
+
+    :param model: Pydantic model class used to validate the payload.
+    :param raw: Provider payload as JSON-compatible text or a Python value.
+    :returns: Validated instance of ``model``.
+    :raises pydantic.ValidationError: If the payload does not match the model.
+    """
     if isinstance(raw, str | bytes | bytearray):
         return model.model_validate_json(raw)
     return model.model_validate(raw)
 
 
 def _enforce[Model: BaseModel](model: type[Model], label: str, call: Callable[..., Any]) -> Model:
-    """Validate provider output, retrying once with strict-schema mode when supported."""
+    """Validate provider output, retrying once with strict-schema mode when supported.
+
+    :param model: Pydantic model class used to validate provider output.
+    :param label: Provider response name used in safe diagnostics.
+    :param call: Callable that requests a provider response.
+    :returns: Validated instance of ``model``.
+    :raises ProviderSchemaError: If both provider responses fail validation.
+    """
     raw = call()
     try:
         return _validate(model, raw)
@@ -89,6 +124,11 @@ def request_decision(provider: DecisionProvider, evidence: PullRequestEvidence) 
     """Validate decision output at the provider boundary.
 
     Raises ``ProviderSchemaError`` when the response remains invalid after retry.
+
+    :param provider: Provider that supplies the routing recommendation.
+    :param evidence: Validated pull request evidence passed to the provider.
+    :returns: Validated routing decision.
+    :raises ProviderSchemaError: If the provider returns invalid output after retry.
     """
     return _enforce(Decision, "Decision", _Call(provider.decide, evidence))
 
@@ -99,6 +139,12 @@ def request_review(
     """Validate review output at the provider boundary.
 
     Raises ``ProviderSchemaError`` when the response remains invalid after retry.
+
+    :param provider: Provider that reviews the pull request evidence.
+    :param evidence: Validated pull request evidence passed to the provider.
+    :param depth: Review depth requested from the provider.
+    :returns: Validated review result.
+    :raises ProviderSchemaError: If the provider returns invalid output after retry.
     """
     return _enforce(ReviewResult, "Review", _Call(provider.review, evidence, depth=depth))
 
@@ -107,14 +153,29 @@ class _Call:
     """Bind provider arguments while allowing retry-only keyword arguments."""
 
     def __init__(self, func: Callable[..., Any], *args: Any, **kwargs: Any) -> None:
+        """Bind arguments for an initial call and any retry.
+
+        :param func: Provider method to invoke.
+        :param args: Positional arguments bound to the method.
+        :param kwargs: Keyword arguments bound to the method.
+        """
         self.func, self.args, self.kwargs = func, args, kwargs
 
     def __call__(self, **extra: Any) -> Any:
+        """Invoke the bound method with optional additional keyword arguments.
+
+        :param extra: Keyword arguments added for this invocation.
+        :returns: The raw result returned by the provider method.
+        """
         return self.func(*self.args, **self.kwargs, **extra)
 
 
 def _editorial(evidence: PullRequestEvidence) -> bool:
-    """Recognize only duplicate-word corrections in plain prose documentation."""
+    """Recognize only duplicate-word corrections in plain prose documentation.
+
+    :param evidence: Pull request evidence whose patches should be inspected.
+    :returns: Whether every changed patch is a supported editorial correction.
+    """
     if not evidence.files:
         return False
     for file in evidence.files:
@@ -172,6 +233,11 @@ class MockDecisionProvider:
     """Deterministic offline decision provider for examples and smoke tests."""
 
     def decide(self, evidence: PullRequestEvidence) -> Decision:
+        """Return a deterministic decision for an offline fixture.
+
+        :param evidence: Validated pull request metadata and file patches.
+        :returns: Synthetic decision based on fixture markers or patch contents.
+        """
         markers = {
             marker
             for file in evidence.files
@@ -208,6 +274,12 @@ class MockReviewProvider:
     """Deterministic offline reviewer that recognizes explicit fixture markers."""
 
     def review(self, evidence: PullRequestEvidence, *, depth: Depth) -> ReviewResult:
+        """Return a deterministic review result for an offline fixture.
+
+        :param evidence: Validated pull request metadata and file patches.
+        :param depth: Review depth recorded in the synthetic provider name.
+        :returns: Synthetic review result based on fixture markers.
+        """
         findings = []
         for file in evidence.files:
             for hunk in parse_patch(file.patch or ""):
