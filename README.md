@@ -148,6 +148,8 @@ cover isolated engine and patch-parsing logic. CI runs each category separately.
 
 Use `uv run ruff format .` to format edits. CI also validates an installed wheel
 in a fresh virtual environment.
+Python callable docstrings use reStructuredText fields; see the
+[docstring convention](CONTRIBUTING.md#python-docstrings).
 
 See the [specification](docs/specification.md),
 [implementation handoff](docs/implementation-handoff.md),

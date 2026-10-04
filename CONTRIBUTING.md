@@ -5,6 +5,15 @@ Use Python 3.12+ and uv. Create a feature branch, implement changes under
 Keep the [specification](docs/specification.md), examples, and README in sync with
 user-visible behavior.
 
+## Python docstrings
+
+Use reStructuredText fields in callable docstrings so Pylance can surface
+parameter descriptions in function hovers and signature help. Use `:param name:`
+for parameters, `:returns:` for meaningful results, and `:raises ExceptionType:`
+for documented exceptions. Omit `self` and `cls`; keep types in Python
+annotations instead of duplicating them with `:type:` or `:rtype:` fields.
+Prefer these fields over Google- or NumPy-style sections.
+
 ## Checks
 
 ```sh

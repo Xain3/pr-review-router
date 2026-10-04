@@ -29,6 +29,12 @@ _FENCED_CODE_START = re.compile(r"^ {0,3}(`{3,}|~{3,})")
 
 
 def assess_coverage(evidence: PullRequestEvidence, policy: Policy) -> Coverage:
+    """Check that every changed file has a complete, metadata-consistent patch.
+
+    :param evidence: Pull request evidence and exported file patches to check.
+    :param policy: Limits used to validate evidence size and file count.
+    :returns: Patch coverage summary with any evidence issues.
+    """
     issues = []
     valid = 0
     size = len(evidence.model_dump_json().encode("utf-8"))
@@ -69,6 +75,15 @@ def assess_coverage(evidence: PullRequestEvidence, policy: Policy) -> Coverage:
 
 
 def _has_nonempty_body_section(body: str, section: str) -> bool:
+    """Check for meaningful section content while ignoring Markdown headings.
+
+    Fenced code counts as content, but headings inside a fence cannot start or
+    end a section.
+
+    :param body: Pull request body in Markdown.
+    :param section: Heading text to find at level two.
+    :returns: Whether the section contains non-heading content.
+    """
     lines = []
     fence: tuple[str, int] | None = None
     for line in body.splitlines():
@@ -99,6 +114,12 @@ def _has_nonempty_body_section(body: str, section: str) -> bool:
 
 
 def assess_pr_text(evidence: PullRequestEvidence, policy: Policy) -> PRTextValidation:
+    """Apply configured title-format and required-body-section checks.
+
+    :param evidence: Pull request title and body to validate.
+    :param policy: Text-check settings and required section names.
+    :returns: Validation status and any failed checks.
+    """
     issues = []
     if policy.title_format == "conventional_commit" and not _CONVENTIONAL_COMMIT_TITLE.fullmatch(
         evidence.title
@@ -117,6 +138,12 @@ def assess_pr_text(evidence: PullRequestEvidence, policy: Policy) -> PRTextValid
 def _criterion_score(
     criterion: RubricCriterion, evidence: PullRequestEvidence
 ) -> tuple[float, str]:
+    """Score one configured text check on the rubric's 0–100 scale.
+
+    :param criterion: Rubric check and its configured comparison value.
+    :param evidence: Pull request text evaluated by the check.
+    :returns: Score from 0 to 100 and a human-readable explanation.
+    """
     text = getattr(evidence, criterion.field)
     if criterion.check == "non_empty":
         passed = bool(text.strip())
@@ -150,6 +177,12 @@ def _criterion_score(
 
 
 def assess_pr_text_rubric(evidence: PullRequestEvidence, policy: Policy) -> RubricEvaluation:
+    """Score configured rubric criteria and determine whether routing may proceed.
+
+    :param evidence: Pull request title and body to score.
+    :param policy: Rubric criteria and minimum passing score.
+    :returns: Aggregate score, criterion results, and pass status.
+    """
     if not policy.rubric_criteria:
         return RubricEvaluation(
             enabled=False,
@@ -192,6 +225,11 @@ def assess_pr_text_rubric(evidence: PullRequestEvidence, policy: Policy) -> Rubr
 
 
 def _findings(reviews: list[ReviewStage]) -> list[Finding]:
+    """Collect findings once each, preserving their first-seen review order.
+
+    :param reviews: Review stages whose findings should be combined.
+    :returns: Unique findings in first-seen order.
+    """
     unique: list[Finding] = []
     seen: set[tuple[str, int | None, str, str, str]] = set()
     for stage in reviews:
@@ -209,6 +247,17 @@ def review_pull_request(
     decision_provider: DecisionProvider,
     review_provider: ReviewProvider,
 ) -> ReviewReport:
+    """Route validated evidence through decision and review providers.
+
+    Incomplete evidence, failed checks, and provider errors fail closed. Review
+    concerns are retained during escalation, and every result remains advisory.
+
+    :param evidence: Validated pull request metadata and changed-file patches.
+    :param policy: Routing thresholds and review behavior settings.
+    :param decision_provider: Provider that recommends a routing decision.
+    :param review_provider: Provider that assesses evidence at a requested depth.
+    :returns: Advisory report containing routing, validation, and review results.
+    """
     coverage = assess_coverage(evidence, policy)
     pr_text = assess_pr_text(evidence, policy)
     rubric = assess_pr_text_rubric(evidence, policy)
@@ -230,6 +279,12 @@ def review_pull_request(
         ],
         route: Literal["no_review", "standard", "deep", "human", "direct", "feedback", "blocked"],
     ) -> ReviewReport:
+        """Build a report with both top-level and per-stage findings bounded.
+
+        :param outcome: Final advisory outcome to include in the report.
+        :param route: Routing path associated with the outcome.
+        :returns: Report with exported findings limited by policy.
+        """
         findings = _findings(reviews)
         # Cap both the summary and nested stage findings in the exported report.
         exported = [
@@ -260,6 +315,10 @@ def review_pull_request(
         )
 
     def unresolved() -> ReviewReport:
+        """Apply the configured outcome when evidence or routing is unresolved.
+
+        :returns: Rejection or human-review report, according to policy.
+        """
         if policy.unresolved_outcome == "rejected":
             reasons.append("Policy blocks unresolved evidence or routing without a human handoff.")
             return report("rejected", "blocked")

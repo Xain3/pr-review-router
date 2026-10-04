@@ -59,6 +59,8 @@ feedback policy reports the uncertainty without requiring a human step.
 ## Development and verification
 
 Run the full checks in the [README](../README.md#development-checks).
+Python callable docstrings use reStructuredText fields as described in the
+[contribution guide](../CONTRIBUTING.md#python-docstrings).
 Tests exercise the installed console entry point, offline example routing, budget
 and coverage failures, threshold boundaries, unavailable confidence, provider
 failures, finding retention/caps, schema validation, and report file handling.
