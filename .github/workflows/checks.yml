@@ -36,6 +36,15 @@ jobs:
         run: uv run --no-sync ruff format --check .
       - name: Spell check
         run: uv run --no-sync codespell
+      - name: Report uncategorized tests
+        run: |
+          uncategorized=$(uv run --no-sync pytest --collect-only -q -m "not unit and not integration and not smoke" | grep '::' || true)
+          if [ -n "$uncategorized" ]; then
+            echo "::notice title=Uncategorized tests::These tests have no unit/integration/smoke marker and were not run by CI:"
+            echo "$uncategorized"
+          else
+            echo "All collected tests have a category marker."
+          fi
       - name: Unit tests
         run: uv run --no-sync pytest -m unit
       - name: Smoke tests
