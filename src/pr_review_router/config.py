@@ -1,6 +1,10 @@
 """Routing policy loaded from TOML; all fields have offline defaults."""
 
+import json
+import os
 import tomllib
+from collections.abc import Mapping
+from importlib.resources import files
 from pathlib import Path
 from typing import Annotated, Literal
 
@@ -9,6 +13,29 @@ from pydantic import Field, field_validator, model_validator
 from .contracts import Contract, Probability, Text
 
 Percent = Annotated[float, Field(ge=0, le=100, allow_inf_nan=False)]
+ENV_PREFIX = "PR_REVIEW_ROUTER_"
+CONFIG_ENV_VAR = f"{ENV_PREFIX}CONFIG"
+
+# Hardcoded fallbacks used when settings are omitted from the TOML configuration.
+FALLBACK_RUBRIC_PASS_SCORE = 100
+FALLBACK_RUBRIC_WEIGHT = 1
+FALLBACK_RUBRIC_BLOCKER = "soft"
+
+FALLBACK_POLICY_ALLOW_DIRECT_ACCEPTANCE = False
+FALLBACK_POLICY_ALLOW_DIRECT_REJECTION = False
+FALLBACK_POLICY_ACCEPTANCE_CONFIDENCE = 0.95
+FALLBACK_POLICY_REJECTION_CONFIDENCE = 0.95
+FALLBACK_POLICY_REVIEW_BEHAVIOR = "escalate"
+FALLBACK_POLICY_FEEDBACK_DEPTH = "standard"
+FALLBACK_POLICY_ACCEPTANCE_FEEDBACK = False
+FALLBACK_POLICY_UNRESOLVED_OUTCOME = "needs_human_review"
+FALLBACK_POLICY_SKIP_CONFIDENCE = 0.95
+FALLBACK_POLICY_REVIEW_CONFIDENCE = 0.85
+FALLBACK_POLICY_MAX_INPUT_BYTES = 100_000
+FALLBACK_POLICY_MAX_FILES = 100
+FALLBACK_POLICY_MAX_FINDINGS = 5
+FALLBACK_POLICY_TITLE_FORMAT = "any"
+FALLBACK_POLICY_RUBRIC_MINIMUM_SCORE = 70
 
 
 class RubricCriterion(Contract):
@@ -18,9 +45,9 @@ class RubricCriterion(Contract):
     check: Literal["non_empty", "min_words", "contains", "section_nonempty"]
     value: Text | None = None
     minimum_words: Annotated[int, Field(gt=0)] | None = None
-    weight: Annotated[int, Field(gt=0)] = 1
-    blocker: Literal["hard", "soft"] = "soft"
-    pass_score: Percent = 100
+    weight: Annotated[int, Field(gt=0)] = FALLBACK_RUBRIC_WEIGHT
+    blocker: Literal["hard", "soft"] = FALLBACK_RUBRIC_BLOCKER
+    pass_score: Percent = FALLBACK_RUBRIC_PASS_SCORE
 
     @model_validator(mode="after")
     def check_arguments(self) -> "RubricCriterion":
@@ -38,22 +65,24 @@ class RubricCriterion(Contract):
 
 
 class Policy(Contract):
-    allow_direct_acceptance: bool = False
-    allow_direct_rejection: bool = False
-    acceptance_confidence: Probability = 0.95
-    rejection_confidence: Probability = 0.95
-    review_behavior: Literal["escalate", "feedback"] = "escalate"
-    feedback_depth: Literal["standard", "deep"] = "standard"
-    acceptance_feedback: bool = False
-    unresolved_outcome: Literal["needs_human_review", "rejected"] = "needs_human_review"
-    skip_confidence: Probability = 0.95
-    review_confidence: Probability = 0.85
-    max_input_bytes: Annotated[int, Field(gt=0)] = 100_000
-    max_files: Annotated[int, Field(gt=0)] = 100
-    max_findings: Annotated[int, Field(gt=0)] = 5
-    title_format: Literal["any", "conventional_commit"] = "any"
+    allow_direct_acceptance: bool = FALLBACK_POLICY_ALLOW_DIRECT_ACCEPTANCE
+    allow_direct_rejection: bool = FALLBACK_POLICY_ALLOW_DIRECT_REJECTION
+    acceptance_confidence: Probability = FALLBACK_POLICY_ACCEPTANCE_CONFIDENCE
+    rejection_confidence: Probability = FALLBACK_POLICY_REJECTION_CONFIDENCE
+    review_behavior: Literal["escalate", "feedback"] = FALLBACK_POLICY_REVIEW_BEHAVIOR
+    feedback_depth: Literal["standard", "deep"] = FALLBACK_POLICY_FEEDBACK_DEPTH
+    acceptance_feedback: bool = FALLBACK_POLICY_ACCEPTANCE_FEEDBACK
+    unresolved_outcome: Literal["needs_human_review", "rejected"] = (
+        FALLBACK_POLICY_UNRESOLVED_OUTCOME
+    )
+    skip_confidence: Probability = FALLBACK_POLICY_SKIP_CONFIDENCE
+    review_confidence: Probability = FALLBACK_POLICY_REVIEW_CONFIDENCE
+    max_input_bytes: Annotated[int, Field(gt=0)] = FALLBACK_POLICY_MAX_INPUT_BYTES
+    max_files: Annotated[int, Field(gt=0)] = FALLBACK_POLICY_MAX_FILES
+    max_findings: Annotated[int, Field(gt=0)] = FALLBACK_POLICY_MAX_FINDINGS
+    title_format: Literal["any", "conventional_commit"] = FALLBACK_POLICY_TITLE_FORMAT
     required_body_sections: list[Text] = Field(default_factory=list)
-    rubric_minimum_score: Percent = 70
+    rubric_minimum_score: Percent = FALLBACK_POLICY_RUBRIC_MINIMUM_SCORE
     rubric_criteria: list[RubricCriterion] = Field(default_factory=list)
 
     @field_validator("rubric_criteria")
@@ -77,7 +106,35 @@ class Policy(Contract):
         return sections
 
 
-def load_policy(path: Path | None) -> Policy:
+def resolve_config_path(path: Path | None, environ: Mapping[str, str] | None = None) -> Path | None:
+    if path is not None:
+        return path
+    environment = os.environ if environ is None else environ
+    configured_path = environment.get(CONFIG_ENV_VAR)
+    if configured_path is None:
+        return None
+    if not configured_path:
+        raise ValueError(f"{CONFIG_ENV_VAR} must not be empty")
+    return Path(configured_path)
+
+
+def load_policy(
+    path: Path | None,
+    environ: Mapping[str, str] | None = None,
+) -> Policy:
     if path is None:
-        return Policy()
-    return Policy.model_validate(tomllib.loads(path.read_text(encoding="utf-8")))
+        contents = files("pr_review_router").joinpath("defaults.toml").read_text(encoding="utf-8")
+    else:
+        contents = path.read_text(encoding="utf-8")
+    values = tomllib.loads(contents)
+    environment = os.environ if environ is None else environ
+    for field_name in Policy.model_fields:
+        variable = f"{ENV_PREFIX}{field_name.upper()}"
+        if variable not in environment:
+            continue
+        raw_value = environment[variable]
+        try:
+            values[field_name] = json.loads(raw_value)
+        except json.JSONDecodeError:
+            values[field_name] = raw_value
+    return Policy.model_validate(values)

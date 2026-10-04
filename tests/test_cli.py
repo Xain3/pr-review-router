@@ -12,7 +12,7 @@ from pr_review_router import cli as cli_module
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def cli(*arguments):
+def cli(*arguments, environment_overrides=None):
     # Exercise the actual installed console script, with all model credentials removed.
     executable = shutil.which("pr-review-router")
     if executable is None:
@@ -22,7 +22,9 @@ def cli(*arguments):
         key: value
         for key, value in os.environ.items()
         if key not in {"OPENAI_API_KEY", "TYPESAFE_API_KEY", "REVIEW_MODEL_API_KEY"}
+        and not key.startswith("PR_REVIEW_ROUTER_")
     }
+    environment.update(environment_overrides or {})
     return subprocess.run(
         [executable, *map(str, arguments)],
         capture_output=True,
@@ -84,6 +86,60 @@ def test_policy_and_private_output_file(tmp_path):
     if os.name == "posix":
         assert output.stat().st_mode & 0o077 == 0
     assert list(output.parent.iterdir()) == [output]
+
+
+@pytest.mark.integration
+def test_config_path_environment_and_cli_precedence(tmp_path):
+    environment_policy = tmp_path / "environment.toml"
+    environment_policy.write_text("skip_confidence = 1.0\n", encoding="utf-8")
+    cli_policy = tmp_path / "cli.toml"
+    cli_policy.write_text("skip_confidence = 0.95\n", encoding="utf-8")
+
+    from_environment = cli(
+        "review",
+        "--input",
+        ROOT / "examples/diff/evidence.json",
+        environment_overrides={"PR_REVIEW_ROUTER_CONFIG": str(environment_policy)},
+    )
+    assert from_environment.returncode == 0, from_environment.stderr
+    assert json.loads(from_environment.stdout)["outcome"] == "reviewed"
+
+    from_cli = cli(
+        "review",
+        "--input",
+        ROOT / "examples/diff/evidence.json",
+        "--config",
+        cli_policy,
+        environment_overrides={"PR_REVIEW_ROUTER_CONFIG": str(environment_policy)},
+    )
+    assert from_cli.returncode == 0, from_cli.stderr
+    assert json.loads(from_cli.stdout)["outcome"] == "skipped"
+
+
+@pytest.mark.integration
+def test_environment_policy_override_and_invalid_value(tmp_path):
+    policy = tmp_path / "policy.toml"
+    policy.write_text("skip_confidence = 1.0\n", encoding="utf-8")
+    completed = cli(
+        "review",
+        "--input",
+        ROOT / "examples/diff/evidence.json",
+        "--config",
+        policy,
+        environment_overrides={"PR_REVIEW_ROUTER_SKIP_CONFIDENCE": "0.95"},
+    )
+    assert completed.returncode == 0, completed.stderr
+    assert json.loads(completed.stdout)["outcome"] == "skipped"
+
+    invalid = cli(
+        "review",
+        "--input",
+        ROOT / "examples/diff/evidence.json",
+        environment_overrides={"PR_REVIEW_ROUTER_MAX_FILES": "0"},
+    )
+    assert invalid.returncode == 2
+    assert invalid.stdout == ""
+    assert "max_files" in invalid.stderr
 
 
 @pytest.mark.integration
