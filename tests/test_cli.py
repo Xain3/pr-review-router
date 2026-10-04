@@ -32,6 +32,7 @@ def cli(*arguments):
     )
 
 
+@pytest.mark.smoke
 def test_help_and_version():
     help_result = cli("--help")
     assert help_result.returncode == 0
@@ -41,6 +42,7 @@ def test_help_and_version():
     assert version_result.stdout.strip() == f"pr-review-router {version('pr-review-router')}"
 
 
+@pytest.mark.unit
 def test_version_without_package_metadata(monkeypatch):
     def missing_distribution(_name):
         _ = _name
@@ -50,6 +52,7 @@ def test_version_without_package_metadata(monkeypatch):
     assert cli_module._get_version() == "unknown"
 
 
+@pytest.mark.smoke
 def test_stdout_review_without_credentials():
     completed = cli("review", "--input", ROOT / "examples/diff/evidence.json")
     assert completed.returncode == 0
@@ -59,6 +62,7 @@ def test_stdout_review_without_credentials():
     assert completed.stderr == ""
 
 
+@pytest.mark.integration
 def test_policy_and_private_output_file(tmp_path):
     policy = tmp_path / "policy.toml"
     policy.write_text("skip_confidence = 1.0\n", encoding="utf-8")
@@ -82,6 +86,7 @@ def test_policy_and_private_output_file(tmp_path):
     assert list(output.parent.iterdir()) == [output]
 
 
+@pytest.mark.integration
 def test_human_handoff_is_an_advisory_success():
     completed = cli("review", "--input", ROOT / "examples/diff/concern.json")
     assert completed.returncode == 0
@@ -94,6 +99,7 @@ def test_human_handoff_is_an_advisory_success():
     "content",
     ["{", '{"PRIVATE_EVIDENCE":"secret"}', '{"number":true}', "null", "[]"],
 )
+@pytest.mark.integration
 def test_invalid_evidence_fails_without_output_or_input_leak(tmp_path, content):
     input_path = tmp_path / "input.json"
     input_path.write_text(content, encoding="utf-8")
@@ -110,6 +116,7 @@ def test_invalid_evidence_fails_without_output_or_input_leak(tmp_path, content):
     "content",
     ["max_findings = 0", "max_files = true", "unknown = 1", "skip_confidence = 2.0", "[broken"],
 )
+@pytest.mark.integration
 def test_invalid_policy_is_a_usage_error(tmp_path, content):
     policy = tmp_path / "policy.toml"
     policy.write_text(content, encoding="utf-8")
@@ -118,6 +125,7 @@ def test_invalid_policy_is_a_usage_error(tmp_path, content):
     assert completed.stdout == ""
 
 
+@pytest.mark.integration
 def test_missing_file_is_a_usage_error(tmp_path):
     completed = cli("review", "--input", tmp_path / "missing.json")
     assert completed.returncode == 2
@@ -125,6 +133,7 @@ def test_missing_file_is_a_usage_error(tmp_path):
 
 
 @pytest.mark.parametrize("target", ["evidence", "policy"])
+@pytest.mark.integration
 def test_output_cannot_overwrite_inputs(tmp_path, target):
     input_path = tmp_path / "evidence.json"
     original = (ROOT / "examples/diff/evidence.json").read_text(encoding="utf-8")
@@ -145,6 +154,7 @@ def test_output_cannot_overwrite_inputs(tmp_path, target):
     assert policy.read_text(encoding="utf-8") == "max_findings = 2\n"
 
 
+@pytest.mark.integration
 def test_duplicate_paths_and_unknown_fields_are_rejected(evidence, tmp_path):
     data = evidence.model_dump()
     data["files"].append(data["files"][0])
@@ -161,6 +171,7 @@ def test_duplicate_paths_and_unknown_fields_are_rejected(evidence, tmp_path):
     ("fixture", "valid"),
     [("valid.json", True), ("invalid.json", False)],
 )
+@pytest.mark.integration
 def test_pr_text_format_examples(fixture, valid):
     completed = cli(
         "review",
@@ -185,6 +196,7 @@ def test_pr_text_format_examples(fixture, valid):
         ("hard_blocker.json", 70.0, False, ["testing"], []),
     ],
 )
+@pytest.mark.integration
 def test_rubric_examples(fixture, score, passed, hard_failures, soft_failures):
     completed = cli(
         "review",

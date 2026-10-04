@@ -2,6 +2,8 @@ import pytest
 
 from pr_review_router.patches import parse_patch
 
+pytestmark = pytest.mark.unit
+
 
 def test_file_headers_multiple_hunks_and_no_newline_marker():
     patch = (
