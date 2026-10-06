@@ -161,3 +161,11 @@ Real Jev/Typesafe and OpenAI-compatible providers, PR fetching/posting, and a
 consumer GitHub/Docker Action are future work.
 
 Licensing is pending owner selection.
+
+## PR4Code connector (opt-in)
+
+`pr-review-router review --review-provider pr4code` delegates the review stage to a
+PR4Code HTTPS endpoint configured by `PR4CODE_API_URL` and `PR4CODE_API_KEY`. The
+request/response JSON contract is an assumption for evaluation (response must match
+the review result schema); invalid or failed responses are handled conservatively by
+the engine. The default and test paths stay offline with mocks.

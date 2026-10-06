@@ -8,12 +8,14 @@ import tempfile
 import tomllib
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
+from typing import Any
 
 from pydantic import ValidationError
 
 from .config import Policy, load_policy, resolve_config_path
 from .contracts import PullRequestEvidence
 from .engine import review_pull_request
+from .pr4code import PR4CodeReviewProvider
 from .providers import MockDecisionProvider, MockReviewProvider
 
 
@@ -69,6 +71,12 @@ def _parse_args(
         "--config",
         type=Path,
         help="Routing policy TOML file (overrides PR_REVIEW_ROUTER_CONFIG).",
+    )
+    review.add_argument(
+        "--review-provider",
+        choices=("mock", "pr4code"),
+        default="mock",
+        help="Review provider; pr4code needs PR4CODE_API_URL and PR4CODE_API_KEY.",
     )
     review.add_argument(
         "--output", type=Path, help="Write JSON report to a file instead of stdout."
@@ -132,7 +140,13 @@ def main(argv: list[str] | None = None) -> int:
     if args is None:
         return 0
     policy, evidence = _load_inputs(args.input, args.config, parser)
-    report = review_pull_request(evidence, policy, MockDecisionProvider(), MockReviewProvider())
+    reviewer: Any = MockReviewProvider()
+    if args.review_provider == "pr4code":
+        url, key = os.environ.get("PR4CODE_API_URL"), os.environ.get("PR4CODE_API_KEY")
+        if not url or not key:
+            parser.error("pr4code requires PR4CODE_API_URL and PR4CODE_API_KEY")
+        reviewer = PR4CodeReviewProvider(url, key)
+    report = review_pull_request(evidence, policy, MockDecisionProvider(), reviewer)
     content = report.model_dump_json(indent=2) + "\n"
     try:
         if args.output:
