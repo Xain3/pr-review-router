@@ -441,6 +441,13 @@ def test_local_settings_reject_remote_or_credential_bearing_origins(endpoint):
         ReviewSettings(endpoint=endpoint, model="test")
 
 
+@pytest.mark.parametrize("delimiter", ["?", "#"])
+def test_local_settings_normalize_empty_query_and_fragment_delimiters(delimiter):
+    settings = ReviewSettings(endpoint=f"http://localhost:11435{delimiter}", model="test")
+
+    assert settings.endpoint == "http://localhost:11435"
+
+
 def test_direct_decisions_and_record_replay_combination_are_disabled(tmp_path):
     with pytest.raises(ValueError, match="direct acceptance"):
         run_experiment(fixture_evidence(), Policy(allow_direct_acceptance=True), fixture_config())

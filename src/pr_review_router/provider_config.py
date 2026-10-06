@@ -4,7 +4,7 @@ import ipaddress
 import tomllib
 from pathlib import Path
 from typing import Annotated, Literal
-from urllib.parse import urlsplit
+from urllib.parse import urlsplit, urlunsplit
 
 from pydantic import Field, field_validator, model_validator
 
@@ -50,7 +50,7 @@ class LocalSettings(Contract):
             or parsed.fragment
         ):
             raise ValueError("endpoint must be a loopback HTTP(S) origin")
-        return value.rstrip("/")
+        return urlunsplit((parsed.scheme, parsed.netloc, "", "", ""))
 
     @field_validator("model")
     @classmethod
