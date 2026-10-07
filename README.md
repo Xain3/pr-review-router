@@ -1,10 +1,10 @@
 # pr-review-router
 
-An advisory pull request review router with a working offline, mock-provider MVP.
+An advisory pull request review router with offline mocks and opt-in local model experiments.
 It accepts exported PR evidence, checks patch coverage, selects a review path,
 and emits a structured JSON report. Reports never approve, merge, or change a PR.
 
-The included providers are deterministic demonstration rules. Their confidence
+The default mock providers are deterministic demonstration rules. Their confidence
 scores have `source: "mock"` and are not calibrated probabilities. The mocks cannot assess substantive correctness. Default routing hands such
 changes to humans; optional direct/feedback policies demonstrate other routes.
 
@@ -25,10 +25,10 @@ description accurately describes the diff. A **human reviewer** handles cases
 the automated route cannot safely resolve.
 
 “Provider” names the integration interface, not necessarily the technology
-behind it: a future provider may use a model, while the current CLI wires in
-offline mocks. `standard` and `deep` are review depths passed to the same review
-provider interface, not two different model roles. In this MVP, both provider
-roles are mocks and cannot perform a substantive code review.
+behind it: the CLI defaults to offline mocks and can explicitly select local
+model adapters. `standard` and `deep` are review depths passed to the same review
+provider interface, not two different model roles. The mocks cannot perform a
+substantive code review.
 
 ## Install and run
 
@@ -57,7 +57,7 @@ uv run pr-review-router review --input examples/rubric/soft_blocker.json --confi
 uv run pr-review-router review --input examples/rubric/hard_blocker.json --config examples/rubric/policy.toml
 ```
 
-No API credentials or inference network access are needed. Dependency installation
+The default mode needs no API credentials or inference network access. Dependency installation
 may require network access. `--config` is optional; the default policy matches
 [examples/diff/policy.toml](examples/diff/policy.toml). JSON goes to stdout unless `--output`
 is given. File output creates parent directories and replaces the destination
@@ -123,6 +123,43 @@ and can combine with PR-text/rubric gates. Defaults preserve the existing routes
 Reports use schema version 3; acceptance/rejection remain advisory signals for
 consumers and never change a PR.
 
+## Local models and reproducible CI
+
+Use `review --providers-config PATH` to select Ollaya decisions and Ollama
+reviews independently. Provider TOML is separate from routing policy. Local
+experiments shadow skip recommendations and require direct decisions to be
+disabled. They retain original decisions and model provenance in separate
+artifacts without changing report schema version 3.
+
+```sh
+# Exercise the real adapters offline using explicitly synthetic HTTP tapes.
+uv run pr-review-router evaluate --corpus examples/local-models/corpus.json --providers-config examples/local-models/replay.toml --replay-dir examples/local-models/recordings --output-dir reports/replay-evaluation
+```
+
+See [local model setup and evaluation](examples/local-models/README.md) for
+installed-model selection, context configuration, live runs, explicit recording
+refresh, and network-free replay. Default tests never require a running model or
+paid inference. Replay protects integration behavior; live evaluation and
+human-reviewed labels are needed to assess model quality. Ollaya routing
+confidence remains unavailable until task calibration; reviewer confidence is
+self-reported.
+
+The [six-criterion PR and review rubric](examples/rubric-review/README.md)
+evaluates title format, Summary structure, meaningful rationale, description
+coverage of the diff, supplied-review coverage, and relevant testing. It shows
+blocking failures, suggestions, uncertainty, and all-pass advisory skip/approval
+recommendations while preserving shadow mode. Semantic criteria support `choice`,
+`noul`, and ordinal `score` questions with explicit experimental numeric bands.
+Assessment rubrics accept JSON or TOML through the same validated contract;
+JSON examples are available for every question format.
+Run `uv run python examples/rubric-review/compare.py` to compare all three formats
+against identical labels with offline replay; `--live --record` explicitly uses
+local models and saves recordings under `reports/`.
+
+```sh
+uv run pr-review-router evaluate --corpus examples/rubric-review/corpus.json --providers-config examples/local-models/replay.toml --replay-dir examples/rubric-review/recordings --output-dir reports/rubric-review-replay
+```
+
 ## Development checks
 
 ```sh
@@ -157,7 +194,7 @@ See the [specification](docs/specification.md),
 [diff-routing examples](examples/diff/README.md),
 [PR-text examples](examples/pr-text/README.md), and
 [contribution guide](CONTRIBUTING.md).
-Real Jev/Typesafe and OpenAI-compatible providers, PR fetching/posting, and a
+Hosted Jev/TypeSafe and review providers, PR fetching/posting, and a
 consumer GitHub/Docker Action are future work.
 
 Licensing is pending owner selection.

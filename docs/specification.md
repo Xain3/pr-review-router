@@ -1,12 +1,13 @@
-# Mock-provider MVP specification
+# Advisory router specification
 
 ## Purpose and scope
 
 Provide an offline CLI and a provider-independent engine for advisory PR review
 routing. Accept owner-supplied JSON evidence and optional TOML policy; produce
-validated JSON reports. The MVP uses deterministic mocks and makes no API calls.
+validated JSON reports. The default mode uses deterministic mocks and makes no
+API calls. Explicit local experiments use separately configured model adapters.
 
-Real Jev/Typesafe decisions, OpenAI-compatible review adapters, GitHub evidence
+Hosted Jev/TypeSafe decisions and review adapters, GitHub evidence
 collection, PR comments, approval/merge operations, and a Docker Action are deferred.
 
 ## Evidence contract
@@ -197,6 +198,168 @@ Stage finding lists are also capped individually. Escalation examines the comple
 provider results before capping. Findings from earlier stages cannot be silently
 discarded by a later clear response.
 
+## Local model experiments and replay
+
+`review --providers-config PATH` selects providers separately from policy TOML
+and its environment overrides. Without this option the default mock behavior
+remains. Each role independently selects `mock`, or `ollaya` for decisions and
+`ollama` for review. Local adapters require an explicit installed model and a
+loopback HTTP(S) origin without embedded credentials. Authenticated, hosted,
+and cloud/remote models remain deferred. The router does not manage models.
+
+Ollaya uses `POST /v1/systemone` with complete evidence and a choice among
+`skip_review`, `review`, and `needs_human_review`. Context overflow or explicit
+truncation fails closed. Reasons deterministically describe the selected label.
+Native confidence/probabilities are retained separately; routing confidence is
+`unavailable` until identifiable task calibration exists. Upstream model
+calibration alone does not establish PR-routing calibration.
+
+Ollama uses `POST /v1/chat/completions`, separate instructions and untrusted
+evidence messages, JSON-schema output, and configurable generation settings.
+Model content contains outcome, numeric confidence, summary, and findings.
+Adapter code supplies identity and `self_reported` confidence provenance.
+Existing response and changed-file validation applies. Refusal, incomplete
+generation, a different answering model, or invalid output fails closed.
+Standard/deep use distinct prompts and output budgets with the same model;
+they do not constitute independent corroboration.
+
+Before review generation `/api/show` must report explicit `num_ctx` matching
+provider `context_tokens`. UTF-8 request/schema/template bytes, framing headroom,
+and reserved output tokens must fit configured and architectural context
+limits. This conservative check assumes byte-fallback tokenization and ordinary
+templates; custom tokenizer/template adoption requires verification. It may
+reject inputs that would fit after tokenization. Evidence is never silently
+summarized or truncated. Model version/digest inspection happens lazily after
+engine preflight, so failed gates prevent all HTTP calls.
+
+HTTP requests have a total deadline and bounded bodies, ignore system proxies,
+and do not redirect or automatically retry. The existing boundary catches schema
+errors from adapter normalization as well as returned payloads and retries once
+with `strict_schema=True`. Raw provider errors never enter advisory reports.
+
+Experiments require `shadow_skips = true` and reject policies enabling direct
+acceptance or rejection. A wrapper retains original validated decisions and
+turns skip recommendations into review requests with an explicit reason, outside
+the engine. Report schema remains version 3. Separate artifacts contain original
+and native decisions, uncapped reviews, model metadata, generation settings,
+prompt/schema revision, usage, timing, and schema/transport failure counts.
+
+`review` supports `--record PATH`, `--replay PATH`, and `--experiment-output PATH`
+only with provider configuration. Artifact output defaults to
+`reports/experiment-PR_NUMBER-HEAD_HASH.json`. Explicit recording writes a
+version-1 tape containing origin, experiment fingerprint, and ordered HTTP
+request/response or failure exchanges, including retry sequences. Private
+runtime artifacts belong under ignored `reports/`; inspect and sanitize tapes
+before committing them. Recording and replay are mutually exclusive.
+
+Replay opens no HTTP client. Fingerprints cover provider/model settings, policy,
+evidence, actual prompt contents/versions, and schemas. Every request and its
+position must match. Header/request mismatches and missing/unused exchanges
+produce status 2, even if the engine caught a replay exception and escalated.
+There is no live fallback or implicit refresh.
+
+`evaluate --corpus PATH --providers-config PATH [--config PATH]` runs validated
+cases and writes per-case reports/artifacts and `summary.json` beneath
+`--output-dir` (default `reports/evaluation`). `--record` writes case tapes;
+`--replay-dir PATH` replays them. Corpus version 1 requires unique safe case IDs,
+relative evidence paths beneath the corpus directory, categories, reference
+routes, and expected concern anchors. Label status distinguishes provisional
+from human-reviewed labels. Initial examples/tapes are explicitly provisional
+and synthetic and do not claim model reviews.
+
+Metrics count unsafe original skips, missed planted defects, findings unmatched
+by reference anchors, human handoffs, schema/transport failures, and request
+latency. Path/optional-line matching of uncapped native findings is a proxy
+requiring human assessment. Replay uses recorded timing and does not assess
+current model quality or speed. Preflight handoffs have no provider decision or
+HTTP calls. Outputs are individually atomic/private; earlier case files can
+remain after a later failure, and summary is written only after completion.
+See [configuration and runnable commands](../examples/local-models/README.md).
+
+## Formal and semantic assessment rubric examples
+
+An evaluation corpus can optionally name `assessment_rubric`, a relative JSON
+or TOML path, and each case can supply a `review` path to UTF-8 review text. These inputs
+must stay beneath the corpus directory and cannot be overwritten by outputs.
+Rubric reference labels require a status for every configured criterion and an
+expected recommendation. Existing corpora without these fields retain their
+behavior and recording fingerprints. The loader selects JSON for a `.json`
+suffix (case insensitive) and otherwise retains TOML parsing for existing paths.
+Both formats use identical Pydantic validation. Fingerprints use the validated
+rubric contents, so changing only the serialization format does not invalidate
+HTTP recordings. This applies to assessment rubrics, including explicit
+`--assessment-rubric` overrides; policy and provider configuration retain TOML.
+The rubric document includes routing actions and thresholds in addition to the
+semantic questions sent to the decision provider.
+
+This experiment rubric is distinct from deterministic `Policy.rubric_criteria`.
+It configures unique criterion IDs, descriptions, failure actions (`block` or
+`suggest`), improvement messages, and checks (`conventional_title`,
+`body_section`, or `semantic`). Formal checks reuse existing title/section
+validators. A formal blocker prevents all HTTP calls and leaves semantic
+criteria explicitly unassessed. Semantic criteria carry instructions and a
+description/review target and use the configured Ollaya decision adapter. The
+entire PR evidence and separately supplied review are untrusted state data;
+criterion instructions are separate. Document/review coverage is not proof of
+code correctness, and review-provider responsibilities remain unchanged.
+
+Semantic criteria are batched through `/v1/systemone`. Each criterion selects
+`question_type`: `choice` (default), `noul`, or `score`. Choices return `passed`,
+`failed`, or `uncertain`. Numeric criteria require explicit finite
+`fail_threshold` and `pass_threshold`, with `0 <= fail < pass` within the native
+range. Values at or below fail map to failed, values at or above pass map to
+passed, and intermediate values require human assessment. Noul ranges from 0
+to 1; score requires 2–10 distinct ordered `levels` and ranges from 0 to the
+last level index. Higher values must mean greater criterion satisfaction.
+Formal checks cannot use numeric types. Choices cannot configure numeric
+thresholds or levels, and noul cannot configure score levels.
+
+Native response validation requires exactly the asked criterion IDs and types,
+and exact choice labels or configured score legends/probability labels. Score
+values outside the configured scale are invalid. Numeric thresholds are
+experimental policy bands, not task calibration. A middle score may mean
+partial satisfaction; it is mapped to human assessment without claiming model
+uncertainty. Noul is a native probability of the configured proposition, not a
+validated probability of a correct PR decision. Native typed answers are retained
+per criterion in artifacts and evaluation summaries, alongside mapped statuses.
+`--assessment-rubric` evaluates an alternative rubric against the same corpus
+evidence, supplied reviews, and reference labels; its path is protected from
+output replacement. The example comparison runner evaluates choice, noul, and
+score variants with identical labels, using offline replay by default and local
+inference only with `--live`. Rubric-specific request latency and schema-failure
+counts exclude follow-up reviewer calls; total pipeline metrics still include
+them. Replay durations are recorded HTTP timings, not current model latency.
+Native scores are retained but task confidence remains unavailable. Missing
+review text makes review-target criteria unavailable;
+context truncation or unrecovered provider/schema errors cannot yield approval.
+The complete request, including supplied review and rubric instructions, must
+fit the policy input budget before any model/metadata request. Existing engine
+preflight still prevents every provider call for incomplete evidence.
+
+Known failed blocking criteria yield `block`; otherwise any uncertain criterion
+yields `needs_human_review`; otherwise failed suggestion criteria yield
+`suggest_changes`; only all passed criteria yield `skip_and_approve`. Results
+include criterion statuses/sources, blockers, configured suggestions, and
+`skip_recommended` / `approval_recommended`. Advice is always `advisory_only`
+with `automation_authorized: false`. There is no aggregate threshold that can
+cancel a blocking failure, and task confidence is never invented.
+
+The rubric decision provider requests human review for blockers/uncertainty,
+normal review for suggestions, and skip for all-pass advice. Existing shadow
+mode records the original skip and continues reviewing. Report schema version 3
+is unchanged; rubric advice is saved under `assessment_rubric` in experiment
+artifacts and summaries. It cannot override coverage or unresolved review and
+never approves or changes a PR. Policy direct decisions remain disabled.
+
+Rubric configuration, actual prompt/schema contents and revisions, and complete
+supplied review text join the fingerprint only for rubric experiments. Native
+normalization uses the existing single schema retry. Evaluation compares each
+criterion status and recommendation with independent reference labels, counting
+blockers, suggestions, skip/approval advice, mismatches, and unsafe approval
+recommendations. Reference-label edits alone do not require fresh inference.
+See the [nine-case, six-criterion examples](../examples/rubric-review/README.md).
+Labels remain provisional and offline tapes explicitly synthetic.
+
 ## Mock behavior
 
 Added-line `MOCK_DECISION_ACCEPT` / `MOCK_DECISION_REJECT` markers return synthetic
@@ -216,7 +379,8 @@ rules and clearly label confidence as mock-derived.
 
 ## CLI and acceptance
 
-`pr-review-router review --input PATH [--config PATH] [--output PATH]` returns JSON.
+`pr-review-router review --input PATH [--config PATH] [--output PATH]` returns JSON
+with mocks unless explicit provider configuration is supplied.
 Help/version work without credentials. Successful advisory runs exit 0; invalid
 input/policy or I/O exits 2. File writes are atomic, and validation failures leave
 an existing report untouched. Evidence/policy cannot be overwritten by the report.
@@ -224,3 +388,4 @@ an existing report untouched. Evidence/policy cannot be overwritten by the repor
 A fresh checkout installs from `uv.lock`, passes Ruff, formatting, codespell,
 pytest, packaging, CLI smoke checks, and fresh-wheel execution without development
 dependencies or model credentials. CI is read-only and uses verified action pins.
+Fresh-wheel runtime dependencies are constrained by `uv.lock` for reproducible replay.

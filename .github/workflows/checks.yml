@@ -55,9 +55,13 @@ jobs:
         run: uv build
       - name: Validate installed wheel
         run: |
+          uv export --locked --no-dev --no-emit-project --no-hashes --output-file /tmp/router-wheel-constraints.txt
           uv venv /tmp/router-wheel
-          uv pip install --python /tmp/router-wheel/bin/python dist/*.whl
+          uv pip install --python /tmp/router-wheel/bin/python --constraint /tmp/router-wheel-constraints.txt dist/*.whl
           cd /tmp
           /tmp/router-wheel/bin/pr-review-router --help
           /tmp/router-wheel/bin/pr-review-router --version
           /tmp/router-wheel/bin/pr-review-router review --input "$GITHUB_WORKSPACE/examples/diff/evidence.json" --config "$GITHUB_WORKSPACE/examples/diff/policy.toml"
+          /tmp/router-wheel/bin/pr-review-router evaluate --corpus "$GITHUB_WORKSPACE/examples/local-models/corpus.json" --providers-config "$GITHUB_WORKSPACE/examples/local-models/replay.toml" --replay-dir "$GITHUB_WORKSPACE/examples/local-models/recordings" --output-dir /tmp/router-wheel-replay
+          /tmp/router-wheel/bin/pr-review-router evaluate --corpus "$GITHUB_WORKSPACE/examples/rubric-review/corpus.json" --providers-config "$GITHUB_WORKSPACE/examples/local-models/replay.toml" --replay-dir "$GITHUB_WORKSPACE/examples/rubric-review/recordings" --output-dir /tmp/router-wheel-rubric
+          /tmp/router-wheel/bin/python "$GITHUB_WORKSPACE/examples/rubric-review/compare.py" --output-dir /tmp/router-wheel-rubric-comparison

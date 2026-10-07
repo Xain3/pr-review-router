@@ -1,0 +1,24 @@
+{
+  "repository": "example/rubric-review",
+  "number": 105,
+  "base_sha": "sanitized-base",
+  "head_sha": "sanitized-partial-description",
+  "title": "fix(average): handle empty input and raise the batch limit",
+  "body": "## Summary\nReturn zero for empty input in average().\n\n## Rationale\nEmpty inputs currently raise ZeroDivisionError; returning zero preserves the caller's\nempty-report convention. \n\n## Testing\nThe validation plan covers empty and ordinary averages. These tests are described here, not executed by this fixture.\n",
+  "files": [
+    {
+      "path": "average.py",
+      "status": "modified",
+      "additions": 2,
+      "deletions": 0,
+      "patch": "@@ -1,2 +1,4 @@\n def average(values):\n+    if not values:\n+        return 0\n     return sum(values) / len(values)\n"
+    },
+    {
+      "path": "settings.py",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "patch": "@@ -1 +1 @@\n-MAX_BATCH_ITEMS = 100\n+MAX_BATCH_ITEMS = 250\n"
+    }
+  ]
+}

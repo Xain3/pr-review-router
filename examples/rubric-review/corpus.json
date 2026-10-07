@@ -1,0 +1,213 @@
+{
+  "corpus_version": 1,
+  "label_status": "provisional",
+  "assessment_rubric": "rubric.toml",
+  "cases": [
+    {
+      "case_id": "all-pass",
+      "category": "rubric",
+      "evidence": "all-pass.json",
+      "expectations": {
+        "decision_routes": [
+          "skip_review"
+        ],
+        "concerns": [],
+        "rubric": {
+          "recommendation": "skip_and_approve",
+          "criteria": {
+            "title-format": "passed",
+            "summary-section": "passed",
+            "change-rationale": "passed",
+            "description-coverage": "passed",
+            "review-coverage": "passed",
+            "testing-explanation": "passed"
+          }
+        }
+      },
+      "review": "reviews/complete.md"
+    },
+    {
+      "case_id": "invalid-title",
+      "category": "rubric",
+      "evidence": "invalid-title.json",
+      "expectations": {
+        "decision_routes": [
+          "needs_human_review"
+        ],
+        "concerns": [],
+        "rubric": {
+          "recommendation": "block",
+          "criteria": {
+            "title-format": "failed",
+            "summary-section": "passed",
+            "change-rationale": "uncertain",
+            "description-coverage": "uncertain",
+            "review-coverage": "uncertain",
+            "testing-explanation": "uncertain"
+          }
+        }
+      },
+      "review": "reviews/complete.md"
+    },
+    {
+      "case_id": "missing-summary",
+      "category": "rubric",
+      "evidence": "missing-summary.json",
+      "expectations": {
+        "decision_routes": [
+          "needs_human_review"
+        ],
+        "concerns": [],
+        "rubric": {
+          "recommendation": "block",
+          "criteria": {
+            "title-format": "passed",
+            "summary-section": "failed",
+            "change-rationale": "uncertain",
+            "description-coverage": "uncertain",
+            "review-coverage": "uncertain",
+            "testing-explanation": "uncertain"
+          }
+        }
+      },
+      "review": "reviews/complete.md"
+    },
+    {
+      "case_id": "vague-rationale",
+      "category": "rubric",
+      "evidence": "vague-rationale.json",
+      "expectations": {
+        "decision_routes": [
+          "needs_human_review"
+        ],
+        "concerns": [],
+        "rubric": {
+          "recommendation": "block",
+          "criteria": {
+            "title-format": "passed",
+            "summary-section": "passed",
+            "change-rationale": "failed",
+            "description-coverage": "passed",
+            "review-coverage": "passed",
+            "testing-explanation": "passed"
+          }
+        }
+      },
+      "review": "reviews/complete.md"
+    },
+    {
+      "case_id": "partial-description",
+      "category": "rubric",
+      "evidence": "partial-description.json",
+      "expectations": {
+        "decision_routes": [
+          "needs_human_review"
+        ],
+        "concerns": [],
+        "rubric": {
+          "recommendation": "block",
+          "criteria": {
+            "title-format": "passed",
+            "summary-section": "passed",
+            "change-rationale": "failed",
+            "description-coverage": "failed",
+            "review-coverage": "passed",
+            "testing-explanation": "failed"
+          }
+        }
+      },
+      "review": "reviews/complete.md"
+    },
+    {
+      "case_id": "partial-review",
+      "category": "rubric",
+      "evidence": "partial-review.json",
+      "expectations": {
+        "decision_routes": [
+          "needs_human_review"
+        ],
+        "concerns": [],
+        "rubric": {
+          "recommendation": "block",
+          "criteria": {
+            "title-format": "passed",
+            "summary-section": "passed",
+            "change-rationale": "passed",
+            "description-coverage": "passed",
+            "review-coverage": "failed",
+            "testing-explanation": "passed"
+          }
+        }
+      },
+      "review": "reviews/partial.md"
+    },
+    {
+      "case_id": "testing-suggestion",
+      "category": "rubric",
+      "evidence": "testing-suggestion.json",
+      "expectations": {
+        "decision_routes": [
+          "review"
+        ],
+        "concerns": [],
+        "rubric": {
+          "recommendation": "suggest_changes",
+          "criteria": {
+            "title-format": "passed",
+            "summary-section": "passed",
+            "change-rationale": "passed",
+            "description-coverage": "passed",
+            "review-coverage": "passed",
+            "testing-explanation": "failed"
+          }
+        }
+      },
+      "review": "reviews/complete.md"
+    },
+    {
+      "case_id": "missing-review",
+      "category": "rubric",
+      "evidence": "missing-review.json",
+      "expectations": {
+        "decision_routes": [
+          "needs_human_review"
+        ],
+        "concerns": [],
+        "rubric": {
+          "recommendation": "needs_human_review",
+          "criteria": {
+            "title-format": "passed",
+            "summary-section": "passed",
+            "change-rationale": "passed",
+            "description-coverage": "passed",
+            "review-coverage": "uncertain",
+            "testing-explanation": "passed"
+          }
+        }
+      }
+    },
+    {
+      "case_id": "incomplete-patch",
+      "category": "rubric",
+      "evidence": "incomplete-patch.json",
+      "expectations": {
+        "decision_routes": [
+          "needs_human_review"
+        ],
+        "concerns": [],
+        "rubric": {
+          "recommendation": "needs_human_review",
+          "criteria": {
+            "title-format": "uncertain",
+            "summary-section": "uncertain",
+            "change-rationale": "uncertain",
+            "description-coverage": "uncertain",
+            "review-coverage": "uncertain",
+            "testing-explanation": "uncertain"
+          }
+        }
+      },
+      "review": "reviews/complete.md"
+    }
+  ]
+}

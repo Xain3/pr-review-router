@@ -5,8 +5,7 @@ applyTo: "**/*.py"
 ---
 # Python Docstrings
 
-The canonical repository guidance is in [`AGENTS.md`](../../AGENTS.md#python-docstrings).
-Follow that section when editing Python files.
+The canonical repository guidance is in [`AGENTS.md`](../../AGENTS.md), under the “Python docstrings” section. Follow that section when editing Python files.
 
 - Start callable docstrings with a concise summary, then use reStructuredText fields for details: `:param name:`, `:returns:`, and `:raises ExceptionType:` as applicable.
 - Omit `self` and `cls` from parameter fields. Keep types in Python annotations instead of duplicating them with `:type:` or `:rtype:` fields.

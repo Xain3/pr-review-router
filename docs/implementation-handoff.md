@@ -71,8 +71,12 @@ environment. Action commits were resolved from official release refs.
 
 ## Later integration work
 
-Real Jev/Typesafe and OpenAI-compatible adapters need transport validation,
-timeouts, credential handling, prompt/input isolation, and confidence provenance.
+Local Ollaya and Ollama adapters now implement the existing protocols. See
+[local experiments](../examples/local-models/README.md) for configuration,
+shadow skips, context safeguards, provenance, evaluation, and offline replay.
+Hosted Jev/TypeSafe and review adapters still need credential configuration and
+capability testing. Human-reviewed evaluation and task calibration precede
+honoring model skips. The default CLI still uses offline demonstration mocks.
 A PR evidence collector must paginate files, bind metadata and patches to supplied
 commit identifiers, and mark unavailable/truncated content accurately. A consumer
 GitHub/Docker Action is separate from this repository's read-only quality CI.

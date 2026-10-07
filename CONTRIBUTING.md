@@ -26,15 +26,25 @@ uv build
 uv run pr-review-router --help
 uv run pr-review-router --version
 uv run pr-review-router review --input examples/diff/evidence.json --config examples/diff/policy.toml
+uv run pr-review-router evaluate --corpus examples/local-models/corpus.json --providers-config examples/local-models/replay.toml --replay-dir examples/local-models/recordings --output-dir reports/replay-evaluation
+uv run pr-review-router evaluate --corpus examples/rubric-review/corpus.json --providers-config examples/local-models/replay.toml --replay-dir examples/rubric-review/recordings --output-dir reports/rubric-review-replay
+uv run python examples/rubric-review/compare.py
 ```
 
 Use `uv run ruff format .` to format changes. Commit `uv.lock` whenever dependencies
 change. CI also exercises the installed wheel from a fresh environment.
+Wheel validation uses runtime dependency constraints exported from the same lockfile.
 
 Keep tests deterministic and offline; do not introduce credential requirements
 or paid inference into the default suite. Preserve confidence provenance,
 coverage checks, conservative escalation, advisory-only reports, and provider
 independence.
+
+Local adapter tests and corpus replay use explicitly synthetic HTTP tapes.
+Live inference is an explicit developer command, never a default CI check.
+Refresh tapes explicitly and inspect sanitized requests/responses before
+committing. Reference labels require human review before quality assessment or
+calibration; see [local model guidance](examples/local-models/README.md).
 
 Never commit credentials, raw PR exports, or private reports. Use sanitized
 fixtures in `examples/` and ignored runtime output under `reports/`.

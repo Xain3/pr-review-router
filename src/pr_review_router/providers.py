@@ -102,8 +102,8 @@ def _enforce[Model: BaseModel](model: type[Model], label: str, call: Callable[..
     :returns: Validated instance of ``model``.
     :raises ProviderSchemaError: If both provider responses fail validation.
     """
-    raw = call()
     try:
+        raw = call()
         return _validate(model, raw)
     except ValidationError:
         pass
@@ -111,8 +111,8 @@ def _enforce[Model: BaseModel](model: type[Model], label: str, call: Callable[..
         supports = "strict_schema" in inspect.signature(call.func).parameters  # type: ignore[attr-defined]
     except (TypeError, ValueError, AttributeError):
         supports = False
-    raw = call(strict_schema=True) if supports else call()
     try:
+        raw = call(strict_schema=True) if supports else call()
         return _validate(model, raw)
     except ValidationError as error:
         raise ProviderSchemaError(

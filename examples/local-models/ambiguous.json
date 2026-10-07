@@ -1,0 +1,12 @@
+{
+  "repository": "example/evaluation",
+  "number": 4,
+  "base_sha": "sanitized-base",
+  "head_sha": "sanitized-ambiguous",
+  "title": "feat: change the default service mode",
+  "body": "Surrounding mode definitions and callers are unavailable in this export.",
+  "files": [{
+    "path": "service.py", "status": "modified", "additions": 1, "deletions": 1,
+    "patch": "@@ -1 +1 @@\n-DEFAULT_MODE = LEGACY\n+DEFAULT_MODE = MODERN\n"
+  }]
+}

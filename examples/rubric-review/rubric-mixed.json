@@ -1,0 +1,80 @@
+{
+  "rubric_version": 1,
+  "criteria": [
+    {
+      "criterion_id": "title-format",
+      "description": "The title follows Conventional Commits.",
+      "check": "conventional_title",
+      "action": "block",
+      "suggestion": "Use a title such as fix(average): handle empty input and raise the batch limit."
+    },
+    {
+      "criterion_id": "summary-section",
+      "description": "The description includes a populated Summary section.",
+      "check": "body_section",
+      "section": "Summary",
+      "action": "block",
+      "suggestion": "Add a populated level-two Summary section."
+    },
+    {
+      "criterion_id": "change-rationale",
+      "description": "The description explains why the changes are needed.",
+      "check": "semantic",
+      "target": "description",
+      "instructions": "Does the PR description give a meaningful rationale for each substantive change visible in the diff? Restating what changed, generic statements such as 'make things better', or a Rationale heading alone do not satisfy this criterion.",
+      "action": "block",
+      "suggestion": "Explain the problem each substantive change solves and why this approach was chosen.",
+      "question_type": "score",
+      "fail_threshold": 1.0,
+      "pass_threshold": 2.75,
+      "levels": [
+        "No rationale for the changes.",
+        "Only generic motivation or a restatement of changes.",
+        "Specific rationale for some, but not every, substantive change.",
+        "Meaningful rationale for every substantive change."
+      ]
+    },
+    {
+      "criterion_id": "description-coverage",
+      "description": "The description accurately covers all substantive changes in the diff.",
+      "check": "semantic",
+      "target": "description",
+      "instructions": "Does the description accurately identify every substantive behavior or configuration change visible in all supplied file patches? A description mentioning only one of several substantive changes fails. Compare meaning with the diff, not just the presence of a Summary heading. Do not judge whether the code itself is correct.",
+      "action": "block",
+      "suggestion": "Describe every substantive change visible in the supplied patches.",
+      "question_type": "noul",
+      "fail_threshold": 0.2,
+      "pass_threshold": 0.8
+    },
+    {
+      "criterion_id": "review-coverage",
+      "description": "The supplied review addresses all substantive changes in the PR.",
+      "check": "semantic",
+      "target": "review",
+      "instructions": "Does the separately supplied review text address each substantive change visible in every supplied patch, including its implications or relevant edge cases? A generic approval, a repetition of the PR title, or a review addressing only one change fails. Missing evidence or ambiguous references do not establish coverage. Assess coverage, not whether the review proves the code correct.",
+      "action": "block",
+      "suggestion": "Extend the review to address each changed behavior and relevant edge cases.",
+      "question_type": "noul",
+      "fail_threshold": 0.2,
+      "pass_threshold": 0.8
+    },
+    {
+      "criterion_id": "testing-explanation",
+      "description": "The description records relevant validation for the changes.",
+      "check": "semantic",
+      "target": "description",
+      "instructions": "Does the PR description explain relevant testing or a specific reason testing is not applicable for the substantive changes in the diff? A Testing heading, 'tests pass', or 'not discussed' alone is insufficient. Assess the explanation; do not invent or claim verification of test execution.",
+      "action": "suggest",
+      "suggestion": "Describe validation for empty input, ordinary averages, and the changed batch-size boundary.",
+      "question_type": "score",
+      "fail_threshold": 1.0,
+      "pass_threshold": 2.75,
+      "levels": [
+        "No relevant testing explanation.",
+        "Generic testing assertion without relevant detail.",
+        "Specific validation for some but not all substantive changes.",
+        "Relevant validation or a specific testing justification for every substantive change."
+      ]
+    }
+  ]
+}

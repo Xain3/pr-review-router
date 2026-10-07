@@ -1,5 +1,11 @@
 # Rubric-based PR-text examples
 
+For a six-criterion use case combining formal checks with semantic rationale,
+description/diff coverage, supplied-review coverage, blockers, suggestions,
+and an advisory skip/approval recommendation, see
+[PR and review rubric evaluation](../rubric-review/README.md). This set below
+demonstrates the existing deterministic policy rubric.
+
 This set demonstrates multiple weighted criteria rather than a single format
 gate. Rubric scoring is a deterministic policy check, not a model/provider
 role: it evaluates configured title/body text before any provider is called and

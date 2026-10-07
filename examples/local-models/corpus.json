@@ -1,0 +1,19 @@
+{
+  "corpus_version": 1,
+  "label_status": "provisional",
+  "cases": [
+    {"case_id": "editorial", "category": "editorial", "evidence": "editorial.json",
+     "expectations": {"decision_routes": ["skip_review", "review"], "concerns": []}},
+    {"case_id": "correct-code", "category": "correct_code", "evidence": "correct-code.json",
+     "expectations": {"decision_routes": ["review"], "concerns": []}},
+    {"case_id": "planted-defect", "category": "planted_defect", "evidence": "planted-defect.json",
+     "expectations": {"decision_routes": ["review"], "concerns": [
+       {"concern_id": "empty-input-division", "path": "average.py", "line": 2,
+        "description": "Removing the empty-input guard causes division by zero for an empty sequence."}
+     ]}},
+    {"case_id": "ambiguous", "category": "ambiguous", "evidence": "ambiguous.json",
+     "expectations": {"decision_routes": ["needs_human_review", "review"], "concerns": []}},
+    {"case_id": "incomplete", "category": "incomplete", "evidence": "incomplete.json",
+     "expectations": {"decision_routes": ["needs_human_review"], "concerns": []}}
+  ]
+}
