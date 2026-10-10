@@ -1,0 +1,145 @@
+{
+  "schema_version": 2,
+  "case_id": "pr-080",
+  "label_status": "provisional",
+  "label_origin": "synthetic_author_intent",
+  "family_id": "legacy-config",
+  "scenario": "diff_description_mismatch",
+  "variant": "diff_description_mismatch",
+  "complexity": "non_trivial",
+  "has_breaking_change": true,
+  "expected_quality": "needs_revision",
+  "tags": [
+    "breaking_change",
+    "diff_description_mismatch",
+    "non_trivial"
+  ],
+  "criteria": {
+    "title_format": {
+      "status": "passed",
+      "explanation": "The title uses a lowercase type, optional scope/!, and ': '.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "title_meaningful": {
+      "status": "passed",
+      "explanation": "The title names a concrete, intelligible change.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "title_diff_consistency": {
+      "status": "failed",
+      "explanation": "The title follows the false summary rather than the patch.",
+      "sources": [
+        "evidence.json#/title",
+        "evidence.json#/files"
+      ]
+    },
+    "description_present": {
+      "status": "passed",
+      "explanation": "The description contains substantive change information.",
+      "sources": [
+        "evidence.json#/body"
+      ]
+    },
+    "rationale": {
+      "status": "failed",
+      "explanation": "The generic consumer-workflow claim does not explain the actual changes.",
+      "sources": [
+        "evidence.json#/body"
+      ]
+    },
+    "changes_described": {
+      "status": "passed",
+      "explanation": "The description states concrete implementation changes.",
+      "sources": [
+        "evidence.json#/body"
+      ]
+    },
+    "description_title_consistency": {
+      "status": "passed",
+      "explanation": "The description and meaningful title describe the same change.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/title"
+      ]
+    },
+    "description_commit_consistency": {
+      "status": "passed",
+      "explanation": "The description covers the changes named by every commit.",
+      "sources": [
+        "evidence.json#/body",
+        "metadata.json#/commits"
+      ]
+    },
+    "description_diff_consistency": {
+      "status": "failed",
+      "explanation": "The body claims: Keep config/legacy.toml and change its timeout_seconds from 10 to 20; leave config/default.toml and setup instructions unchanged. The actual change is: Delete config/legacy.toml and remove its setup instructions from docs/setup.md; config/default.toml remains the documented configuration.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "limitations": {
+      "status": "failed",
+      "explanation": "Uninvestigated edge cases are acknowledged without explaining the actual scope risks.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "breaking_changes": {
+      "status": "failed",
+      "explanation": "The body claims compatibility while the patch removes a public interface.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "testing": {
+      "status": "failed",
+      "explanation": "No relevant checks or validation plan are described.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "change_triviality": {
+      "type": "ordinal",
+      "score": 4,
+      "level": "incompatible",
+      "is_trivial": false,
+      "explanation": "A supported configuration entrypoint is deleted; deployment scripts referencing it must migrate.",
+      "sources": [
+        "evidence.json#/files"
+      ]
+    }
+  },
+  "diagnostics": {
+    "text_diff_triviality": {
+      "diff_score": 4,
+      "title_score": 2,
+      "body_score": 2,
+      "text_score": 2,
+      "assessment": "agreed",
+      "relationship": "text_understates",
+      "score_delta": -2,
+      "potential_confounder": true,
+      "title_explanation": "The claim changes a timeout value while explicitly retaining both configuration paths. Title: chore(config): update defaults in the legacy configuration",
+      "body_explanation": "The claim changes a timeout value while explicitly retaining both configuration paths. Summary: Keep config/legacy.toml and change its timeout_seconds from 10 to 20; leave config/default.toml and setup instructions unchanged.",
+      "sources": [
+        "evidence.json#/title",
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    }
+  },
+  "reference_change": {
+    "summary": "Delete config/legacy.toml and remove its setup instructions from docs/setup.md; config/default.toml remains the documented configuration.",
+    "rationale": "Two documented configuration entrypoints cause operators to select an obsolete file that is no longer maintained.",
+    "limitations": "No automatic migration is included; scripts referencing the removed file must be updated manually.",
+    "breaking_changes": "BREAKING CHANGE: config/legacy.toml is removed; deploy scripts must use config/default.toml."
+  }
+}

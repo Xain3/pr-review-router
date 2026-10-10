@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "synthetic": true,
+  "case_id": "pr-078",
+  "url": "https://example.invalid/synthetic/pr-quality-demo/pull/78",
+  "state": "open",
+  "draft": false,
+  "author": {
+    "login": "synthetic-author-08",
+    "name": "Synthetic Author 08",
+    "email": "author-08@example.invalid"
+  },
+  "created_at": "2026-03-19T12:00:00+00:00",
+  "updated_at": "2026-03-19T13:00:00+00:00",
+  "base_ref": "main",
+  "head_ref": "synthetic/pr-078",
+  "base_sha": "0a4554ac1f9142dd5a1c4063b22489f4a8c2b6f8",
+  "head_sha": "08caa6ca792a5305c0c7dc62f2ed3e983188ef87",
+  "changed_files": 2,
+  "additions": 14,
+  "deletions": 0,
+  "commits": [
+    {
+      "sha": "304c864af220494b50d4090089826c06b6171b5e",
+      "parents": [
+        "0a4554ac1f9142dd5a1c4063b22489f4a8c2b6f8"
+      ],
+      "message": "feat(export): add JSON serialization",
+      "author": {
+        "login": "synthetic-author-08",
+        "name": "Synthetic Author 08",
+        "email": "author-08@example.invalid"
+      },
+      "authored_at": "2026-03-19T11:50:00+00:00",
+      "files": [
+        "src/export.py"
+      ],
+      "additions": 8,
+      "deletions": 0
+    },
+    {
+      "sha": "08caa6ca792a5305c0c7dc62f2ed3e983188ef87",
+      "parents": [
+        "304c864af220494b50d4090089826c06b6171b5e"
+      ],
+      "message": "chore: support the behavior described in the PR summary",
+      "author": {
+        "login": "synthetic-author-08",
+        "name": "Synthetic Author 08",
+        "email": "author-08@example.invalid"
+      },
+      "authored_at": "2026-03-19T11:51:00+00:00",
+      "files": [
+        "tests/test_export.py"
+      ],
+      "additions": 6,
+      "deletions": 0
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "synthetic": true,
+  "case_id": "pr-063",
+  "url": "https://example.invalid/synthetic/pr-quality-demo/pull/63",
+  "state": "open",
+  "draft": false,
+  "author": {
+    "login": "synthetic-author-03",
+    "name": "Synthetic Author 03",
+    "email": "author-03@example.invalid"
+  },
+  "created_at": "2026-03-04T12:00:00+00:00",
+  "updated_at": "2026-03-04T13:00:00+00:00",
+  "base_ref": "main",
+  "head_ref": "synthetic/pr-063",
+  "base_sha": "934513e1420e8d449c33f405e7a7081d676b546f",
+  "head_sha": "e20db213f727db0920f3f3b428cefb1795608f4c",
+  "changed_files": 1,
+  "additions": 1,
+  "deletions": 1,
+  "commits": [
+    {
+      "sha": "e20db213f727db0920f3f3b428cefb1795608f4c",
+      "parents": [
+        "934513e1420e8d449c33f405e7a7081d676b546f"
+      ],
+      "message": "perf(db): add an index to the orders table",
+      "author": {
+        "login": "synthetic-author-03",
+        "name": "Synthetic Author 03",
+        "email": "author-03@example.invalid"
+      },
+      "authored_at": "2026-03-04T11:50:00+00:00",
+      "files": [
+        "README.md"
+      ],
+      "additions": 1,
+      "deletions": 1
+    }
+  ]
+}

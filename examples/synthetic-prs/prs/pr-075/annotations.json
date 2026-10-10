@@ -1,0 +1,144 @@
+{
+  "schema_version": 2,
+  "case_id": "pr-075",
+  "label_status": "provisional",
+  "label_origin": "synthetic_author_intent",
+  "family_id": "cache-key",
+  "scenario": "diff_description_mismatch",
+  "variant": "diff_description_mismatch",
+  "complexity": "non_trivial",
+  "has_breaking_change": false,
+  "expected_quality": "needs_revision",
+  "tags": [
+    "diff_description_mismatch",
+    "non_trivial"
+  ],
+  "criteria": {
+    "title_format": {
+      "status": "passed",
+      "explanation": "The title uses a lowercase type, optional scope/!, and ': '.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "title_meaningful": {
+      "status": "passed",
+      "explanation": "The title names a concrete, intelligible change.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "title_diff_consistency": {
+      "status": "failed",
+      "explanation": "The title follows the false summary rather than the patch.",
+      "sources": [
+        "evidence.json#/title",
+        "evidence.json#/files"
+      ]
+    },
+    "description_present": {
+      "status": "passed",
+      "explanation": "The description contains substantive change information.",
+      "sources": [
+        "evidence.json#/body"
+      ]
+    },
+    "rationale": {
+      "status": "failed",
+      "explanation": "The generic consumer-workflow claim does not explain the actual changes.",
+      "sources": [
+        "evidence.json#/body"
+      ]
+    },
+    "changes_described": {
+      "status": "passed",
+      "explanation": "The description states concrete implementation changes.",
+      "sources": [
+        "evidence.json#/body"
+      ]
+    },
+    "description_title_consistency": {
+      "status": "passed",
+      "explanation": "The description and meaningful title describe the same change.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/title"
+      ]
+    },
+    "description_commit_consistency": {
+      "status": "passed",
+      "explanation": "The description covers the changes named by every commit.",
+      "sources": [
+        "evidence.json#/body",
+        "metadata.json#/commits"
+      ]
+    },
+    "description_diff_consistency": {
+      "status": "failed",
+      "explanation": "The body claims: Uppercase keys before lookup and test resolution against uppercase stored keys. The actual change is: Lowercase keys before cache lookup in src/cache.py and add a test showing that 'USER' and 'user' resolve to the same stored entry.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "limitations": {
+      "status": "failed",
+      "explanation": "Uninvestigated edge cases are acknowledged without explaining the actual scope risks.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "breaking_changes": {
+      "status": "not_applicable",
+      "explanation": "No public field or configuration entrypoint is removed in this family; any behavior changes and scope risks are still documented in the reference text.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "testing": {
+      "status": "failed",
+      "explanation": "No relevant checks or validation plan are described.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "change_triviality": {
+      "type": "ordinal",
+      "score": 2,
+      "level": "bounded_behavior",
+      "is_trivial": false,
+      "explanation": "Lowercasing changes lookup semantics and can affect stores with differently capitalized keys.",
+      "sources": [
+        "evidence.json#/files"
+      ]
+    }
+  },
+  "diagnostics": {
+    "text_diff_triviality": {
+      "diff_score": 2,
+      "title_score": 2,
+      "body_score": 2,
+      "text_score": 2,
+      "assessment": "agreed",
+      "relationship": "aligned",
+      "score_delta": 0,
+      "potential_confounder": false,
+      "title_explanation": "The claim changes key normalization and lookup semantics. Title: fix(cache): uppercase keys for lookup",
+      "body_explanation": "The claim changes key normalization and lookup semantics. Summary: Uppercase keys before lookup and test resolution against uppercase stored keys.",
+      "sources": [
+        "evidence.json#/title",
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    }
+  },
+  "reference_change": {
+    "summary": "Lowercase keys before cache lookup in src/cache.py and add a test showing that 'USER' and 'user' resolve to the same stored entry.",
+    "rationale": "Callers use different capitalization for keys, causing misses against a store whose keys are already lowercase.",
+    "limitations": "Only lookup is normalized; writers must still store lowercase keys. Stores containing distinct uppercase keys may see changed lookup results.",
+    "breaking_changes": "No signature change; key matching becomes case-insensitive for lookup."
+  }
+}

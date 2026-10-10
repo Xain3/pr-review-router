@@ -1,0 +1,146 @@
+{
+  "schema_version": 2,
+  "case_id": "pr-095",
+  "label_status": "provisional",
+  "label_origin": "synthetic_author_intent",
+  "family_id": "cache-key",
+  "scenario": "combined_failures",
+  "variant": "combined_failures",
+  "complexity": "non_trivial",
+  "has_breaking_change": false,
+  "expected_quality": "needs_revision",
+  "tags": [
+    "combined_failures",
+    "missing_change_description",
+    "non_trivial",
+    "nonconventional_title"
+  ],
+  "criteria": {
+    "title_format": {
+      "status": "failed",
+      "explanation": "The meaningful title lacks a conventional type and colon prefix.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "title_meaningful": {
+      "status": "passed",
+      "explanation": "The title names a concrete, intelligible change.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "title_diff_consistency": {
+      "status": "passed",
+      "explanation": "The title agrees with the reference change and patch.",
+      "sources": [
+        "evidence.json#/title",
+        "evidence.json#/files"
+      ]
+    },
+    "description_present": {
+      "status": "passed",
+      "explanation": "The description contains substantive change information.",
+      "sources": [
+        "evidence.json#/body"
+      ]
+    },
+    "rationale": {
+      "status": "passed",
+      "explanation": "The rationale explains the concrete problem motivating the reference change.",
+      "sources": [
+        "evidence.json#/body"
+      ]
+    },
+    "changes_described": {
+      "status": "failed",
+      "explanation": "The body explains the problem but omits the actual edits.",
+      "sources": [
+        "evidence.json#/body"
+      ]
+    },
+    "description_title_consistency": {
+      "status": "not_assessable",
+      "explanation": "There is no concrete implementation account to compare.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/title"
+      ]
+    },
+    "description_commit_consistency": {
+      "status": "not_assessable",
+      "explanation": "There is no concrete implementation account to compare.",
+      "sources": [
+        "evidence.json#/body",
+        "metadata.json#/commits"
+      ]
+    },
+    "description_diff_consistency": {
+      "status": "not_assessable",
+      "explanation": "There is no concrete implementation account to compare.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "limitations": {
+      "status": "failed",
+      "explanation": "The body defers assessment instead of naming concrete risks.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "breaking_changes": {
+      "status": "not_applicable",
+      "explanation": "No public field or configuration entrypoint is removed in this family; any behavior changes and scope risks are still documented in the reference text.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "testing": {
+      "status": "failed",
+      "explanation": "No relevant checks or validation plan are described.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "change_triviality": {
+      "type": "ordinal",
+      "score": 2,
+      "level": "bounded_behavior",
+      "is_trivial": false,
+      "explanation": "Lowercasing changes lookup semantics and can affect stores with differently capitalized keys.",
+      "sources": [
+        "evidence.json#/files"
+      ]
+    }
+  },
+  "diagnostics": {
+    "text_diff_triviality": {
+      "diff_score": 2,
+      "title_score": 2,
+      "body_score": null,
+      "text_score": 2,
+      "assessment": "title_only",
+      "relationship": "aligned",
+      "score_delta": 0,
+      "potential_confounder": false,
+      "title_explanation": "The stated work changes lookup normalization. Title: Normalize keys for lookup",
+      "body_explanation": "The body provides motivation and generic scope statements without describing actual edits.",
+      "sources": [
+        "evidence.json#/title",
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    }
+  },
+  "reference_change": {
+    "summary": "Lowercase keys before cache lookup in src/cache.py and add a test showing that 'USER' and 'user' resolve to the same stored entry.",
+    "rationale": "Callers use different capitalization for keys, causing misses against a store whose keys are already lowercase.",
+    "limitations": "Only lookup is normalized; writers must still store lowercase keys. Stores containing distinct uppercase keys may see changed lookup results.",
+    "breaking_changes": "No signature change; key matching becomes case-insensitive for lookup."
+  }
+}

@@ -1,0 +1,145 @@
+{
+  "schema_version": 2,
+  "case_id": "pr-083",
+  "label_status": "provisional",
+  "label_origin": "synthetic_author_intent",
+  "family_id": "readme-link",
+  "scenario": "additional_cases",
+  "variant": "placeholder_description",
+  "complexity": "trivial",
+  "has_breaking_change": false,
+  "expected_quality": "needs_revision",
+  "tags": [
+    "additional_cases",
+    "placeholder_description",
+    "trivial"
+  ],
+  "criteria": {
+    "title_format": {
+      "status": "passed",
+      "explanation": "The title uses a lowercase type, optional scope/!, and ': '.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "title_meaningful": {
+      "status": "passed",
+      "explanation": "The title names a concrete, intelligible change.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "title_diff_consistency": {
+      "status": "passed",
+      "explanation": "The title agrees with the reference change and patch.",
+      "sources": [
+        "evidence.json#/title",
+        "evidence.json#/files"
+      ]
+    },
+    "description_present": {
+      "status": "failed",
+      "explanation": "The description is empty or contains only a placeholder/headings.",
+      "sources": [
+        "evidence.json#/body"
+      ]
+    },
+    "rationale": {
+      "status": "failed",
+      "explanation": "The description is empty or contains only a placeholder/headings.",
+      "sources": [
+        "evidence.json#/body"
+      ]
+    },
+    "changes_described": {
+      "status": "failed",
+      "explanation": "The description is empty or contains only a placeholder/headings.",
+      "sources": [
+        "evidence.json#/body"
+      ]
+    },
+    "description_title_consistency": {
+      "status": "not_assessable",
+      "explanation": "No substantive description claims exist to compare.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/title"
+      ]
+    },
+    "description_commit_consistency": {
+      "status": "not_assessable",
+      "explanation": "No substantive description claims exist to compare.",
+      "sources": [
+        "evidence.json#/body",
+        "metadata.json#/commits"
+      ]
+    },
+    "description_diff_consistency": {
+      "status": "not_assessable",
+      "explanation": "No substantive description claims exist to compare.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "limitations": {
+      "status": "failed",
+      "explanation": "The description is empty or contains only a placeholder/headings.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "breaking_changes": {
+      "status": "not_applicable",
+      "explanation": "No public field or configuration entrypoint is removed in this family; any behavior changes and scope risks are still documented in the reference text.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "testing": {
+      "status": "failed",
+      "explanation": "The description is empty or contains only a placeholder/headings.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "change_triviality": {
+      "type": "ordinal",
+      "score": 0,
+      "level": "editorial",
+      "is_trivial": true,
+      "explanation": "Only a misspelled relative documentation link is corrected.",
+      "sources": [
+        "evidence.json#/files"
+      ]
+    }
+  },
+  "diagnostics": {
+    "text_diff_triviality": {
+      "diff_score": 0,
+      "title_score": 0,
+      "body_score": null,
+      "text_score": 0,
+      "assessment": "title_only",
+      "relationship": "aligned",
+      "score_delta": 0,
+      "potential_confounder": false,
+      "title_explanation": "The stated work repairs a documentation link. Title: docs: correct the getting started link",
+      "body_explanation": "The empty or placeholder-only body supplies no substantive change claim.",
+      "sources": [
+        "evidence.json#/title",
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    }
+  },
+  "reference_change": {
+    "summary": "Fix the README link target from docs/geting-started.md to docs/getting-started.md without changing its label.",
+    "rationale": "The misspelled path leads new users to a missing documentation page.",
+    "limitations": "Other README links and the guide's contents are outside scope.",
+    "breaking_changes": "None; no public API or command changes."
+  }
+}

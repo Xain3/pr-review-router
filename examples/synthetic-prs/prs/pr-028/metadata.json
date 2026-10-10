@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "synthetic": true,
+  "case_id": "pr-028",
+  "url": "https://example.invalid/synthetic/pr-quality-demo/pull/28",
+  "state": "open",
+  "draft": false,
+  "author": {
+    "login": "synthetic-author-08",
+    "name": "Synthetic Author 08",
+    "email": "author-08@example.invalid"
+  },
+  "created_at": "2026-01-28T12:00:00+00:00",
+  "updated_at": "2026-01-28T13:00:00+00:00",
+  "base_ref": "main",
+  "head_ref": "synthetic/pr-028",
+  "base_sha": "0a4554ac1f9142dd5a1c4063b22489f4a8c2b6f8",
+  "head_sha": "fd66b7831f734cb5801a715104c1cbbe876e057a",
+  "changed_files": 2,
+  "additions": 14,
+  "deletions": 0,
+  "commits": [
+    {
+      "sha": "726206f183db942dd1a7b2d31d47d9feac1bc40f",
+      "parents": [
+        "0a4554ac1f9142dd5a1c4063b22489f4a8c2b6f8"
+      ],
+      "message": "feat(export): add CSV serialization",
+      "author": {
+        "login": "synthetic-author-08",
+        "name": "Synthetic Author 08",
+        "email": "author-08@example.invalid"
+      },
+      "authored_at": "2026-01-28T11:50:00+00:00",
+      "files": [
+        "src/export.py"
+      ],
+      "additions": 8,
+      "deletions": 0
+    },
+    {
+      "sha": "fd66b7831f734cb5801a715104c1cbbe876e057a",
+      "parents": [
+        "726206f183db942dd1a7b2d31d47d9feac1bc40f"
+      ],
+      "message": "test(export): cover CSV quoting and empty input",
+      "author": {
+        "login": "synthetic-author-08",
+        "name": "Synthetic Author 08",
+        "email": "author-08@example.invalid"
+      },
+      "authored_at": "2026-01-28T11:51:00+00:00",
+      "files": [
+        "tests/test_export.py"
+      ],
+      "additions": 6,
+      "deletions": 0
+    }
+  ]
+}

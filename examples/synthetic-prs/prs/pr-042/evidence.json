@@ -1,0 +1,19 @@
+{
+  "repository": "synthetic/pr-quality-demo",
+  "number": 42,
+  "base_sha": "694f179946c7f7c85ae1f6b3b8d486713db91525",
+  "head_sha": "5ccaa2447c19b51c3701a286cccbc9bd2955d99c",
+  "title": "fix(cli): correct the output option in help text",
+  "body": "## Rationale\nUsers copying the help example currently receive an unknown-option error.\n\n## Testing\nValidation has not been performed; test selection is pending.\n\n## Limitations\nUnrelated features remain outside scope; risk assessment is pending.\n\n## Breaking changes\nNone; the accepted option remains --output.\n",
+  "files_complete": true,
+  "files": [
+    {
+      "path": "cli/help.js",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "patch": "diff --git a/cli/help.js b/cli/help.js\n--- a/cli/help.js\n+++ b/cli/help.js\n@@ -1 +1 @@\n-export const help = 'Usage: demo --ouput FILE';\n+export const help = 'Usage: demo --output FILE';\n",
+      "patch_truncated": false
+    }
+  ]
+}

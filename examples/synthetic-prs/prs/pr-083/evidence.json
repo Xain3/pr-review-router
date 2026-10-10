@@ -1,0 +1,19 @@
+{
+  "repository": "synthetic/pr-quality-demo",
+  "number": 83,
+  "base_sha": "934513e1420e8d449c33f405e7a7081d676b546f",
+  "head_sha": "8b97e4400d1e6161f1ec5e1d920d75a907a989d4",
+  "title": "docs: correct the getting started link",
+  "body": "TODO",
+  "files_complete": true,
+  "files": [
+    {
+      "path": "README.md",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "patch": "diff --git a/README.md b/README.md\n--- a/README.md\n+++ b/README.md\n@@ -1,3 +1,3 @@\n # Demo\n \n-[Getting started](docs/geting-started.md)\n+[Getting started](docs/getting-started.md)\n",
+      "patch_truncated": false
+    }
+  ]
+}

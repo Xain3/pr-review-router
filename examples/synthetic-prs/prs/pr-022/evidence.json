@@ -1,0 +1,19 @@
+{
+  "repository": "synthetic/pr-quality-demo",
+  "number": 22,
+  "base_sha": "694f179946c7f7c85ae1f6b3b8d486713db91525",
+  "head_sha": "54182327348d71c0f18b52a3858cda28e3c00b3c",
+  "title": "asdf qwer zxcv 123",
+  "body": "## Summary\nCorrect the help string from --ouput to --output in cli/help.js; the parser and option behavior are unchanged.\n\n## Rationale\nUsers copying the help example currently receive an unknown-option error.\n\n## Testing\nValidation plan: print the help string and confirm it matches the parser's existing --output option.\n\n## Limitations\nThis only changes help text; option parsing and validation are outside scope.\n\n## Breaking changes\nNone; the accepted option remains --output.\n",
+  "files_complete": true,
+  "files": [
+    {
+      "path": "cli/help.js",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "patch": "diff --git a/cli/help.js b/cli/help.js\n--- a/cli/help.js\n+++ b/cli/help.js\n@@ -1 +1 @@\n-export const help = 'Usage: demo --ouput FILE';\n+export const help = 'Usage: demo --output FILE';\n",
+      "patch_truncated": false
+    }
+  ]
+}

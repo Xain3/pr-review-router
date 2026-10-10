@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "synthetic": true,
+  "case_id": "pr-100",
+  "url": "https://example.invalid/synthetic/pr-quality-demo/pull/100",
+  "state": "open",
+  "draft": false,
+  "author": {
+    "login": "synthetic-author-10",
+    "name": "Synthetic Author 10",
+    "email": "author-10@example.invalid"
+  },
+  "created_at": "2026-04-10T12:00:00+00:00",
+  "updated_at": "2026-04-10T13:00:00+00:00",
+  "base_ref": "main",
+  "head_ref": "synthetic/pr-100",
+  "base_sha": "1af41584b263c10f1b7d7fe9180942f5106a6f71",
+  "head_sha": "5e73b30770983d2915bd402a0e317efd366b3000",
+  "changed_files": 2,
+  "additions": 1,
+  "deletions": 4,
+  "commits": [
+    {
+      "sha": "a502b261bfc27aea8cda4c59a37f37728fdb3ba2",
+      "parents": [
+        "1af41584b263c10f1b7d7fe9180942f5106a6f71"
+      ],
+      "message": "perf(db): add an index to the orders table",
+      "author": {
+        "login": "synthetic-author-10",
+        "name": "Synthetic Author 10",
+        "email": "author-10@example.invalid"
+      },
+      "authored_at": "2026-04-10T11:50:00+00:00",
+      "files": [
+        "config/legacy.toml"
+      ],
+      "additions": 0,
+      "deletions": 2
+    },
+    {
+      "sha": "5e73b30770983d2915bd402a0e317efd366b3000",
+      "parents": [
+        "a502b261bfc27aea8cda4c59a37f37728fdb3ba2"
+      ],
+      "message": "docs(config): remove legacy setup instructions",
+      "author": {
+        "login": "synthetic-author-10",
+        "name": "Synthetic Author 10",
+        "email": "author-10@example.invalid"
+      },
+      "authored_at": "2026-04-10T11:51:00+00:00",
+      "files": [
+        "docs/setup.md"
+      ],
+      "additions": 1,
+      "deletions": 2
+    }
+  ]
+}
