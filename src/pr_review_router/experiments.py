@@ -31,6 +31,34 @@ from .providers import MockDecisionProvider, MockReviewProvider
 from .transport import Session, Tape, fingerprint
 
 
+def _experiment_policy_inputs(policy: Policy) -> dict[str, Any]:
+    """Return policy inputs while preserving replay hashes for older policies.
+
+    :param policy: Routing policy used by the experiment.
+    :returns: Policy fields that affect this experiment's provider interaction.
+    """
+    values = policy.model_dump(mode="json")
+    if not policy.nonsemantic_checks:
+        values.pop("nonsemantic_checks")
+        values.pop("check_timeout_seconds")
+    return values
+
+
+def _experiment_report_schema(policy: Policy) -> dict[str, Any]:
+    """Return the report schema relevant to an experiment fingerprint.
+
+    :param policy: Routing policy used by the experiment.
+    :returns: Current schema, or the pre-check schema for legacy policies.
+    """
+    schema = ReviewReport.model_json_schema()
+    if not policy.nonsemantic_checks:
+        schema["properties"].pop("nonsemantic_checks")
+        schema["required"].remove("nonsemantic_checks")
+        for name in ("NonSemanticCheckResult", "NonSemanticChecks"):
+            schema["$defs"].pop(name, None)
+    return schema
+
+
 class _CapturingMockReviewProvider:
     """Retain complete mock responses before the engine applies report limits."""
 
@@ -104,12 +132,12 @@ def run_experiment(
     fingerprint_inputs = {
         "experiment_version": 1,
         "providers": config.model_dump(mode="json"),
-        "policy": policy.model_dump(mode="json"),
+        "policy": _experiment_policy_inputs(policy),
         "evidence": evidence.model_dump(mode="json"),
         "adapters": adapter_versions(),
         "decision_schema": Decision.model_json_schema(),
         "review_schema": ReviewResult.model_json_schema(),
-        "report_schema": ReviewReport.model_json_schema(),
+        "report_schema": _experiment_report_schema(policy),
     }
     if rubric:
         fingerprint_inputs["assessment_rubric"] = {
