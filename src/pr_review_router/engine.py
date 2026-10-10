@@ -1,12 +1,15 @@
 """Provider-independent advisory routing; incomplete evidence fails closed."""
 
 import re
+import subprocess
 from typing import Literal
 
 from .config import Policy, RubricCriterion
 from .contracts import (
     Coverage,
     Finding,
+    NonSemanticCheckResult,
+    NonSemanticChecks,
     PRTextValidation,
     PullRequestEvidence,
     ReviewReport,
@@ -224,6 +227,83 @@ def assess_pr_text_rubric(evidence: PullRequestEvidence, policy: Policy) -> Rubr
     )
 
 
+def _check_target(evidence: PullRequestEvidence, target: str) -> str:
+    """Build the text selected by a regex policy check.
+
+    :param evidence: Validated pull request evidence.
+    :param target: Configured evidence field to inspect.
+    :returns: Text representation of the selected field.
+    """
+    if target == "title":
+        return evidence.title
+    if target == "body":
+        return evidence.body
+    if target == "patch":
+        return "\n".join(file.patch or "" for file in evidence.files)
+    return "\n".join(file.path for file in evidence.files)
+
+
+def assess_nonsemantic_checks(evidence: PullRequestEvidence, policy: Policy) -> NonSemanticChecks:
+    """Run configured regex and external-script policy checks.
+
+    Regexes run against the configured evidence field. Scripts receive compact
+    validated evidence JSON on stdin and must exit with status zero to pass.
+
+    :param evidence: Validated pull request evidence to check.
+    :param policy: Non-semantic checks and execution timeout.
+    :returns: Individual check outcomes and the aggregate pass status.
+    """
+    results = []
+    serialized = evidence.model_dump_json()
+    for check in policy.nonsemantic_checks:
+        if check.kind == "regex":
+            assert check.target is not None and check.pattern is not None
+            matched = re.search(check.pattern, _check_target(evidence, check.target)) is not None
+            passed = matched == check.must_match
+            expectation = "match" if check.must_match else "not match"
+            detail = f"Regex {expectation} succeeded." if passed else f"Regex {expectation} failed."
+        else:
+            assert check.command is not None
+            try:
+                completed = subprocess.run(
+                    check.command,
+                    input=serialized,
+                    text=True,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    timeout=policy.check_timeout_seconds,
+                    check=False,
+                    shell=False,
+                )
+            except subprocess.TimeoutExpired:
+                passed = False
+                detail = "External check timed out."
+            except OSError:
+                passed = False
+                detail = "External check could not be started."
+            else:
+                passed = completed.returncode == 0
+                detail = (
+                    "External check passed."
+                    if passed
+                    else f"External check exited with status {completed.returncode}."
+                )
+        results.append(
+            NonSemanticCheckResult(
+                check_id=check.check_id,
+                description=check.description,
+                kind=check.kind,
+                passed=passed,
+                detail=detail,
+            )
+        )
+    return NonSemanticChecks(
+        enabled=bool(results),
+        passed=all(result.passed for result in results),
+        checks=results,
+    )
+
+
 def _findings(reviews: list[ReviewStage]) -> list[Finding]:
     """Collect findings once each, preserving their first-seen review order.
 
@@ -260,10 +340,16 @@ def review_pull_request(
     """
     coverage = assess_coverage(evidence, policy)
     pr_text = assess_pr_text(evidence, policy)
+    nonsemantic_checks = assess_nonsemantic_checks(evidence, policy)
     rubric = assess_pr_text_rubric(evidence, policy)
     decision = None
     reviews: list[ReviewStage] = []
     reasons = [*coverage.issues, *pr_text.issues]
+    reasons.extend(
+        f"Non-semantic check failed: {check.check_id} ({check.detail})"
+        for check in nonsemantic_checks.checks
+        if not check.passed
+    )
     reasons.extend(
         f"Rubric hard blocker failed: {criterion_id}."
         for criterion_id in rubric.failed_hard_blockers
@@ -307,6 +393,7 @@ def review_pull_request(
             reasons=reasons,
             coverage=coverage,
             pr_text=pr_text,
+            nonsemantic_checks=nonsemantic_checks,
             rubric=rubric,
             decision=decision,
             reviews=exported,
@@ -324,7 +411,12 @@ def review_pull_request(
             return report("rejected", "blocked")
         return report("needs_human_review", "human")
 
-    if not coverage.complete or not pr_text.valid or not rubric.passed:
+    if (
+        not coverage.complete
+        or not pr_text.valid
+        or not nonsemantic_checks.passed
+        or not rubric.passed
+    ):
         return unresolved()
     try:
         decision = request_decision(decision_provider, evidence)

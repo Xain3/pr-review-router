@@ -2,6 +2,7 @@
 
 import json
 import os
+import re
 import tomllib
 from collections.abc import Mapping
 from importlib.resources import files
@@ -36,6 +37,9 @@ FALLBACK_POLICY_MAX_FILES = 100
 FALLBACK_POLICY_MAX_FINDINGS = 5
 FALLBACK_POLICY_TITLE_FORMAT = "any"
 FALLBACK_POLICY_RUBRIC_MINIMUM_SCORE = 70
+FALLBACK_POLICY_CHECK_TIMEOUT_SECONDS = 10
+
+CheckTarget = Literal["title", "body", "patch", "file_paths"]
 
 
 class RubricCriterion(Contract):
@@ -71,6 +75,41 @@ class RubricCriterion(Contract):
         return self
 
 
+class NonSemanticCheck(Contract):
+    """A deterministic policy check implemented by a regex or external command."""
+
+    check_id: Text
+    description: Text
+    kind: Literal["regex", "script"]
+    target: CheckTarget | None = None
+    pattern: Text | None = None
+    must_match: bool = True
+    command: list[Text] | None = None
+
+    @model_validator(mode="after")
+    def check_arguments(self) -> "NonSemanticCheck":
+        """Ensure a check has the arguments required by its implementation.
+
+        :returns: This check after successful validation.
+        :raises ValueError: If the check configuration is inconsistent.
+        """
+        if self.kind == "regex":
+            if self.target is None or self.pattern is None or self.command is not None:
+                raise ValueError("regex checks require target and pattern, and forbid command")
+            try:
+                re.compile(self.pattern)
+            except re.error as error:
+                raise ValueError(f"invalid regex pattern: {error}") from error
+        elif (
+            self.command is None
+            or not self.command
+            or self.target is not None
+            or self.pattern is not None
+        ):
+            raise ValueError("script checks require command and forbid target and pattern")
+        return self
+
+
 class Policy(Contract):
     """Validated routing thresholds, limits, text checks, and rubric settings."""
 
@@ -93,6 +132,10 @@ class Policy(Contract):
     required_body_sections: list[Text] = Field(default_factory=list)
     rubric_minimum_score: Percent = FALLBACK_POLICY_RUBRIC_MINIMUM_SCORE
     rubric_criteria: list[RubricCriterion] = Field(default_factory=list)
+    nonsemantic_checks: list[NonSemanticCheck] = Field(default_factory=list)
+    check_timeout_seconds: Annotated[int, Field(gt=0, le=60)] = (
+        FALLBACK_POLICY_CHECK_TIMEOUT_SECONDS
+    )
 
     @field_validator("rubric_criteria")
     @classmethod
@@ -125,6 +168,20 @@ class Policy(Contract):
         if len(sections) != len(set(sections)):
             raise ValueError("body section names must be unique")
         return sections
+
+    @field_validator("nonsemantic_checks")
+    @classmethod
+    def unique_nonsemantic_checks(cls, checks: list[NonSemanticCheck]) -> list[NonSemanticCheck]:
+        """Keep non-semantic check IDs unique for unambiguous reporting.
+
+        :param checks: Configured checks to validate.
+        :returns: The checks when all IDs are unique.
+        :raises ValueError: If any check ID appears more than once.
+        """
+        ids = [check.check_id for check in checks]
+        if len(ids) != len(set(ids)):
+            raise ValueError("nonsemantic check IDs must be unique")
+        return checks
 
 
 def resolve_config_path(path: Path | None, environ: Mapping[str, str] | None = None) -> Path | None:

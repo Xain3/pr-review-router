@@ -137,6 +137,24 @@ class PRTextValidation(Contract):
     issues: list[str] = Field(default_factory=list)
 
 
+class NonSemanticCheckResult(Contract):
+    """Outcome of one configured deterministic policy check."""
+
+    check_id: Text
+    description: Text
+    kind: Literal["regex", "script"]
+    passed: bool
+    detail: Text
+
+
+class NonSemanticChecks(Contract):
+    """Aggregate outcome of configured regex and external-script checks."""
+
+    enabled: bool
+    passed: bool
+    checks: list[NonSemanticCheckResult] = Field(default_factory=list)
+
+
 class RubricCriterionResult(Contract):
     """Score and pass/blocker metadata for one configured rubric criterion."""
 
@@ -177,6 +195,7 @@ class ReviewReport(Contract):
     reasons: list[str]
     coverage: Coverage
     pr_text: PRTextValidation
+    nonsemantic_checks: NonSemanticChecks
     rubric: RubricEvaluation
     decision: Decision | None = None
     reviews: list[ReviewStage] = Field(default_factory=list)
