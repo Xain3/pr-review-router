@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "synthetic": true,
+  "case_id": "pr-053",
+  "url": "https://example.invalid/synthetic/pr-quality-demo/pull/53",
+  "state": "open",
+  "draft": false,
+  "author": {
+    "login": "synthetic-author-03",
+    "name": "Synthetic Author 03",
+    "email": "author-03@example.invalid"
+  },
+  "created_at": "2026-02-22T12:00:00+00:00",
+  "updated_at": "2026-02-22T13:00:00+00:00",
+  "base_ref": "main",
+  "head_ref": "synthetic/pr-053",
+  "base_sha": "934513e1420e8d449c33f405e7a7081d676b546f",
+  "head_sha": "c077d00d3da0af59a2ec8d9ad51cf2653568032f",
+  "changed_files": 1,
+  "additions": 1,
+  "deletions": 1,
+  "commits": [
+    {
+      "sha": "c077d00d3da0af59a2ec8d9ad51cf2653568032f",
+      "parents": [
+        "934513e1420e8d449c33f405e7a7081d676b546f"
+      ],
+      "message": "docs: correct the getting started link",
+      "author": {
+        "login": "synthetic-author-03",
+        "name": "Synthetic Author 03",
+        "email": "author-03@example.invalid"
+      },
+      "authored_at": "2026-02-22T11:50:00+00:00",
+      "files": [
+        "README.md"
+      ],
+      "additions": 1,
+      "deletions": 1
+    }
+  ]
+}

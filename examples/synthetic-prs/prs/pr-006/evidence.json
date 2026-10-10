@@ -1,0 +1,27 @@
+{
+  "repository": "synthetic/pr-quality-demo",
+  "number": 6,
+  "base_sha": "666bcffd244693b9b4af1f8a2eef18258317baa6",
+  "head_sha": "d9b7d5367c3034b0b8822ee38bdf271e95f85d00",
+  "title": "feat(batch): raise the batch limit to 100",
+  "body": "## Summary\nIncrease MAX_BATCH_SIZE from 50 to 100 in src/batch.py and add boundary tests that accept 100 items and reject 101.\n\n## Rationale\nThe import worker supplies up to 100 items per page; the current limit rejects valid pages and forces an unnecessary split.\n\n## Testing\nValidation plan: run tests/test_batch.py for the 100-item boundary and the rejected 101-item case.\n\n## Limitations\nNo memory or throughput measurements have been taken; larger accepted batches may increase peak memory.\n\n## Breaking changes\nNone expected; batches previously accepted remain accepted.\n",
+  "files_complete": true,
+  "files": [
+    {
+      "path": "src/batch.py",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "patch": "diff --git a/src/batch.py b/src/batch.py\n--- a/src/batch.py\n+++ b/src/batch.py\n@@ -1,4 +1,4 @@\n-MAX_BATCH_SIZE = 50\n+MAX_BATCH_SIZE = 100\n \n def accepts(items):\n     return len(items) <= MAX_BATCH_SIZE\n",
+      "patch_truncated": false
+    },
+    {
+      "path": "tests/test_batch.py",
+      "status": "added",
+      "additions": 6,
+      "deletions": 0,
+      "patch": "diff --git a/tests/test_batch.py b/tests/test_batch.py\n--- /dev/null\n+++ b/tests/test_batch.py\n@@ -0,0 +1,6 @@\n+from src.batch import accepts\n+\n+\n+def test_boundary():\n+    assert accepts([0] * 100)\n+    assert not accepts([0] * 101)\n",
+      "patch_truncated": false
+    }
+  ]
+}

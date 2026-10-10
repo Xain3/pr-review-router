@@ -1,0 +1,27 @@
+{
+  "repository": "synthetic/pr-quality-demo",
+  "number": 48,
+  "base_sha": "0a4554ac1f9142dd5a1c4063b22489f4a8c2b6f8",
+  "head_sha": "3bf0cd9c06b39928d93242c8ff0f73d075a244ca",
+  "title": "feat(export): add CSV serialization",
+  "body": "## Rationale\nDownstream spreadsheet imports require delimited text; naive joining would corrupt fields that contain commas.\n\n## Testing\nValidation has not been performed; test selection is pending.\n\n## Limitations\nUnrelated features remain outside scope; risk assessment is pending.\n\n## Breaking changes\nNone; this adds a new helper without replacing an existing API.\n",
+  "files_complete": true,
+  "files": [
+    {
+      "path": "src/export.py",
+      "status": "added",
+      "additions": 8,
+      "deletions": 0,
+      "patch": "diff --git a/src/export.py b/src/export.py\n--- /dev/null\n+++ b/src/export.py\n@@ -0,0 +1,8 @@\n+import csv\n+import io\n+\n+\n+def csv_text(rows):\n+    output = io.StringIO()\n+    csv.writer(output, lineterminator='\\n').writerows(rows)\n+    return output.getvalue()\n",
+      "patch_truncated": false
+    },
+    {
+      "path": "tests/test_export.py",
+      "status": "added",
+      "additions": 6,
+      "deletions": 0,
+      "patch": "diff --git a/tests/test_export.py b/tests/test_export.py\n--- /dev/null\n+++ b/tests/test_export.py\n@@ -0,0 +1,6 @@\n+from src.export import csv_text\n+\n+\n+def test_csv():\n+    assert csv_text([['a,b', 'c']]) == '\"a,b\",c\\n'\n+    assert csv_text([]) == ''\n",
+      "patch_truncated": false
+    }
+  ]
+}

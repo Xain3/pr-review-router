@@ -1,0 +1,116 @@
+{
+  "schema_version": 1,
+  "case_id": "pr-086",
+  "label_status": "provisional",
+  "label_origin": "synthetic_author_intent",
+  "family_id": "batch-limit",
+  "scenario": "additional_cases",
+  "variant": "missing_limitations",
+  "complexity": "non_trivial",
+  "has_breaking_change": false,
+  "expected_quality": "needs_revision",
+  "tags": [
+    "additional_cases",
+    "missing_limitations",
+    "non_trivial"
+  ],
+  "criteria": {
+    "title_format": {
+      "status": "passed",
+      "explanation": "The title uses a lowercase type, optional scope/!, and ': '.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "title_meaningful": {
+      "status": "passed",
+      "explanation": "The title names a concrete, intelligible change.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "title_diff_consistency": {
+      "status": "passed",
+      "explanation": "The title agrees with the reference change and patch.",
+      "sources": [
+        "evidence.json#/title",
+        "evidence.json#/files"
+      ]
+    },
+    "description_present": {
+      "status": "passed",
+      "explanation": "The description contains substantive change information.",
+      "sources": [
+        "evidence.json#/body"
+      ]
+    },
+    "rationale": {
+      "status": "passed",
+      "explanation": "The rationale explains the concrete problem motivating the reference change.",
+      "sources": [
+        "evidence.json#/body"
+      ]
+    },
+    "changes_described": {
+      "status": "passed",
+      "explanation": "The description states concrete implementation changes.",
+      "sources": [
+        "evidence.json#/body"
+      ]
+    },
+    "description_title_consistency": {
+      "status": "passed",
+      "explanation": "The description and meaningful title describe the same change.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/title"
+      ]
+    },
+    "description_commit_consistency": {
+      "status": "passed",
+      "explanation": "The description covers the changes named by every commit.",
+      "sources": [
+        "evidence.json#/body",
+        "metadata.json#/commits"
+      ]
+    },
+    "description_diff_consistency": {
+      "status": "passed",
+      "explanation": "The summary covers all substantive changes in the patches.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "limitations": {
+      "status": "failed",
+      "explanation": "The description omits limitations information.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "breaking_changes": {
+      "status": "not_applicable",
+      "explanation": "No public field or configuration entrypoint is removed in this family; any behavior changes and scope risks are still documented in the reference text.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "testing": {
+      "status": "passed",
+      "explanation": "The description gives a relevant validation plan, without claiming execution.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    }
+  },
+  "reference_change": {
+    "summary": "Increase MAX_BATCH_SIZE from 50 to 100 in src/batch.py and add boundary tests that accept 100 items and reject 101.",
+    "rationale": "The import worker supplies up to 100 items per page; the current limit rejects valid pages and forces an unnecessary split.",
+    "limitations": "No memory or throughput measurements have been taken; larger accepted batches may increase peak memory.",
+    "breaking_changes": "None expected; batches previously accepted remain accepted."
+  }
+}

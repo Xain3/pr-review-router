@@ -1,0 +1,116 @@
+{
+  "schema_version": 1,
+  "case_id": "pr-079",
+  "label_status": "provisional",
+  "label_origin": "synthetic_author_intent",
+  "family_id": "api-field",
+  "scenario": "diff_description_mismatch",
+  "variant": "diff_description_mismatch",
+  "complexity": "non_trivial",
+  "has_breaking_change": true,
+  "expected_quality": "needs_revision",
+  "tags": [
+    "breaking_change",
+    "diff_description_mismatch",
+    "non_trivial"
+  ],
+  "criteria": {
+    "title_format": {
+      "status": "passed",
+      "explanation": "The title uses a lowercase type, optional scope/!, and ': '.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "title_meaningful": {
+      "status": "passed",
+      "explanation": "The title names a concrete, intelligible change.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "title_diff_consistency": {
+      "status": "failed",
+      "explanation": "The title follows the false summary rather than the patch.",
+      "sources": [
+        "evidence.json#/title",
+        "evidence.json#/files"
+      ]
+    },
+    "description_present": {
+      "status": "passed",
+      "explanation": "The description contains substantive change information.",
+      "sources": [
+        "evidence.json#/body"
+      ]
+    },
+    "rationale": {
+      "status": "failed",
+      "explanation": "The generic consumer-workflow claim does not explain the actual changes.",
+      "sources": [
+        "evidence.json#/body"
+      ]
+    },
+    "changes_described": {
+      "status": "passed",
+      "explanation": "The description states concrete implementation changes.",
+      "sources": [
+        "evidence.json#/body"
+      ]
+    },
+    "description_title_consistency": {
+      "status": "passed",
+      "explanation": "The description and meaningful title describe the same change.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/title"
+      ]
+    },
+    "description_commit_consistency": {
+      "status": "passed",
+      "explanation": "The description covers the changes named by every commit.",
+      "sources": [
+        "evidence.json#/body",
+        "metadata.json#/commits"
+      ]
+    },
+    "description_diff_consistency": {
+      "status": "failed",
+      "explanation": "The body claims: Reformat user_response without changing the response keys or updating the API docs. The actual change is: Replace the JSON response key name with full_name in src/users.py and update docs/api.md to show the new response shape.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "limitations": {
+      "status": "failed",
+      "explanation": "Uninvestigated edge cases are acknowledged without explaining the actual scope risks.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "breaking_changes": {
+      "status": "failed",
+      "explanation": "The body claims compatibility while the patch removes a public interface.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "testing": {
+      "status": "failed",
+      "explanation": "No relevant checks or validation plan are described.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    }
+  },
+  "reference_change": {
+    "summary": "Replace the JSON response key name with full_name in src/users.py and update docs/api.md to show the new response shape.",
+    "rationale": "API consumers confuse the existing name field with a login identifier; the response needs a distinct label for the person's full name.",
+    "limitations": "No compatibility alias or migration period is provided; existing consumers must update their response parsing.",
+    "breaking_changes": "BREAKING CHANGE: the response removes name and exposes full_name instead; clients must read full_name."
+  }
+}

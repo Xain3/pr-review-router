@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "synthetic": true,
+  "case_id": "pr-047",
+  "url": "https://example.invalid/synthetic/pr-quality-demo/pull/47",
+  "state": "open",
+  "draft": false,
+  "author": {
+    "login": "synthetic-author-07",
+    "name": "Synthetic Author 07",
+    "email": "author-07@example.invalid"
+  },
+  "created_at": "2026-02-16T12:00:00+00:00",
+  "updated_at": "2026-02-16T13:00:00+00:00",
+  "base_ref": "main",
+  "head_ref": "synthetic/pr-047",
+  "base_sha": "24b046c6af49f7c3f00293559bf7dab40ec961c7",
+  "head_sha": "9a7ef4c6a7e476b1e00f162bb4d83c7440b956ea",
+  "changed_files": 2,
+  "additions": 10,
+  "deletions": 1,
+  "commits": [
+    {
+      "sha": "03aeb92557002338755dd32e5d3d2add42382471",
+      "parents": [
+        "24b046c6af49f7c3f00293559bf7dab40ec961c7"
+      ],
+      "message": "fix(auth): use constant-time token comparison",
+      "author": {
+        "login": "synthetic-author-07",
+        "name": "Synthetic Author 07",
+        "email": "author-07@example.invalid"
+      },
+      "authored_at": "2026-02-16T11:50:00+00:00",
+      "files": [
+        "src/auth.py"
+      ],
+      "additions": 4,
+      "deletions": 1
+    },
+    {
+      "sha": "9a7ef4c6a7e476b1e00f162bb4d83c7440b956ea",
+      "parents": [
+        "03aeb92557002338755dd32e5d3d2add42382471"
+      ],
+      "message": "test(auth): cover matching and mismatching tokens",
+      "author": {
+        "login": "synthetic-author-07",
+        "name": "Synthetic Author 07",
+        "email": "author-07@example.invalid"
+      },
+      "authored_at": "2026-02-16T11:51:00+00:00",
+      "files": [
+        "tests/test_auth.py"
+      ],
+      "additions": 6,
+      "deletions": 0
+    }
+  ]
+}

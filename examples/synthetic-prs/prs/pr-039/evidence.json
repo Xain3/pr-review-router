@@ -1,0 +1,27 @@
+{
+  "repository": "synthetic/pr-quality-demo",
+  "number": 39,
+  "base_sha": "e9cb7192f7acf6924f96838f6c7580c9a09d0317",
+  "head_sha": "3cfc7877b40375f2aeca867ad4046747d3541975",
+  "title": "feat(api)!: rename the user response field",
+  "body": "## Summary\nReplace the JSON response key name with full_name in src/users.py and update docs/api.md to show the new response shape.\n\n## Testing\nValidation plan: call user_response('Ada') and compare the returned key with the response example in docs/api.md.\n\n## Limitations\nNo compatibility alias or migration period is provided; existing consumers must update their response parsing.\n\n## Breaking changes\nBREAKING CHANGE: the response removes name and exposes full_name instead; clients must read full_name.\n",
+  "files_complete": true,
+  "files": [
+    {
+      "path": "src/users.py",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "patch": "diff --git a/src/users.py b/src/users.py\n--- a/src/users.py\n+++ b/src/users.py\n@@ -1,2 +1,2 @@\n def user_response(name):\n-    return {'name': name}\n+    return {'full_name': name}\n",
+      "patch_truncated": false
+    },
+    {
+      "path": "docs/api.md",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "patch": "diff --git a/docs/api.md b/docs/api.md\n--- a/docs/api.md\n+++ b/docs/api.md\n@@ -1,3 +1,3 @@\n # User response\n \n-Example: {\"name\": \"Ada\"}\n+Example: {\"full_name\": \"Ada\"}\n",
+      "patch_truncated": false
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "repository": "synthetic/pr-quality-demo",
+  "number": 54,
+  "base_sha": "ebbf30c3e069a318ad71161b7574e6171addda2b",
+  "head_sha": "38a4a520f4ea94fcbd95ffd5e1e65920b8c608a5",
+  "title": "chore(deps): upgrade the runtime to version 22",
+  "body": "## Summary\nReturn 0 for an empty values list before division in src/stats.py, and add regression tests for empty and ordinary inputs.\n\n## Rationale\nAn empty batch currently raises ZeroDivisionError; the reporting contract requires a neutral numeric result for batches with no observations.\n\n## Testing\nValidation plan: run tests/test_stats.py for [] and [2, 4]; the expected results are 0 and 3 respectively.\n\n## Limitations\nNon-numeric values and iterators remain unsupported; callers expecting an exception for an empty list will observe a behavior change.\n\n## Breaking changes\nNo signature change. Empty input now returns 0 instead of raising ZeroDivisionError, which may affect exception-based callers.\n",
+  "files_complete": true,
+  "files": [
+    {
+      "path": "src/stats.py",
+      "status": "modified",
+      "additions": 2,
+      "deletions": 0,
+      "patch": "diff --git a/src/stats.py b/src/stats.py\n--- a/src/stats.py\n+++ b/src/stats.py\n@@ -1,2 +1,4 @@\n def average(values):\n+    if not values:\n+        return 0\n     return sum(values) / len(values)\n",
+      "patch_truncated": false
+    },
+    {
+      "path": "tests/test_stats.py",
+      "status": "added",
+      "additions": 6,
+      "deletions": 0,
+      "patch": "diff --git a/tests/test_stats.py b/tests/test_stats.py\n--- /dev/null\n+++ b/tests/test_stats.py\n@@ -0,0 +1,6 @@\n+from src.stats import average\n+\n+\n+def test_average():\n+    assert average([]) == 0\n+    assert average([2, 4]) == 3\n",
+      "patch_truncated": false
+    }
+  ]
+}

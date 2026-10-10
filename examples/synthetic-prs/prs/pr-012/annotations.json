@@ -1,0 +1,115 @@
+{
+  "schema_version": 1,
+  "case_id": "pr-012",
+  "label_status": "provisional",
+  "label_origin": "synthetic_author_intent",
+  "family_id": "cli-help",
+  "scenario": "nonconventional_title",
+  "variant": "nonconventional_title",
+  "complexity": "trivial",
+  "has_breaking_change": false,
+  "expected_quality": "needs_revision",
+  "tags": [
+    "nonconventional_title",
+    "trivial"
+  ],
+  "criteria": {
+    "title_format": {
+      "status": "failed",
+      "explanation": "The meaningful title lacks a conventional type and colon prefix.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "title_meaningful": {
+      "status": "passed",
+      "explanation": "The title names a concrete, intelligible change.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "title_diff_consistency": {
+      "status": "passed",
+      "explanation": "The title agrees with the reference change and patch.",
+      "sources": [
+        "evidence.json#/title",
+        "evidence.json#/files"
+      ]
+    },
+    "description_present": {
+      "status": "passed",
+      "explanation": "The description contains substantive change information.",
+      "sources": [
+        "evidence.json#/body"
+      ]
+    },
+    "rationale": {
+      "status": "passed",
+      "explanation": "The rationale explains the concrete problem motivating the reference change.",
+      "sources": [
+        "evidence.json#/body"
+      ]
+    },
+    "changes_described": {
+      "status": "passed",
+      "explanation": "The description states concrete implementation changes.",
+      "sources": [
+        "evidence.json#/body"
+      ]
+    },
+    "description_title_consistency": {
+      "status": "passed",
+      "explanation": "The description and meaningful title describe the same change.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/title"
+      ]
+    },
+    "description_commit_consistency": {
+      "status": "passed",
+      "explanation": "The description covers the changes named by every commit.",
+      "sources": [
+        "evidence.json#/body",
+        "metadata.json#/commits"
+      ]
+    },
+    "description_diff_consistency": {
+      "status": "passed",
+      "explanation": "The summary covers all substantive changes in the patches.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "limitations": {
+      "status": "passed",
+      "explanation": "The description names relevant scope limits or risks.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "breaking_changes": {
+      "status": "not_applicable",
+      "explanation": "No public field or configuration entrypoint is removed in this family; any behavior changes and scope risks are still documented in the reference text.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "testing": {
+      "status": "passed",
+      "explanation": "The description gives a relevant validation plan, without claiming execution.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    }
+  },
+  "reference_change": {
+    "summary": "Correct the help string from --ouput to --output in cli/help.js; the parser and option behavior are unchanged.",
+    "rationale": "Users copying the help example currently receive an unknown-option error.",
+    "limitations": "This only changes help text; option parsing and validation are outside scope.",
+    "breaking_changes": "None; the accepted option remains --output."
+  }
+}

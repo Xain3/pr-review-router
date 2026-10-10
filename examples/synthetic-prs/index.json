@@ -1,0 +1,2104 @@
+{
+  "schema_version": 1,
+  "synthetic": true,
+  "label_status": "provisional",
+  "case_count": 100,
+  "criteria": {
+    "title_format": "Title follows the router's Conventional Commits syntax.",
+    "title_meaningful": "Title conveys an intelligible change rather than gibberish.",
+    "title_diff_consistency": "Meaningful title agrees with the actual diff.",
+    "description_present": "Body contains substantive prose rather than only placeholders/headings.",
+    "rationale": "Body explains a concrete reason for the actual changes, rather than restating them.",
+    "changes_described": "Body concretely describes changes; factual accuracy is assessed separately.",
+    "description_title_consistency": "Body's change claims agree with the title.",
+    "description_commit_consistency": "Body's change claims agree with all commit messages.",
+    "description_diff_consistency": "Body accurately covers substantive diff changes, including removals.",
+    "limitations": "Body identifies relevant scope boundaries, risks, or limitations.",
+    "breaking_changes": "Body accurately discloses and explains migration for an incompatible change.",
+    "testing": "Body describes relevant validation or a specific reason testing does not apply."
+  },
+  "scenario_counts": {
+    "good": 10,
+    "nonconventional_title": 10,
+    "gibberish_title": 10,
+    "missing_rationale": 10,
+    "missing_change_description": 10,
+    "title_description_mismatch": 10,
+    "commit_description_mismatch": 10,
+    "diff_description_mismatch": 10,
+    "additional_cases": 10,
+    "combined_failures": 10
+  },
+  "quality_counts": {
+    "good": 10,
+    "needs_revision": 90
+  },
+  "cases": [
+    {
+      "case_id": "pr-001",
+      "family_id": "guide-typo",
+      "scenario": "good",
+      "variant": "good",
+      "complexity": "trivial",
+      "title": "docs(guide): remove a repeated word",
+      "expected_quality": "good",
+      "tags": [
+        "good",
+        "trivial"
+      ],
+      "failed_criteria": [],
+      "evidence": "prs/pr-001/evidence.json",
+      "metadata": "prs/pr-001/metadata.json",
+      "annotations": "prs/pr-001/annotations.json"
+    },
+    {
+      "case_id": "pr-002",
+      "family_id": "cli-help",
+      "scenario": "good",
+      "variant": "good",
+      "complexity": "trivial",
+      "title": "fix(cli): correct the output option in help text",
+      "expected_quality": "good",
+      "tags": [
+        "good",
+        "trivial"
+      ],
+      "failed_criteria": [],
+      "evidence": "prs/pr-002/evidence.json",
+      "metadata": "prs/pr-002/metadata.json",
+      "annotations": "prs/pr-002/annotations.json"
+    },
+    {
+      "case_id": "pr-003",
+      "family_id": "readme-link",
+      "scenario": "good",
+      "variant": "good",
+      "complexity": "trivial",
+      "title": "docs: correct the getting started link",
+      "expected_quality": "good",
+      "tags": [
+        "good",
+        "trivial"
+      ],
+      "failed_criteria": [],
+      "evidence": "prs/pr-003/evidence.json",
+      "metadata": "prs/pr-003/metadata.json",
+      "annotations": "prs/pr-003/annotations.json"
+    },
+    {
+      "case_id": "pr-004",
+      "family_id": "empty-average",
+      "scenario": "good",
+      "variant": "good",
+      "complexity": "non_trivial",
+      "title": "fix(stats): handle an empty average input",
+      "expected_quality": "good",
+      "tags": [
+        "good",
+        "non_trivial"
+      ],
+      "failed_criteria": [],
+      "evidence": "prs/pr-004/evidence.json",
+      "metadata": "prs/pr-004/metadata.json",
+      "annotations": "prs/pr-004/annotations.json"
+    },
+    {
+      "case_id": "pr-005",
+      "family_id": "cache-key",
+      "scenario": "good",
+      "variant": "good",
+      "complexity": "non_trivial",
+      "title": "fix(cache): normalize keys for lookup",
+      "expected_quality": "good",
+      "tags": [
+        "good",
+        "non_trivial"
+      ],
+      "failed_criteria": [],
+      "evidence": "prs/pr-005/evidence.json",
+      "metadata": "prs/pr-005/metadata.json",
+      "annotations": "prs/pr-005/annotations.json"
+    },
+    {
+      "case_id": "pr-006",
+      "family_id": "batch-limit",
+      "scenario": "good",
+      "variant": "good",
+      "complexity": "non_trivial",
+      "title": "feat(batch): raise the batch limit to 100",
+      "expected_quality": "good",
+      "tags": [
+        "good",
+        "non_trivial"
+      ],
+      "failed_criteria": [],
+      "evidence": "prs/pr-006/evidence.json",
+      "metadata": "prs/pr-006/metadata.json",
+      "annotations": "prs/pr-006/annotations.json"
+    },
+    {
+      "case_id": "pr-007",
+      "family_id": "token-compare",
+      "scenario": "good",
+      "variant": "good",
+      "complexity": "non_trivial",
+      "title": "fix(auth): compare tokens in constant time",
+      "expected_quality": "good",
+      "tags": [
+        "good",
+        "non_trivial"
+      ],
+      "failed_criteria": [],
+      "evidence": "prs/pr-007/evidence.json",
+      "metadata": "prs/pr-007/metadata.json",
+      "annotations": "prs/pr-007/annotations.json"
+    },
+    {
+      "case_id": "pr-008",
+      "family_id": "csv-export",
+      "scenario": "good",
+      "variant": "good",
+      "complexity": "non_trivial",
+      "title": "feat(export): add CSV serialization",
+      "expected_quality": "good",
+      "tags": [
+        "good",
+        "non_trivial"
+      ],
+      "failed_criteria": [],
+      "evidence": "prs/pr-008/evidence.json",
+      "metadata": "prs/pr-008/metadata.json",
+      "annotations": "prs/pr-008/annotations.json"
+    },
+    {
+      "case_id": "pr-009",
+      "family_id": "api-field",
+      "scenario": "good",
+      "variant": "good",
+      "complexity": "non_trivial",
+      "title": "feat(api)!: rename the user response field",
+      "expected_quality": "good",
+      "tags": [
+        "breaking_change",
+        "good",
+        "non_trivial"
+      ],
+      "failed_criteria": [],
+      "evidence": "prs/pr-009/evidence.json",
+      "metadata": "prs/pr-009/metadata.json",
+      "annotations": "prs/pr-009/annotations.json"
+    },
+    {
+      "case_id": "pr-010",
+      "family_id": "legacy-config",
+      "scenario": "good",
+      "variant": "good",
+      "complexity": "non_trivial",
+      "title": "chore(config)!: remove the legacy configuration",
+      "expected_quality": "good",
+      "tags": [
+        "breaking_change",
+        "good",
+        "non_trivial"
+      ],
+      "failed_criteria": [],
+      "evidence": "prs/pr-010/evidence.json",
+      "metadata": "prs/pr-010/metadata.json",
+      "annotations": "prs/pr-010/annotations.json"
+    },
+    {
+      "case_id": "pr-011",
+      "family_id": "guide-typo",
+      "scenario": "nonconventional_title",
+      "variant": "nonconventional_title",
+      "complexity": "trivial",
+      "title": "Remove a repeated word",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "nonconventional_title",
+        "trivial"
+      ],
+      "failed_criteria": [
+        "title_format"
+      ],
+      "evidence": "prs/pr-011/evidence.json",
+      "metadata": "prs/pr-011/metadata.json",
+      "annotations": "prs/pr-011/annotations.json"
+    },
+    {
+      "case_id": "pr-012",
+      "family_id": "cli-help",
+      "scenario": "nonconventional_title",
+      "variant": "nonconventional_title",
+      "complexity": "trivial",
+      "title": "Correct the output option in help text",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "nonconventional_title",
+        "trivial"
+      ],
+      "failed_criteria": [
+        "title_format"
+      ],
+      "evidence": "prs/pr-012/evidence.json",
+      "metadata": "prs/pr-012/metadata.json",
+      "annotations": "prs/pr-012/annotations.json"
+    },
+    {
+      "case_id": "pr-013",
+      "family_id": "readme-link",
+      "scenario": "nonconventional_title",
+      "variant": "nonconventional_title",
+      "complexity": "trivial",
+      "title": "Correct the getting started link",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "nonconventional_title",
+        "trivial"
+      ],
+      "failed_criteria": [
+        "title_format"
+      ],
+      "evidence": "prs/pr-013/evidence.json",
+      "metadata": "prs/pr-013/metadata.json",
+      "annotations": "prs/pr-013/annotations.json"
+    },
+    {
+      "case_id": "pr-014",
+      "family_id": "empty-average",
+      "scenario": "nonconventional_title",
+      "variant": "nonconventional_title",
+      "complexity": "non_trivial",
+      "title": "Handle an empty average input",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "non_trivial",
+        "nonconventional_title"
+      ],
+      "failed_criteria": [
+        "title_format"
+      ],
+      "evidence": "prs/pr-014/evidence.json",
+      "metadata": "prs/pr-014/metadata.json",
+      "annotations": "prs/pr-014/annotations.json"
+    },
+    {
+      "case_id": "pr-015",
+      "family_id": "cache-key",
+      "scenario": "nonconventional_title",
+      "variant": "nonconventional_title",
+      "complexity": "non_trivial",
+      "title": "Normalize keys for lookup",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "non_trivial",
+        "nonconventional_title"
+      ],
+      "failed_criteria": [
+        "title_format"
+      ],
+      "evidence": "prs/pr-015/evidence.json",
+      "metadata": "prs/pr-015/metadata.json",
+      "annotations": "prs/pr-015/annotations.json"
+    },
+    {
+      "case_id": "pr-016",
+      "family_id": "batch-limit",
+      "scenario": "nonconventional_title",
+      "variant": "nonconventional_title",
+      "complexity": "non_trivial",
+      "title": "Raise the batch limit to 100",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "non_trivial",
+        "nonconventional_title"
+      ],
+      "failed_criteria": [
+        "title_format"
+      ],
+      "evidence": "prs/pr-016/evidence.json",
+      "metadata": "prs/pr-016/metadata.json",
+      "annotations": "prs/pr-016/annotations.json"
+    },
+    {
+      "case_id": "pr-017",
+      "family_id": "token-compare",
+      "scenario": "nonconventional_title",
+      "variant": "nonconventional_title",
+      "complexity": "non_trivial",
+      "title": "Compare tokens in constant time",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "non_trivial",
+        "nonconventional_title"
+      ],
+      "failed_criteria": [
+        "title_format"
+      ],
+      "evidence": "prs/pr-017/evidence.json",
+      "metadata": "prs/pr-017/metadata.json",
+      "annotations": "prs/pr-017/annotations.json"
+    },
+    {
+      "case_id": "pr-018",
+      "family_id": "csv-export",
+      "scenario": "nonconventional_title",
+      "variant": "nonconventional_title",
+      "complexity": "non_trivial",
+      "title": "Add csv serialization",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "non_trivial",
+        "nonconventional_title"
+      ],
+      "failed_criteria": [
+        "title_format"
+      ],
+      "evidence": "prs/pr-018/evidence.json",
+      "metadata": "prs/pr-018/metadata.json",
+      "annotations": "prs/pr-018/annotations.json"
+    },
+    {
+      "case_id": "pr-019",
+      "family_id": "api-field",
+      "scenario": "nonconventional_title",
+      "variant": "nonconventional_title",
+      "complexity": "non_trivial",
+      "title": "Rename the user response field",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "breaking_change",
+        "non_trivial",
+        "nonconventional_title"
+      ],
+      "failed_criteria": [
+        "title_format"
+      ],
+      "evidence": "prs/pr-019/evidence.json",
+      "metadata": "prs/pr-019/metadata.json",
+      "annotations": "prs/pr-019/annotations.json"
+    },
+    {
+      "case_id": "pr-020",
+      "family_id": "legacy-config",
+      "scenario": "nonconventional_title",
+      "variant": "nonconventional_title",
+      "complexity": "non_trivial",
+      "title": "Remove the legacy configuration",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "breaking_change",
+        "non_trivial",
+        "nonconventional_title"
+      ],
+      "failed_criteria": [
+        "title_format"
+      ],
+      "evidence": "prs/pr-020/evidence.json",
+      "metadata": "prs/pr-020/metadata.json",
+      "annotations": "prs/pr-020/annotations.json"
+    },
+    {
+      "case_id": "pr-021",
+      "family_id": "guide-typo",
+      "scenario": "gibberish_title",
+      "variant": "gibberish_title",
+      "complexity": "trivial",
+      "title": "asdf qwer zxcv 123",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "gibberish_title",
+        "invalid_syntax_gibberish",
+        "trivial"
+      ],
+      "failed_criteria": [
+        "title_format",
+        "title_meaningful"
+      ],
+      "evidence": "prs/pr-021/evidence.json",
+      "metadata": "prs/pr-021/metadata.json",
+      "annotations": "prs/pr-021/annotations.json"
+    },
+    {
+      "case_id": "pr-022",
+      "family_id": "cli-help",
+      "scenario": "gibberish_title",
+      "variant": "gibberish_title",
+      "complexity": "trivial",
+      "title": "asdf qwer zxcv 123",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "gibberish_title",
+        "invalid_syntax_gibberish",
+        "trivial"
+      ],
+      "failed_criteria": [
+        "title_format",
+        "title_meaningful"
+      ],
+      "evidence": "prs/pr-022/evidence.json",
+      "metadata": "prs/pr-022/metadata.json",
+      "annotations": "prs/pr-022/annotations.json"
+    },
+    {
+      "case_id": "pr-023",
+      "family_id": "readme-link",
+      "scenario": "gibberish_title",
+      "variant": "gibberish_title",
+      "complexity": "trivial",
+      "title": "asdf qwer zxcv 123",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "gibberish_title",
+        "invalid_syntax_gibberish",
+        "trivial"
+      ],
+      "failed_criteria": [
+        "title_format",
+        "title_meaningful"
+      ],
+      "evidence": "prs/pr-023/evidence.json",
+      "metadata": "prs/pr-023/metadata.json",
+      "annotations": "prs/pr-023/annotations.json"
+    },
+    {
+      "case_id": "pr-024",
+      "family_id": "empty-average",
+      "scenario": "gibberish_title",
+      "variant": "gibberish_title",
+      "complexity": "non_trivial",
+      "title": "asdf qwer zxcv 123",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "gibberish_title",
+        "invalid_syntax_gibberish",
+        "non_trivial"
+      ],
+      "failed_criteria": [
+        "title_format",
+        "title_meaningful"
+      ],
+      "evidence": "prs/pr-024/evidence.json",
+      "metadata": "prs/pr-024/metadata.json",
+      "annotations": "prs/pr-024/annotations.json"
+    },
+    {
+      "case_id": "pr-025",
+      "family_id": "cache-key",
+      "scenario": "gibberish_title",
+      "variant": "gibberish_title",
+      "complexity": "non_trivial",
+      "title": "asdf qwer zxcv 123",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "gibberish_title",
+        "invalid_syntax_gibberish",
+        "non_trivial"
+      ],
+      "failed_criteria": [
+        "title_format",
+        "title_meaningful"
+      ],
+      "evidence": "prs/pr-025/evidence.json",
+      "metadata": "prs/pr-025/metadata.json",
+      "annotations": "prs/pr-025/annotations.json"
+    },
+    {
+      "case_id": "pr-026",
+      "family_id": "batch-limit",
+      "scenario": "gibberish_title",
+      "variant": "gibberish_title",
+      "complexity": "non_trivial",
+      "title": "fix(core): blorb zzz flarp",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "gibberish_title",
+        "non_trivial",
+        "valid_syntax_gibberish"
+      ],
+      "failed_criteria": [
+        "title_meaningful"
+      ],
+      "evidence": "prs/pr-026/evidence.json",
+      "metadata": "prs/pr-026/metadata.json",
+      "annotations": "prs/pr-026/annotations.json"
+    },
+    {
+      "case_id": "pr-027",
+      "family_id": "token-compare",
+      "scenario": "gibberish_title",
+      "variant": "gibberish_title",
+      "complexity": "non_trivial",
+      "title": "fix(core): blorb zzz flarp",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "gibberish_title",
+        "non_trivial",
+        "valid_syntax_gibberish"
+      ],
+      "failed_criteria": [
+        "title_meaningful"
+      ],
+      "evidence": "prs/pr-027/evidence.json",
+      "metadata": "prs/pr-027/metadata.json",
+      "annotations": "prs/pr-027/annotations.json"
+    },
+    {
+      "case_id": "pr-028",
+      "family_id": "csv-export",
+      "scenario": "gibberish_title",
+      "variant": "gibberish_title",
+      "complexity": "non_trivial",
+      "title": "fix(core): blorb zzz flarp",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "gibberish_title",
+        "non_trivial",
+        "valid_syntax_gibberish"
+      ],
+      "failed_criteria": [
+        "title_meaningful"
+      ],
+      "evidence": "prs/pr-028/evidence.json",
+      "metadata": "prs/pr-028/metadata.json",
+      "annotations": "prs/pr-028/annotations.json"
+    },
+    {
+      "case_id": "pr-029",
+      "family_id": "api-field",
+      "scenario": "gibberish_title",
+      "variant": "gibberish_title",
+      "complexity": "non_trivial",
+      "title": "fix(core): blorb zzz flarp",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "breaking_change",
+        "gibberish_title",
+        "non_trivial",
+        "valid_syntax_gibberish"
+      ],
+      "failed_criteria": [
+        "title_meaningful"
+      ],
+      "evidence": "prs/pr-029/evidence.json",
+      "metadata": "prs/pr-029/metadata.json",
+      "annotations": "prs/pr-029/annotations.json"
+    },
+    {
+      "case_id": "pr-030",
+      "family_id": "legacy-config",
+      "scenario": "gibberish_title",
+      "variant": "gibberish_title",
+      "complexity": "non_trivial",
+      "title": "fix(core): blorb zzz flarp",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "breaking_change",
+        "gibberish_title",
+        "non_trivial",
+        "valid_syntax_gibberish"
+      ],
+      "failed_criteria": [
+        "title_meaningful"
+      ],
+      "evidence": "prs/pr-030/evidence.json",
+      "metadata": "prs/pr-030/metadata.json",
+      "annotations": "prs/pr-030/annotations.json"
+    },
+    {
+      "case_id": "pr-031",
+      "family_id": "guide-typo",
+      "scenario": "missing_rationale",
+      "variant": "missing_rationale",
+      "complexity": "trivial",
+      "title": "docs(guide): remove a repeated word",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "missing_rationale",
+        "trivial"
+      ],
+      "failed_criteria": [
+        "rationale"
+      ],
+      "evidence": "prs/pr-031/evidence.json",
+      "metadata": "prs/pr-031/metadata.json",
+      "annotations": "prs/pr-031/annotations.json"
+    },
+    {
+      "case_id": "pr-032",
+      "family_id": "cli-help",
+      "scenario": "missing_rationale",
+      "variant": "missing_rationale",
+      "complexity": "trivial",
+      "title": "fix(cli): correct the output option in help text",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "missing_rationale",
+        "trivial"
+      ],
+      "failed_criteria": [
+        "rationale"
+      ],
+      "evidence": "prs/pr-032/evidence.json",
+      "metadata": "prs/pr-032/metadata.json",
+      "annotations": "prs/pr-032/annotations.json"
+    },
+    {
+      "case_id": "pr-033",
+      "family_id": "readme-link",
+      "scenario": "missing_rationale",
+      "variant": "missing_rationale",
+      "complexity": "trivial",
+      "title": "docs: correct the getting started link",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "missing_rationale",
+        "trivial"
+      ],
+      "failed_criteria": [
+        "rationale"
+      ],
+      "evidence": "prs/pr-033/evidence.json",
+      "metadata": "prs/pr-033/metadata.json",
+      "annotations": "prs/pr-033/annotations.json"
+    },
+    {
+      "case_id": "pr-034",
+      "family_id": "empty-average",
+      "scenario": "missing_rationale",
+      "variant": "missing_rationale",
+      "complexity": "non_trivial",
+      "title": "fix(stats): handle an empty average input",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "missing_rationale",
+        "non_trivial"
+      ],
+      "failed_criteria": [
+        "rationale"
+      ],
+      "evidence": "prs/pr-034/evidence.json",
+      "metadata": "prs/pr-034/metadata.json",
+      "annotations": "prs/pr-034/annotations.json"
+    },
+    {
+      "case_id": "pr-035",
+      "family_id": "cache-key",
+      "scenario": "missing_rationale",
+      "variant": "missing_rationale",
+      "complexity": "non_trivial",
+      "title": "fix(cache): normalize keys for lookup",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "missing_rationale",
+        "non_trivial"
+      ],
+      "failed_criteria": [
+        "rationale"
+      ],
+      "evidence": "prs/pr-035/evidence.json",
+      "metadata": "prs/pr-035/metadata.json",
+      "annotations": "prs/pr-035/annotations.json"
+    },
+    {
+      "case_id": "pr-036",
+      "family_id": "batch-limit",
+      "scenario": "missing_rationale",
+      "variant": "missing_rationale",
+      "complexity": "non_trivial",
+      "title": "feat(batch): raise the batch limit to 100",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "missing_rationale",
+        "non_trivial"
+      ],
+      "failed_criteria": [
+        "rationale"
+      ],
+      "evidence": "prs/pr-036/evidence.json",
+      "metadata": "prs/pr-036/metadata.json",
+      "annotations": "prs/pr-036/annotations.json"
+    },
+    {
+      "case_id": "pr-037",
+      "family_id": "token-compare",
+      "scenario": "missing_rationale",
+      "variant": "missing_rationale",
+      "complexity": "non_trivial",
+      "title": "fix(auth): compare tokens in constant time",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "missing_rationale",
+        "non_trivial"
+      ],
+      "failed_criteria": [
+        "rationale"
+      ],
+      "evidence": "prs/pr-037/evidence.json",
+      "metadata": "prs/pr-037/metadata.json",
+      "annotations": "prs/pr-037/annotations.json"
+    },
+    {
+      "case_id": "pr-038",
+      "family_id": "csv-export",
+      "scenario": "missing_rationale",
+      "variant": "missing_rationale",
+      "complexity": "non_trivial",
+      "title": "feat(export): add CSV serialization",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "missing_rationale",
+        "non_trivial"
+      ],
+      "failed_criteria": [
+        "rationale"
+      ],
+      "evidence": "prs/pr-038/evidence.json",
+      "metadata": "prs/pr-038/metadata.json",
+      "annotations": "prs/pr-038/annotations.json"
+    },
+    {
+      "case_id": "pr-039",
+      "family_id": "api-field",
+      "scenario": "missing_rationale",
+      "variant": "missing_rationale",
+      "complexity": "non_trivial",
+      "title": "feat(api)!: rename the user response field",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "breaking_change",
+        "missing_rationale",
+        "non_trivial"
+      ],
+      "failed_criteria": [
+        "rationale"
+      ],
+      "evidence": "prs/pr-039/evidence.json",
+      "metadata": "prs/pr-039/metadata.json",
+      "annotations": "prs/pr-039/annotations.json"
+    },
+    {
+      "case_id": "pr-040",
+      "family_id": "legacy-config",
+      "scenario": "missing_rationale",
+      "variant": "missing_rationale",
+      "complexity": "non_trivial",
+      "title": "chore(config)!: remove the legacy configuration",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "breaking_change",
+        "missing_rationale",
+        "non_trivial"
+      ],
+      "failed_criteria": [
+        "rationale"
+      ],
+      "evidence": "prs/pr-040/evidence.json",
+      "metadata": "prs/pr-040/metadata.json",
+      "annotations": "prs/pr-040/annotations.json"
+    },
+    {
+      "case_id": "pr-041",
+      "family_id": "guide-typo",
+      "scenario": "missing_change_description",
+      "variant": "missing_change_description",
+      "complexity": "trivial",
+      "title": "docs(guide): remove a repeated word",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "missing_change_description",
+        "trivial"
+      ],
+      "failed_criteria": [
+        "changes_described",
+        "limitations",
+        "testing"
+      ],
+      "evidence": "prs/pr-041/evidence.json",
+      "metadata": "prs/pr-041/metadata.json",
+      "annotations": "prs/pr-041/annotations.json"
+    },
+    {
+      "case_id": "pr-042",
+      "family_id": "cli-help",
+      "scenario": "missing_change_description",
+      "variant": "missing_change_description",
+      "complexity": "trivial",
+      "title": "fix(cli): correct the output option in help text",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "missing_change_description",
+        "trivial"
+      ],
+      "failed_criteria": [
+        "changes_described",
+        "limitations",
+        "testing"
+      ],
+      "evidence": "prs/pr-042/evidence.json",
+      "metadata": "prs/pr-042/metadata.json",
+      "annotations": "prs/pr-042/annotations.json"
+    },
+    {
+      "case_id": "pr-043",
+      "family_id": "readme-link",
+      "scenario": "missing_change_description",
+      "variant": "missing_change_description",
+      "complexity": "trivial",
+      "title": "docs: correct the getting started link",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "missing_change_description",
+        "trivial"
+      ],
+      "failed_criteria": [
+        "changes_described",
+        "limitations",
+        "testing"
+      ],
+      "evidence": "prs/pr-043/evidence.json",
+      "metadata": "prs/pr-043/metadata.json",
+      "annotations": "prs/pr-043/annotations.json"
+    },
+    {
+      "case_id": "pr-044",
+      "family_id": "empty-average",
+      "scenario": "missing_change_description",
+      "variant": "missing_change_description",
+      "complexity": "non_trivial",
+      "title": "fix(stats): handle an empty average input",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "missing_change_description",
+        "non_trivial"
+      ],
+      "failed_criteria": [
+        "changes_described",
+        "limitations",
+        "testing"
+      ],
+      "evidence": "prs/pr-044/evidence.json",
+      "metadata": "prs/pr-044/metadata.json",
+      "annotations": "prs/pr-044/annotations.json"
+    },
+    {
+      "case_id": "pr-045",
+      "family_id": "cache-key",
+      "scenario": "missing_change_description",
+      "variant": "missing_change_description",
+      "complexity": "non_trivial",
+      "title": "fix(cache): normalize keys for lookup",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "missing_change_description",
+        "non_trivial"
+      ],
+      "failed_criteria": [
+        "changes_described",
+        "limitations",
+        "testing"
+      ],
+      "evidence": "prs/pr-045/evidence.json",
+      "metadata": "prs/pr-045/metadata.json",
+      "annotations": "prs/pr-045/annotations.json"
+    },
+    {
+      "case_id": "pr-046",
+      "family_id": "batch-limit",
+      "scenario": "missing_change_description",
+      "variant": "missing_change_description",
+      "complexity": "non_trivial",
+      "title": "feat(batch): raise the batch limit to 100",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "missing_change_description",
+        "non_trivial"
+      ],
+      "failed_criteria": [
+        "changes_described",
+        "limitations",
+        "testing"
+      ],
+      "evidence": "prs/pr-046/evidence.json",
+      "metadata": "prs/pr-046/metadata.json",
+      "annotations": "prs/pr-046/annotations.json"
+    },
+    {
+      "case_id": "pr-047",
+      "family_id": "token-compare",
+      "scenario": "missing_change_description",
+      "variant": "missing_change_description",
+      "complexity": "non_trivial",
+      "title": "fix(auth): compare tokens in constant time",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "missing_change_description",
+        "non_trivial"
+      ],
+      "failed_criteria": [
+        "changes_described",
+        "limitations",
+        "testing"
+      ],
+      "evidence": "prs/pr-047/evidence.json",
+      "metadata": "prs/pr-047/metadata.json",
+      "annotations": "prs/pr-047/annotations.json"
+    },
+    {
+      "case_id": "pr-048",
+      "family_id": "csv-export",
+      "scenario": "missing_change_description",
+      "variant": "missing_change_description",
+      "complexity": "non_trivial",
+      "title": "feat(export): add CSV serialization",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "missing_change_description",
+        "non_trivial"
+      ],
+      "failed_criteria": [
+        "changes_described",
+        "limitations",
+        "testing"
+      ],
+      "evidence": "prs/pr-048/evidence.json",
+      "metadata": "prs/pr-048/metadata.json",
+      "annotations": "prs/pr-048/annotations.json"
+    },
+    {
+      "case_id": "pr-049",
+      "family_id": "api-field",
+      "scenario": "missing_change_description",
+      "variant": "missing_change_description",
+      "complexity": "non_trivial",
+      "title": "feat(api)!: rename the user response field",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "breaking_change",
+        "missing_change_description",
+        "non_trivial"
+      ],
+      "failed_criteria": [
+        "breaking_changes",
+        "changes_described",
+        "limitations",
+        "testing"
+      ],
+      "evidence": "prs/pr-049/evidence.json",
+      "metadata": "prs/pr-049/metadata.json",
+      "annotations": "prs/pr-049/annotations.json"
+    },
+    {
+      "case_id": "pr-050",
+      "family_id": "legacy-config",
+      "scenario": "missing_change_description",
+      "variant": "missing_change_description",
+      "complexity": "non_trivial",
+      "title": "chore(config)!: remove the legacy configuration",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "breaking_change",
+        "missing_change_description",
+        "non_trivial"
+      ],
+      "failed_criteria": [
+        "breaking_changes",
+        "changes_described",
+        "limitations",
+        "testing"
+      ],
+      "evidence": "prs/pr-050/evidence.json",
+      "metadata": "prs/pr-050/metadata.json",
+      "annotations": "prs/pr-050/annotations.json"
+    },
+    {
+      "case_id": "pr-051",
+      "family_id": "guide-typo",
+      "scenario": "title_description_mismatch",
+      "variant": "title_description_mismatch",
+      "complexity": "trivial",
+      "title": "chore(deps): upgrade the runtime to version 22",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "title_description_mismatch",
+        "trivial"
+      ],
+      "failed_criteria": [
+        "description_title_consistency",
+        "title_diff_consistency"
+      ],
+      "evidence": "prs/pr-051/evidence.json",
+      "metadata": "prs/pr-051/metadata.json",
+      "annotations": "prs/pr-051/annotations.json"
+    },
+    {
+      "case_id": "pr-052",
+      "family_id": "cli-help",
+      "scenario": "title_description_mismatch",
+      "variant": "title_description_mismatch",
+      "complexity": "trivial",
+      "title": "chore(deps): upgrade the runtime to version 22",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "title_description_mismatch",
+        "trivial"
+      ],
+      "failed_criteria": [
+        "description_title_consistency",
+        "title_diff_consistency"
+      ],
+      "evidence": "prs/pr-052/evidence.json",
+      "metadata": "prs/pr-052/metadata.json",
+      "annotations": "prs/pr-052/annotations.json"
+    },
+    {
+      "case_id": "pr-053",
+      "family_id": "readme-link",
+      "scenario": "title_description_mismatch",
+      "variant": "title_description_mismatch",
+      "complexity": "trivial",
+      "title": "chore(deps): upgrade the runtime to version 22",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "title_description_mismatch",
+        "trivial"
+      ],
+      "failed_criteria": [
+        "description_title_consistency",
+        "title_diff_consistency"
+      ],
+      "evidence": "prs/pr-053/evidence.json",
+      "metadata": "prs/pr-053/metadata.json",
+      "annotations": "prs/pr-053/annotations.json"
+    },
+    {
+      "case_id": "pr-054",
+      "family_id": "empty-average",
+      "scenario": "title_description_mismatch",
+      "variant": "title_description_mismatch",
+      "complexity": "non_trivial",
+      "title": "chore(deps): upgrade the runtime to version 22",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "non_trivial",
+        "title_description_mismatch"
+      ],
+      "failed_criteria": [
+        "description_title_consistency",
+        "title_diff_consistency"
+      ],
+      "evidence": "prs/pr-054/evidence.json",
+      "metadata": "prs/pr-054/metadata.json",
+      "annotations": "prs/pr-054/annotations.json"
+    },
+    {
+      "case_id": "pr-055",
+      "family_id": "cache-key",
+      "scenario": "title_description_mismatch",
+      "variant": "title_description_mismatch",
+      "complexity": "non_trivial",
+      "title": "chore(deps): upgrade the runtime to version 22",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "non_trivial",
+        "title_description_mismatch"
+      ],
+      "failed_criteria": [
+        "description_title_consistency",
+        "title_diff_consistency"
+      ],
+      "evidence": "prs/pr-055/evidence.json",
+      "metadata": "prs/pr-055/metadata.json",
+      "annotations": "prs/pr-055/annotations.json"
+    },
+    {
+      "case_id": "pr-056",
+      "family_id": "batch-limit",
+      "scenario": "title_description_mismatch",
+      "variant": "title_description_mismatch",
+      "complexity": "non_trivial",
+      "title": "chore(deps): upgrade the runtime to version 22",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "non_trivial",
+        "title_description_mismatch"
+      ],
+      "failed_criteria": [
+        "description_title_consistency",
+        "title_diff_consistency"
+      ],
+      "evidence": "prs/pr-056/evidence.json",
+      "metadata": "prs/pr-056/metadata.json",
+      "annotations": "prs/pr-056/annotations.json"
+    },
+    {
+      "case_id": "pr-057",
+      "family_id": "token-compare",
+      "scenario": "title_description_mismatch",
+      "variant": "title_description_mismatch",
+      "complexity": "non_trivial",
+      "title": "chore(deps): upgrade the runtime to version 22",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "non_trivial",
+        "title_description_mismatch"
+      ],
+      "failed_criteria": [
+        "description_title_consistency",
+        "title_diff_consistency"
+      ],
+      "evidence": "prs/pr-057/evidence.json",
+      "metadata": "prs/pr-057/metadata.json",
+      "annotations": "prs/pr-057/annotations.json"
+    },
+    {
+      "case_id": "pr-058",
+      "family_id": "csv-export",
+      "scenario": "title_description_mismatch",
+      "variant": "title_description_mismatch",
+      "complexity": "non_trivial",
+      "title": "chore(deps): upgrade the runtime to version 22",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "non_trivial",
+        "title_description_mismatch"
+      ],
+      "failed_criteria": [
+        "description_title_consistency",
+        "title_diff_consistency"
+      ],
+      "evidence": "prs/pr-058/evidence.json",
+      "metadata": "prs/pr-058/metadata.json",
+      "annotations": "prs/pr-058/annotations.json"
+    },
+    {
+      "case_id": "pr-059",
+      "family_id": "api-field",
+      "scenario": "title_description_mismatch",
+      "variant": "title_description_mismatch",
+      "complexity": "non_trivial",
+      "title": "chore(deps): upgrade the runtime to version 22",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "breaking_change",
+        "non_trivial",
+        "title_description_mismatch"
+      ],
+      "failed_criteria": [
+        "description_title_consistency",
+        "title_diff_consistency"
+      ],
+      "evidence": "prs/pr-059/evidence.json",
+      "metadata": "prs/pr-059/metadata.json",
+      "annotations": "prs/pr-059/annotations.json"
+    },
+    {
+      "case_id": "pr-060",
+      "family_id": "legacy-config",
+      "scenario": "title_description_mismatch",
+      "variant": "title_description_mismatch",
+      "complexity": "non_trivial",
+      "title": "chore(deps): upgrade the runtime to version 22",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "breaking_change",
+        "non_trivial",
+        "title_description_mismatch"
+      ],
+      "failed_criteria": [
+        "description_title_consistency",
+        "title_diff_consistency"
+      ],
+      "evidence": "prs/pr-060/evidence.json",
+      "metadata": "prs/pr-060/metadata.json",
+      "annotations": "prs/pr-060/annotations.json"
+    },
+    {
+      "case_id": "pr-061",
+      "family_id": "guide-typo",
+      "scenario": "commit_description_mismatch",
+      "variant": "commit_description_mismatch",
+      "complexity": "trivial",
+      "title": "docs(guide): remove a repeated word",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "commit_description_mismatch",
+        "trivial"
+      ],
+      "failed_criteria": [
+        "description_commit_consistency"
+      ],
+      "evidence": "prs/pr-061/evidence.json",
+      "metadata": "prs/pr-061/metadata.json",
+      "annotations": "prs/pr-061/annotations.json"
+    },
+    {
+      "case_id": "pr-062",
+      "family_id": "cli-help",
+      "scenario": "commit_description_mismatch",
+      "variant": "commit_description_mismatch",
+      "complexity": "trivial",
+      "title": "fix(cli): correct the output option in help text",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "commit_description_mismatch",
+        "trivial"
+      ],
+      "failed_criteria": [
+        "description_commit_consistency"
+      ],
+      "evidence": "prs/pr-062/evidence.json",
+      "metadata": "prs/pr-062/metadata.json",
+      "annotations": "prs/pr-062/annotations.json"
+    },
+    {
+      "case_id": "pr-063",
+      "family_id": "readme-link",
+      "scenario": "commit_description_mismatch",
+      "variant": "commit_description_mismatch",
+      "complexity": "trivial",
+      "title": "docs: correct the getting started link",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "commit_description_mismatch",
+        "trivial"
+      ],
+      "failed_criteria": [
+        "description_commit_consistency"
+      ],
+      "evidence": "prs/pr-063/evidence.json",
+      "metadata": "prs/pr-063/metadata.json",
+      "annotations": "prs/pr-063/annotations.json"
+    },
+    {
+      "case_id": "pr-064",
+      "family_id": "empty-average",
+      "scenario": "commit_description_mismatch",
+      "variant": "commit_description_mismatch",
+      "complexity": "non_trivial",
+      "title": "fix(stats): handle an empty average input",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "commit_description_mismatch",
+        "non_trivial"
+      ],
+      "failed_criteria": [
+        "description_commit_consistency"
+      ],
+      "evidence": "prs/pr-064/evidence.json",
+      "metadata": "prs/pr-064/metadata.json",
+      "annotations": "prs/pr-064/annotations.json"
+    },
+    {
+      "case_id": "pr-065",
+      "family_id": "cache-key",
+      "scenario": "commit_description_mismatch",
+      "variant": "commit_description_mismatch",
+      "complexity": "non_trivial",
+      "title": "fix(cache): normalize keys for lookup",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "commit_description_mismatch",
+        "non_trivial"
+      ],
+      "failed_criteria": [
+        "description_commit_consistency"
+      ],
+      "evidence": "prs/pr-065/evidence.json",
+      "metadata": "prs/pr-065/metadata.json",
+      "annotations": "prs/pr-065/annotations.json"
+    },
+    {
+      "case_id": "pr-066",
+      "family_id": "batch-limit",
+      "scenario": "commit_description_mismatch",
+      "variant": "commit_description_mismatch",
+      "complexity": "non_trivial",
+      "title": "feat(batch): raise the batch limit to 100",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "commit_description_mismatch",
+        "non_trivial"
+      ],
+      "failed_criteria": [
+        "description_commit_consistency"
+      ],
+      "evidence": "prs/pr-066/evidence.json",
+      "metadata": "prs/pr-066/metadata.json",
+      "annotations": "prs/pr-066/annotations.json"
+    },
+    {
+      "case_id": "pr-067",
+      "family_id": "token-compare",
+      "scenario": "commit_description_mismatch",
+      "variant": "commit_description_mismatch",
+      "complexity": "non_trivial",
+      "title": "fix(auth): compare tokens in constant time",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "commit_description_mismatch",
+        "non_trivial"
+      ],
+      "failed_criteria": [
+        "description_commit_consistency"
+      ],
+      "evidence": "prs/pr-067/evidence.json",
+      "metadata": "prs/pr-067/metadata.json",
+      "annotations": "prs/pr-067/annotations.json"
+    },
+    {
+      "case_id": "pr-068",
+      "family_id": "csv-export",
+      "scenario": "commit_description_mismatch",
+      "variant": "commit_description_mismatch",
+      "complexity": "non_trivial",
+      "title": "feat(export): add CSV serialization",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "commit_description_mismatch",
+        "non_trivial"
+      ],
+      "failed_criteria": [
+        "description_commit_consistency"
+      ],
+      "evidence": "prs/pr-068/evidence.json",
+      "metadata": "prs/pr-068/metadata.json",
+      "annotations": "prs/pr-068/annotations.json"
+    },
+    {
+      "case_id": "pr-069",
+      "family_id": "api-field",
+      "scenario": "commit_description_mismatch",
+      "variant": "commit_description_mismatch",
+      "complexity": "non_trivial",
+      "title": "feat(api)!: rename the user response field",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "breaking_change",
+        "commit_description_mismatch",
+        "non_trivial"
+      ],
+      "failed_criteria": [
+        "description_commit_consistency"
+      ],
+      "evidence": "prs/pr-069/evidence.json",
+      "metadata": "prs/pr-069/metadata.json",
+      "annotations": "prs/pr-069/annotations.json"
+    },
+    {
+      "case_id": "pr-070",
+      "family_id": "legacy-config",
+      "scenario": "commit_description_mismatch",
+      "variant": "commit_description_mismatch",
+      "complexity": "non_trivial",
+      "title": "chore(config)!: remove the legacy configuration",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "breaking_change",
+        "commit_description_mismatch",
+        "non_trivial"
+      ],
+      "failed_criteria": [
+        "description_commit_consistency"
+      ],
+      "evidence": "prs/pr-070/evidence.json",
+      "metadata": "prs/pr-070/metadata.json",
+      "annotations": "prs/pr-070/annotations.json"
+    },
+    {
+      "case_id": "pr-071",
+      "family_id": "guide-typo",
+      "scenario": "diff_description_mismatch",
+      "variant": "diff_description_mismatch",
+      "complexity": "trivial",
+      "title": "docs(guide): replace the guide with a video",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "diff_description_mismatch",
+        "trivial"
+      ],
+      "failed_criteria": [
+        "description_diff_consistency",
+        "limitations",
+        "rationale",
+        "testing",
+        "title_diff_consistency"
+      ],
+      "evidence": "prs/pr-071/evidence.json",
+      "metadata": "prs/pr-071/metadata.json",
+      "annotations": "prs/pr-071/annotations.json"
+    },
+    {
+      "case_id": "pr-072",
+      "family_id": "cli-help",
+      "scenario": "diff_description_mismatch",
+      "variant": "diff_description_mismatch",
+      "complexity": "trivial",
+      "title": "feat(cli): rename the output option to --destination",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "diff_description_mismatch",
+        "trivial"
+      ],
+      "failed_criteria": [
+        "description_diff_consistency",
+        "limitations",
+        "rationale",
+        "testing",
+        "title_diff_consistency"
+      ],
+      "evidence": "prs/pr-072/evidence.json",
+      "metadata": "prs/pr-072/metadata.json",
+      "annotations": "prs/pr-072/annotations.json"
+    },
+    {
+      "case_id": "pr-073",
+      "family_id": "readme-link",
+      "scenario": "diff_description_mismatch",
+      "variant": "diff_description_mismatch",
+      "complexity": "trivial",
+      "title": "docs: move the getting started guide to the website",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "diff_description_mismatch",
+        "trivial"
+      ],
+      "failed_criteria": [
+        "description_diff_consistency",
+        "limitations",
+        "rationale",
+        "testing",
+        "title_diff_consistency"
+      ],
+      "evidence": "prs/pr-073/evidence.json",
+      "metadata": "prs/pr-073/metadata.json",
+      "annotations": "prs/pr-073/annotations.json"
+    },
+    {
+      "case_id": "pr-074",
+      "family_id": "empty-average",
+      "scenario": "diff_description_mismatch",
+      "variant": "diff_description_mismatch",
+      "complexity": "non_trivial",
+      "title": "fix(stats): return one for an empty average input",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "diff_description_mismatch",
+        "non_trivial"
+      ],
+      "failed_criteria": [
+        "description_diff_consistency",
+        "limitations",
+        "rationale",
+        "testing",
+        "title_diff_consistency"
+      ],
+      "evidence": "prs/pr-074/evidence.json",
+      "metadata": "prs/pr-074/metadata.json",
+      "annotations": "prs/pr-074/annotations.json"
+    },
+    {
+      "case_id": "pr-075",
+      "family_id": "cache-key",
+      "scenario": "diff_description_mismatch",
+      "variant": "diff_description_mismatch",
+      "complexity": "non_trivial",
+      "title": "fix(cache): uppercase keys for lookup",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "diff_description_mismatch",
+        "non_trivial"
+      ],
+      "failed_criteria": [
+        "description_diff_consistency",
+        "limitations",
+        "rationale",
+        "testing",
+        "title_diff_consistency"
+      ],
+      "evidence": "prs/pr-075/evidence.json",
+      "metadata": "prs/pr-075/metadata.json",
+      "annotations": "prs/pr-075/annotations.json"
+    },
+    {
+      "case_id": "pr-076",
+      "family_id": "batch-limit",
+      "scenario": "diff_description_mismatch",
+      "variant": "diff_description_mismatch",
+      "complexity": "non_trivial",
+      "title": "feat(batch): raise the batch limit to 200",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "diff_description_mismatch",
+        "non_trivial"
+      ],
+      "failed_criteria": [
+        "description_diff_consistency",
+        "limitations",
+        "rationale",
+        "testing",
+        "title_diff_consistency"
+      ],
+      "evidence": "prs/pr-076/evidence.json",
+      "metadata": "prs/pr-076/metadata.json",
+      "annotations": "prs/pr-076/annotations.json"
+    },
+    {
+      "case_id": "pr-077",
+      "family_id": "token-compare",
+      "scenario": "diff_description_mismatch",
+      "variant": "diff_description_mismatch",
+      "complexity": "non_trivial",
+      "title": "fix(auth): compare tokens without case sensitivity",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "diff_description_mismatch",
+        "non_trivial"
+      ],
+      "failed_criteria": [
+        "description_diff_consistency",
+        "limitations",
+        "rationale",
+        "testing",
+        "title_diff_consistency"
+      ],
+      "evidence": "prs/pr-077/evidence.json",
+      "metadata": "prs/pr-077/metadata.json",
+      "annotations": "prs/pr-077/annotations.json"
+    },
+    {
+      "case_id": "pr-078",
+      "family_id": "csv-export",
+      "scenario": "diff_description_mismatch",
+      "variant": "diff_description_mismatch",
+      "complexity": "non_trivial",
+      "title": "feat(export): add JSON serialization",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "diff_description_mismatch",
+        "non_trivial"
+      ],
+      "failed_criteria": [
+        "description_diff_consistency",
+        "limitations",
+        "rationale",
+        "testing",
+        "title_diff_consistency"
+      ],
+      "evidence": "prs/pr-078/evidence.json",
+      "metadata": "prs/pr-078/metadata.json",
+      "annotations": "prs/pr-078/annotations.json"
+    },
+    {
+      "case_id": "pr-079",
+      "family_id": "api-field",
+      "scenario": "diff_description_mismatch",
+      "variant": "diff_description_mismatch",
+      "complexity": "non_trivial",
+      "title": "style(api): reformat the user response without changing fields",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "breaking_change",
+        "diff_description_mismatch",
+        "non_trivial"
+      ],
+      "failed_criteria": [
+        "breaking_changes",
+        "description_diff_consistency",
+        "limitations",
+        "rationale",
+        "testing",
+        "title_diff_consistency"
+      ],
+      "evidence": "prs/pr-079/evidence.json",
+      "metadata": "prs/pr-079/metadata.json",
+      "annotations": "prs/pr-079/annotations.json"
+    },
+    {
+      "case_id": "pr-080",
+      "family_id": "legacy-config",
+      "scenario": "diff_description_mismatch",
+      "variant": "diff_description_mismatch",
+      "complexity": "non_trivial",
+      "title": "chore(config): update defaults in the legacy configuration",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "breaking_change",
+        "diff_description_mismatch",
+        "non_trivial"
+      ],
+      "failed_criteria": [
+        "breaking_changes",
+        "description_diff_consistency",
+        "limitations",
+        "rationale",
+        "testing",
+        "title_diff_consistency"
+      ],
+      "evidence": "prs/pr-080/evidence.json",
+      "metadata": "prs/pr-080/metadata.json",
+      "annotations": "prs/pr-080/annotations.json"
+    },
+    {
+      "case_id": "pr-081",
+      "family_id": "guide-typo",
+      "scenario": "additional_cases",
+      "variant": "empty_description",
+      "complexity": "trivial",
+      "title": "docs(guide): remove a repeated word",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "additional_cases",
+        "empty_description",
+        "trivial"
+      ],
+      "failed_criteria": [
+        "changes_described",
+        "description_present",
+        "limitations",
+        "rationale",
+        "testing"
+      ],
+      "evidence": "prs/pr-081/evidence.json",
+      "metadata": "prs/pr-081/metadata.json",
+      "annotations": "prs/pr-081/annotations.json"
+    },
+    {
+      "case_id": "pr-082",
+      "family_id": "cli-help",
+      "scenario": "additional_cases",
+      "variant": "whitespace_description",
+      "complexity": "trivial",
+      "title": "fix(cli): correct the output option in help text",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "additional_cases",
+        "trivial",
+        "whitespace_description"
+      ],
+      "failed_criteria": [
+        "changes_described",
+        "description_present",
+        "limitations",
+        "rationale",
+        "testing"
+      ],
+      "evidence": "prs/pr-082/evidence.json",
+      "metadata": "prs/pr-082/metadata.json",
+      "annotations": "prs/pr-082/annotations.json"
+    },
+    {
+      "case_id": "pr-083",
+      "family_id": "readme-link",
+      "scenario": "additional_cases",
+      "variant": "placeholder_description",
+      "complexity": "trivial",
+      "title": "docs: correct the getting started link",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "additional_cases",
+        "placeholder_description",
+        "trivial"
+      ],
+      "failed_criteria": [
+        "changes_described",
+        "description_present",
+        "limitations",
+        "rationale",
+        "testing"
+      ],
+      "evidence": "prs/pr-083/evidence.json",
+      "metadata": "prs/pr-083/metadata.json",
+      "annotations": "prs/pr-083/annotations.json"
+    },
+    {
+      "case_id": "pr-084",
+      "family_id": "empty-average",
+      "scenario": "additional_cases",
+      "variant": "empty_headings",
+      "complexity": "non_trivial",
+      "title": "fix(stats): handle an empty average input",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "additional_cases",
+        "empty_headings",
+        "non_trivial"
+      ],
+      "failed_criteria": [
+        "changes_described",
+        "description_present",
+        "limitations",
+        "rationale",
+        "testing"
+      ],
+      "evidence": "prs/pr-084/evidence.json",
+      "metadata": "prs/pr-084/metadata.json",
+      "annotations": "prs/pr-084/annotations.json"
+    },
+    {
+      "case_id": "pr-085",
+      "family_id": "cache-key",
+      "scenario": "additional_cases",
+      "variant": "vague_rationale",
+      "complexity": "non_trivial",
+      "title": "fix(cache): normalize keys for lookup",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "additional_cases",
+        "non_trivial",
+        "vague_rationale"
+      ],
+      "failed_criteria": [
+        "rationale"
+      ],
+      "evidence": "prs/pr-085/evidence.json",
+      "metadata": "prs/pr-085/metadata.json",
+      "annotations": "prs/pr-085/annotations.json"
+    },
+    {
+      "case_id": "pr-086",
+      "family_id": "batch-limit",
+      "scenario": "additional_cases",
+      "variant": "missing_limitations",
+      "complexity": "non_trivial",
+      "title": "feat(batch): raise the batch limit to 100",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "additional_cases",
+        "missing_limitations",
+        "non_trivial"
+      ],
+      "failed_criteria": [
+        "limitations"
+      ],
+      "evidence": "prs/pr-086/evidence.json",
+      "metadata": "prs/pr-086/metadata.json",
+      "annotations": "prs/pr-086/annotations.json"
+    },
+    {
+      "case_id": "pr-087",
+      "family_id": "token-compare",
+      "scenario": "additional_cases",
+      "variant": "missing_testing",
+      "complexity": "non_trivial",
+      "title": "fix(auth): compare tokens in constant time",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "additional_cases",
+        "missing_testing",
+        "non_trivial"
+      ],
+      "failed_criteria": [
+        "testing"
+      ],
+      "evidence": "prs/pr-087/evidence.json",
+      "metadata": "prs/pr-087/metadata.json",
+      "annotations": "prs/pr-087/annotations.json"
+    },
+    {
+      "case_id": "pr-088",
+      "family_id": "csv-export",
+      "scenario": "additional_cases",
+      "variant": "partial_description",
+      "complexity": "non_trivial",
+      "title": "feat(export): add CSV serialization",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "additional_cases",
+        "non_trivial",
+        "partial_description"
+      ],
+      "failed_criteria": [
+        "description_commit_consistency",
+        "description_diff_consistency"
+      ],
+      "evidence": "prs/pr-088/evidence.json",
+      "metadata": "prs/pr-088/metadata.json",
+      "annotations": "prs/pr-088/annotations.json"
+    },
+    {
+      "case_id": "pr-089",
+      "family_id": "api-field",
+      "scenario": "additional_cases",
+      "variant": "undocumented_breaking_change",
+      "complexity": "non_trivial",
+      "title": "feat(api)!: rename the user response field",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "additional_cases",
+        "breaking_change",
+        "non_trivial",
+        "undocumented_breaking_change"
+      ],
+      "failed_criteria": [
+        "breaking_changes",
+        "limitations"
+      ],
+      "evidence": "prs/pr-089/evidence.json",
+      "metadata": "prs/pr-089/metadata.json",
+      "annotations": "prs/pr-089/annotations.json"
+    },
+    {
+      "case_id": "pr-090",
+      "family_id": "legacy-config",
+      "scenario": "additional_cases",
+      "variant": "undocumented_breaking_change",
+      "complexity": "non_trivial",
+      "title": "chore(config)!: remove the legacy configuration",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "additional_cases",
+        "breaking_change",
+        "non_trivial",
+        "undocumented_breaking_change"
+      ],
+      "failed_criteria": [
+        "breaking_changes",
+        "limitations"
+      ],
+      "evidence": "prs/pr-090/evidence.json",
+      "metadata": "prs/pr-090/metadata.json",
+      "annotations": "prs/pr-090/annotations.json"
+    },
+    {
+      "case_id": "pr-091",
+      "family_id": "guide-typo",
+      "scenario": "combined_failures",
+      "variant": "combined_failures",
+      "complexity": "trivial",
+      "title": "Remove a repeated word",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "combined_failures",
+        "missing_rationale",
+        "nonconventional_title",
+        "trivial"
+      ],
+      "failed_criteria": [
+        "rationale",
+        "title_format"
+      ],
+      "evidence": "prs/pr-091/evidence.json",
+      "metadata": "prs/pr-091/metadata.json",
+      "annotations": "prs/pr-091/annotations.json"
+    },
+    {
+      "case_id": "pr-092",
+      "family_id": "cli-help",
+      "scenario": "combined_failures",
+      "variant": "combined_failures",
+      "complexity": "trivial",
+      "title": "asdf qwer zxcv 123",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "combined_failures",
+        "empty_description",
+        "gibberish_title",
+        "invalid_syntax_gibberish",
+        "trivial"
+      ],
+      "failed_criteria": [
+        "changes_described",
+        "description_present",
+        "limitations",
+        "rationale",
+        "testing",
+        "title_format",
+        "title_meaningful"
+      ],
+      "evidence": "prs/pr-092/evidence.json",
+      "metadata": "prs/pr-092/metadata.json",
+      "annotations": "prs/pr-092/annotations.json"
+    },
+    {
+      "case_id": "pr-093",
+      "family_id": "readme-link",
+      "scenario": "combined_failures",
+      "variant": "combined_failures",
+      "complexity": "trivial",
+      "title": "chore(deps): upgrade the runtime to version 22",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "combined_failures",
+        "missing_rationale",
+        "title_description_mismatch",
+        "trivial"
+      ],
+      "failed_criteria": [
+        "description_title_consistency",
+        "rationale",
+        "title_diff_consistency"
+      ],
+      "evidence": "prs/pr-093/evidence.json",
+      "metadata": "prs/pr-093/metadata.json",
+      "annotations": "prs/pr-093/annotations.json"
+    },
+    {
+      "case_id": "pr-094",
+      "family_id": "empty-average",
+      "scenario": "combined_failures",
+      "variant": "combined_failures",
+      "complexity": "non_trivial",
+      "title": "fix(stats): handle an empty average input",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "combined_failures",
+        "diff_description_mismatch",
+        "non_trivial"
+      ],
+      "failed_criteria": [
+        "description_commit_consistency",
+        "description_diff_consistency",
+        "description_title_consistency",
+        "limitations",
+        "rationale",
+        "testing"
+      ],
+      "evidence": "prs/pr-094/evidence.json",
+      "metadata": "prs/pr-094/metadata.json",
+      "annotations": "prs/pr-094/annotations.json"
+    },
+    {
+      "case_id": "pr-095",
+      "family_id": "cache-key",
+      "scenario": "combined_failures",
+      "variant": "combined_failures",
+      "complexity": "non_trivial",
+      "title": "Normalize keys for lookup",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "combined_failures",
+        "missing_change_description",
+        "non_trivial",
+        "nonconventional_title"
+      ],
+      "failed_criteria": [
+        "changes_described",
+        "limitations",
+        "testing",
+        "title_format"
+      ],
+      "evidence": "prs/pr-095/evidence.json",
+      "metadata": "prs/pr-095/metadata.json",
+      "annotations": "prs/pr-095/annotations.json"
+    },
+    {
+      "case_id": "pr-096",
+      "family_id": "batch-limit",
+      "scenario": "combined_failures",
+      "variant": "combined_failures",
+      "complexity": "non_trivial",
+      "title": "feat(batch): raise the batch limit to 100",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "combined_failures",
+        "missing_limitations",
+        "missing_rationale",
+        "non_trivial"
+      ],
+      "failed_criteria": [
+        "limitations",
+        "rationale"
+      ],
+      "evidence": "prs/pr-096/evidence.json",
+      "metadata": "prs/pr-096/metadata.json",
+      "annotations": "prs/pr-096/annotations.json"
+    },
+    {
+      "case_id": "pr-097",
+      "family_id": "token-compare",
+      "scenario": "combined_failures",
+      "variant": "combined_failures",
+      "complexity": "non_trivial",
+      "title": "fix(auth): compare tokens in constant time",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "combined_failures",
+        "commit_description_mismatch",
+        "missing_rationale",
+        "non_trivial"
+      ],
+      "failed_criteria": [
+        "description_commit_consistency",
+        "rationale"
+      ],
+      "evidence": "prs/pr-097/evidence.json",
+      "metadata": "prs/pr-097/metadata.json",
+      "annotations": "prs/pr-097/annotations.json"
+    },
+    {
+      "case_id": "pr-098",
+      "family_id": "csv-export",
+      "scenario": "combined_failures",
+      "variant": "combined_failures",
+      "complexity": "non_trivial",
+      "title": "fix(core): blorb zzz flarp",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "combined_failures",
+        "gibberish_title",
+        "non_trivial",
+        "partial_description",
+        "valid_syntax_gibberish"
+      ],
+      "failed_criteria": [
+        "description_commit_consistency",
+        "description_diff_consistency",
+        "title_meaningful"
+      ],
+      "evidence": "prs/pr-098/evidence.json",
+      "metadata": "prs/pr-098/metadata.json",
+      "annotations": "prs/pr-098/annotations.json"
+    },
+    {
+      "case_id": "pr-099",
+      "family_id": "api-field",
+      "scenario": "combined_failures",
+      "variant": "combined_failures",
+      "complexity": "non_trivial",
+      "title": "Rename the user response field",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "breaking_change",
+        "combined_failures",
+        "missing_rationale",
+        "non_trivial",
+        "nonconventional_title",
+        "undocumented_breaking_change"
+      ],
+      "failed_criteria": [
+        "breaking_changes",
+        "limitations",
+        "rationale",
+        "title_format"
+      ],
+      "evidence": "prs/pr-099/evidence.json",
+      "metadata": "prs/pr-099/metadata.json",
+      "annotations": "prs/pr-099/annotations.json"
+    },
+    {
+      "case_id": "pr-100",
+      "family_id": "legacy-config",
+      "scenario": "combined_failures",
+      "variant": "combined_failures",
+      "complexity": "non_trivial",
+      "title": "chore(config)!: remove the legacy configuration",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "breaking_change",
+        "combined_failures",
+        "commit_description_mismatch",
+        "non_trivial",
+        "undocumented_breaking_change"
+      ],
+      "failed_criteria": [
+        "breaking_changes",
+        "description_commit_consistency",
+        "limitations"
+      ],
+      "evidence": "prs/pr-100/evidence.json",
+      "metadata": "prs/pr-100/metadata.json",
+      "annotations": "prs/pr-100/annotations.json"
+    }
+  ]
+}

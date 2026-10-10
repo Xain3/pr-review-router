@@ -111,6 +111,12 @@ fixture. They check structure only, not whether the description is accurate.
 For multiple weighted criteria, hard/soft blockers, and aggregate scores, see
 the [rubric examples](examples/rubric/README.md).
 
+The [synthetic PR corpus](examples/synthetic-prs/README.md) provides 100 fictional
+PRs with metadata, commit lists, complete patches, and provisional annotations
+for title, rationale, description consistency, limitations, and compatibility.
+Use its [index](examples/synthetic-prs/INDEX.md) to browse good cases, individual
+failures, and combined failures.
+
 Reports include commit identifiers, coverage issues, the decision-provider
 recommendation and confidence provenance, review stages and results, routing
 reasons, deduplicated findings, and the number of omitted findings. The

@@ -1,0 +1,118 @@
+{
+  "schema_version": 1,
+  "case_id": "pr-092",
+  "label_status": "provisional",
+  "label_origin": "synthetic_author_intent",
+  "family_id": "cli-help",
+  "scenario": "combined_failures",
+  "variant": "combined_failures",
+  "complexity": "trivial",
+  "has_breaking_change": false,
+  "expected_quality": "needs_revision",
+  "tags": [
+    "combined_failures",
+    "empty_description",
+    "gibberish_title",
+    "invalid_syntax_gibberish",
+    "trivial"
+  ],
+  "criteria": {
+    "title_format": {
+      "status": "failed",
+      "explanation": "The title has neither a conventional prefix nor a meaningful subject.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "title_meaningful": {
+      "status": "failed",
+      "explanation": "The title is gibberish and conveys no recognizable change.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "title_diff_consistency": {
+      "status": "not_assessable",
+      "explanation": "An unintelligible title supplies no change claim to compare.",
+      "sources": [
+        "evidence.json#/title",
+        "evidence.json#/files"
+      ]
+    },
+    "description_present": {
+      "status": "failed",
+      "explanation": "The description is empty or contains only a placeholder/headings.",
+      "sources": [
+        "evidence.json#/body"
+      ]
+    },
+    "rationale": {
+      "status": "failed",
+      "explanation": "The description is empty or contains only a placeholder/headings.",
+      "sources": [
+        "evidence.json#/body"
+      ]
+    },
+    "changes_described": {
+      "status": "failed",
+      "explanation": "The description is empty or contains only a placeholder/headings.",
+      "sources": [
+        "evidence.json#/body"
+      ]
+    },
+    "description_title_consistency": {
+      "status": "not_assessable",
+      "explanation": "No substantive description claims exist to compare.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/title"
+      ]
+    },
+    "description_commit_consistency": {
+      "status": "not_assessable",
+      "explanation": "No substantive description claims exist to compare.",
+      "sources": [
+        "evidence.json#/body",
+        "metadata.json#/commits"
+      ]
+    },
+    "description_diff_consistency": {
+      "status": "not_assessable",
+      "explanation": "No substantive description claims exist to compare.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "limitations": {
+      "status": "failed",
+      "explanation": "The description is empty or contains only a placeholder/headings.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "breaking_changes": {
+      "status": "not_applicable",
+      "explanation": "No public field or configuration entrypoint is removed in this family; any behavior changes and scope risks are still documented in the reference text.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "testing": {
+      "status": "failed",
+      "explanation": "The description is empty or contains only a placeholder/headings.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    }
+  },
+  "reference_change": {
+    "summary": "Correct the help string from --ouput to --output in cli/help.js; the parser and option behavior are unchanged.",
+    "rationale": "Users copying the help example currently receive an unknown-option error.",
+    "limitations": "This only changes help text; option parsing and validation are outside scope.",
+    "breaking_changes": "None; the accepted option remains --output."
+  }
+}

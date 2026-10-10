@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "synthetic": true,
+  "case_id": "pr-040",
+  "url": "https://example.invalid/synthetic/pr-quality-demo/pull/40",
+  "state": "open",
+  "draft": false,
+  "author": {
+    "login": "synthetic-author-10",
+    "name": "Synthetic Author 10",
+    "email": "author-10@example.invalid"
+  },
+  "created_at": "2026-02-09T12:00:00+00:00",
+  "updated_at": "2026-02-09T13:00:00+00:00",
+  "base_ref": "main",
+  "head_ref": "synthetic/pr-040",
+  "base_sha": "1af41584b263c10f1b7d7fe9180942f5106a6f71",
+  "head_sha": "630fe317f16008bd6bf5caecdd5c1fce91fdfd5a",
+  "changed_files": 2,
+  "additions": 1,
+  "deletions": 4,
+  "commits": [
+    {
+      "sha": "84b46c7cbf2ec037ecc8125e394ab5dd015c7abf",
+      "parents": [
+        "1af41584b263c10f1b7d7fe9180942f5106a6f71"
+      ],
+      "message": "chore(config)!: remove the legacy configuration file",
+      "author": {
+        "login": "synthetic-author-10",
+        "name": "Synthetic Author 10",
+        "email": "author-10@example.invalid"
+      },
+      "authored_at": "2026-02-09T11:50:00+00:00",
+      "files": [
+        "config/legacy.toml"
+      ],
+      "additions": 0,
+      "deletions": 2
+    },
+    {
+      "sha": "630fe317f16008bd6bf5caecdd5c1fce91fdfd5a",
+      "parents": [
+        "84b46c7cbf2ec037ecc8125e394ab5dd015c7abf"
+      ],
+      "message": "docs(config): remove legacy setup instructions",
+      "author": {
+        "login": "synthetic-author-10",
+        "name": "Synthetic Author 10",
+        "email": "author-10@example.invalid"
+      },
+      "authored_at": "2026-02-09T11:51:00+00:00",
+      "files": [
+        "docs/setup.md"
+      ],
+      "additions": 1,
+      "deletions": 2
+    }
+  ]
+}
