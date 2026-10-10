@@ -116,6 +116,25 @@
       ]
     }
   },
+  "diagnostics": {
+    "text_diff_triviality": {
+      "diff_score": 0,
+      "title_score": 0,
+      "body_score": 0,
+      "text_score": 0,
+      "assessment": "agreed",
+      "relationship": "aligned",
+      "score_delta": 0,
+      "potential_confounder": false,
+      "title_explanation": "The stated work repairs a documentation link. Title: Correct the getting started link",
+      "body_explanation": "The stated work repairs a documentation link. Summary: Fix the README link target from docs/geting-started.md to docs/getting-started.md without changing its label.",
+      "sources": [
+        "evidence.json#/title",
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    }
+  },
   "reference_change": {
     "summary": "Fix the README link target from docs/geting-started.md to docs/getting-started.md without changing its label.",
     "rationale": "The misspelled path leads new users to a missing documentation page.",

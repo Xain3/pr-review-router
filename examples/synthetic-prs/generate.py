@@ -445,6 +445,55 @@ TRIVIALITY_ASSESSMENTS = {
     ),
 }
 
+# Both sets of text projections are authored independently from the stated claims.
+TRUE_TEXT_TRIVIALITY = {
+    "guide-typo": (0, "The stated work is a prose correction."),
+    "cli-help": (
+        1,
+        "The stated work corrects help text while retaining the accepted parser option.",
+    ),
+    "readme-link": (0, "The stated work repairs a documentation link."),
+    "empty-average": (2, "The stated work changes the result for empty input."),
+    "cache-key": (2, "The stated work changes lookup normalization."),
+    "batch-limit": (2, "The stated work changes the accepted batch-size boundary."),
+    "token-compare": (
+        3,
+        "The stated work changes a comparison primitive to address timing security.",
+    ),
+    "csv-export": (
+        3,
+        "The stated work adds a new serialization helper with format and quoting behavior.",
+    ),
+    "api-field": (4, "The stated work renames a public response field."),
+    "legacy-config": (4, "The stated work deletes an existing configuration entrypoint."),
+}
+
+FALSE_TEXT_TRIVIALITY = {
+    "guide-typo": (0, "The claimed change only replaces written guidance with a video link."),
+    "cli-help": (
+        4,
+        "The claim explicitly renames a parser option and removes the accepted old option.",
+    ),
+    "readme-link": (0, "The claimed change only replaces a documentation link target."),
+    "empty-average": (2, "The claim changes empty-input behavior to a numeric result."),
+    "cache-key": (2, "The claim changes key normalization and lookup semantics."),
+    "batch-limit": (2, "The claim changes the accepted batch-size boundary."),
+    "token-compare": (
+        3,
+        "The claim changes authentication-token matching, which remains security-sensitive "
+        "even though it describes case normalization rather than a timing-security fix.",
+    ),
+    "csv-export": (
+        3,
+        "The claim introduces a new serialization capability, although its format is wrong.",
+    ),
+    "api-field": (1, "The claim explicitly presents formatting with unchanged response fields."),
+    "legacy-config": (
+        2,
+        "The claim changes a timeout value while explicitly retaining both configuration paths.",
+    ),
+}
+
 CRITERIA = {
     "change_triviality": "Ordinal 0–4 assessment of the actual diff: higher scores mean "
     "less trivial changes; scores 0–1 are trivial.",
@@ -499,6 +548,60 @@ def changed_file(edit: Edit) -> dict:
     }
 
 
+def text_triviality_diagnostic(
+    diff_score: int,
+    title_score: int | None,
+    body_score: int | None,
+    title_explanation: str,
+    body_explanation: str,
+) -> dict:
+    """Compare independently annotated text signals with the diff without scoring a criterion.
+
+    :param diff_score: Existing diff-based reference score.
+    :param title_score: Score supported by title wording, or no interpretable claim.
+    :param body_score: Score supported by body wording, or insufficient change information.
+    :param title_explanation: Evidence-based reason for the title projection.
+    :param body_explanation: Evidence-based reason for the body projection.
+    :returns: Unscored confounder metadata retaining conflicts and unknown signals.
+    """
+    signals = [value for value in (title_score, body_score) if value is not None]
+    if not signals:
+        text_score, assessment = None, "not_assessable"
+        relationship = "not_assessable"
+    elif len(set(signals)) > 1:
+        text_score, assessment = None, "conflicting"
+        relationship = "conflicting_text"
+    else:
+        text_score = signals[0]
+        assessment = (
+            "agreed"
+            if len(signals) == 2
+            else "title_only"
+            if title_score is not None
+            else "body_only"
+        )
+        relationship = (
+            "text_understates"
+            if text_score < diff_score
+            else "text_overstates"
+            if text_score > diff_score
+            else "aligned"
+        )
+    return {
+        "diff_score": diff_score,
+        "title_score": title_score,
+        "body_score": body_score,
+        "text_score": text_score,
+        "assessment": assessment,
+        "relationship": relationship,
+        "score_delta": None if text_score is None else text_score - diff_score,
+        "potential_confounder": any(value != diff_score for value in signals) if signals else None,
+        "title_explanation": title_explanation,
+        "body_explanation": body_explanation,
+        "sources": ["evidence.json#/title", "evidence.json#/body", "evidence.json#/files"],
+    }
+
+
 def make_case(number: int, family: Family, profile: str, family_index: int) -> tuple[dict, ...]:
     """Construct one case and explicit criterion labels for its planted issues.
 
@@ -546,6 +649,9 @@ def make_case(number: int, family: Family, profile: str, family_index: int) -> t
         tags.append("breaking_change")
     variant = profile
     body_override = None
+    diff_score = TRIVIALITY_ASSESSMENTS[family.identifier][0]
+    title_score, title_projection_reason = TRUE_TEXT_TRIVIALITY[family.identifier]
+    body_score, body_projection_reason = TRUE_TEXT_TRIVIALITY[family.identifier]
 
     def mark(key: str, status: str, reason: str) -> None:
         """Record an explicit oracle result for one manipulated criterion.
@@ -569,7 +675,9 @@ def make_case(number: int, family: Family, profile: str, family_index: int) -> t
 
     def gibberish() -> None:
         """Use unintelligible titles, including examples with formally valid syntax."""
-        nonlocal title
+        nonlocal title, title_score, title_projection_reason
+        title_score = None
+        title_projection_reason = "The gibberish title provides no interpretable change claim."
         title = "asdf qwer zxcv 123" if family_index < 5 else "fix(core): blorb zzz flarp"
         if family_index < 5:
             mark(
@@ -615,6 +723,9 @@ def make_case(number: int, family: Family, profile: str, family_index: int) -> t
 
     def missing_changes() -> None:
         """Keep motivation but remove concrete implementation and validation details."""
+        nonlocal body_score, body_projection_reason
+        body_score = None
+        body_projection_reason = "The body provides motivation and generic scope statements without describing actual edits."
         sections.pop("Summary", None)
         sections["Testing"] = "Validation has not been performed; test selection is pending."
         sections["Limitations"] = (
@@ -652,7 +763,9 @@ def make_case(number: int, family: Family, profile: str, family_index: int) -> t
 
     def wrong_title() -> None:
         """Use a meaningful conventional title for a completely different change."""
-        nonlocal title
+        nonlocal title, title_score, title_projection_reason
+        title_score = 2
+        title_projection_reason = "The title claims a runtime-version configuration change; no new capability or removed public interface is stated."
         title = "chore(deps): upgrade the runtime to version 22"
         mark(
             "title_diff_consistency",
@@ -682,7 +795,13 @@ def make_case(number: int, family: Family, profile: str, family_index: int) -> t
 
         :param align_text: Whether the title and commit subjects follow the false summary.
         """
-        nonlocal title
+        nonlocal title, title_score, body_score, title_projection_reason, body_projection_reason
+        body_score, body_projection_reason = FALSE_TEXT_TRIVIALITY[family.identifier]
+        if family.identifier == "cli-help":
+            body_projection_reason += (
+                " The specific option-removal claim determines the level despite the generic "
+                "footer claiming preserved interfaces."
+            )
         sections["Summary"] = family.false_summary
         # Avoid truthful supplementary sections accidentally correcting the false summary.
         sections["Rationale"] = "The change described above is needed for a new consumer workflow."
@@ -691,6 +810,7 @@ def make_case(number: int, family: Family, profile: str, family_index: int) -> t
         sections["Breaking changes"] = "None; all existing public interfaces are preserved."
         if align_text:
             title = family.false_title
+            title_score, title_projection_reason = FALSE_TEXT_TRIVIALITY[family.identifier]
             messages[:] = [family.false_title] + [
                 "chore: support the behavior described in the PR summary" for _ in messages[1:]
             ]
@@ -741,7 +861,11 @@ def make_case(number: int, family: Family, profile: str, family_index: int) -> t
 
         :param kind: Empty-description variant.
         """
-        nonlocal body_override
+        nonlocal body_override, body_score, body_projection_reason
+        body_score = None
+        body_projection_reason = (
+            "The empty or placeholder-only body supplies no substantive change claim."
+        )
         body_override = {
             "empty_description": "",
             "whitespace_description": " \n\t\n",
@@ -985,6 +1109,20 @@ def make_case(number: int, family: Family, profile: str, family_index: int) -> t
         else "good",
         "tags": sorted(set(tags)),
         "criteria": criteria,
+        "diagnostics": {
+            "text_diff_triviality": text_triviality_diagnostic(
+                diff_score,
+                title_score,
+                body_score,
+                title_projection_reason + f" Title: {title}",
+                body_projection_reason
+                + (
+                    " Summary: " + sections["Summary"]
+                    if body_override is None and "Summary" in sections
+                    else ""
+                ),
+            ),
+        },
         "reference_change": {
             "summary": family.summary,
             "rationale": family.rationale,
@@ -1029,6 +1167,15 @@ def main() -> None:
                     "triviality_score": annotation["criteria"]["change_triviality"]["score"],
                     "triviality_level": annotation["criteria"]["change_triviality"]["level"],
                     "is_trivial": annotation["criteria"]["change_triviality"]["is_trivial"],
+                    "text_triviality_score": annotation["diagnostics"]["text_diff_triviality"][
+                        "text_score"
+                    ],
+                    "text_diff_triviality_relationship": annotation["diagnostics"][
+                        "text_diff_triviality"
+                    ]["relationship"],
+                    "potential_triviality_confounder": annotation["diagnostics"][
+                        "text_diff_triviality"
+                    ]["potential_confounder"],
                     "title": evidence["title"],
                     "expected_quality": annotation["expected_quality"],
                     "tags": annotation["tags"],
@@ -1061,6 +1208,9 @@ def main() -> None:
                 sorted(Counter(str(case["triviality_score"]) for case in cases).items())
             ),
             "complexity_counts": dict(Counter(case["complexity"] for case in cases)),
+            "text_diff_triviality_counts": dict(
+                Counter(case["text_diff_triviality_relationship"] for case in cases)
+            ),
             "scenario_counts": dict(Counter(case["scenario"] for case in cases)),
             "quality_counts": dict(Counter(case["expected_quality"] for case in cases)),
             "cases": cases,
@@ -1077,8 +1227,11 @@ def main() -> None:
         "3 substantive/security-sensitive, 4 incompatible. Scores 0–1 are trivial. "
         "Scores describe the actual diff independently of description quality.",
         "",
-        "| PR | Family | Triviality (0–4) | Trivial? | Scenario / variant | Quality | Failed criteria | Companions |",
-        "| --- | --- | --- | --- | --- | --- | --- | --- |",
+        "Text signals are diagnostic metadata, excluded from the criteria and scoring. "
+        "Unknown or conflicting text receives no combined score. See annotations for separate title/body signals.",
+        "",
+        "| PR | Family | Triviality (0–4) | Trivial? | Text score / relationship | Scenario / variant | Quality | Failed criteria | Companions |",
+        "| --- | --- | --- | --- | --- | --- | --- | --- | --- |",
     ]
     for case in cases:
         failures = ", ".join(case["failed_criteria"]) or "None"
@@ -1089,6 +1242,8 @@ def main() -> None:
             f"| [{case['case_id']}]({case['evidence']}) | {case['family_id']} | "
             f"{case['triviality_score']} ({case['triviality_level']}) | "
             f"{'yes' if case['is_trivial'] else 'no'} | "
+            f"{case['text_triviality_score'] if case['text_triviality_score'] is not None else 'unknown'} / "
+            f"{case['text_diff_triviality_relationship']} | "
             f"{variant} | {case['expected_quality']} | {failures} | "
             f"[commits]({case['metadata']}) / [labels]({case['annotations']}) |"
         )

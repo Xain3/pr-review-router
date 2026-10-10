@@ -118,6 +118,25 @@
       ]
     }
   },
+  "diagnostics": {
+    "text_diff_triviality": {
+      "diff_score": 4,
+      "title_score": 4,
+      "body_score": 4,
+      "text_score": 4,
+      "assessment": "agreed",
+      "relationship": "aligned",
+      "score_delta": 0,
+      "potential_confounder": false,
+      "title_explanation": "The stated work deletes an existing configuration entrypoint. Title: chore(config)!: remove the legacy configuration",
+      "body_explanation": "The stated work deletes an existing configuration entrypoint. Summary: Delete config/legacy.toml and remove its setup instructions from docs/setup.md; config/default.toml remains the documented configuration.",
+      "sources": [
+        "evidence.json#/title",
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    }
+  },
   "reference_change": {
     "summary": "Delete config/legacy.toml and remove its setup instructions from docs/setup.md; config/default.toml remains the documented configuration.",
     "rationale": "Two documented configuration entrypoints cause operators to select an obsolete file that is no longer maintained.",

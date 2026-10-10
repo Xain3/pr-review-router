@@ -116,6 +116,25 @@
       ]
     }
   },
+  "diagnostics": {
+    "text_diff_triviality": {
+      "diff_score": 1,
+      "title_score": 4,
+      "body_score": 4,
+      "text_score": 4,
+      "assessment": "agreed",
+      "relationship": "text_overstates",
+      "score_delta": 3,
+      "potential_confounder": true,
+      "title_explanation": "The claim explicitly renames a parser option and removes the accepted old option. Title: feat(cli): rename the output option to --destination",
+      "body_explanation": "The claim explicitly renames a parser option and removes the accepted old option. The specific option-removal claim determines the level despite the generic footer claiming preserved interfaces. Summary: Rename the parser option to --destination and remove support for --output.",
+      "sources": [
+        "evidence.json#/title",
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    }
+  },
   "reference_change": {
     "summary": "Correct the help string from --ouput to --output in cli/help.js; the parser and option behavior are unchanged.",
     "rationale": "Users copying the help example currently receive an unknown-option error.",

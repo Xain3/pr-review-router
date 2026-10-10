@@ -90,6 +90,8 @@ def validate(root: Path) -> dict:
     failures = Counter()
     triviality_counts = Counter()
     complexity_counts = Counter()
+    text_relationship_counts = Counter()
+    text_confounder_count = 0
     family_scores = {}
     valid_syntax_gibberish = 0
     commit_count = 0
@@ -175,6 +177,101 @@ def validate(root: Path) -> dict:
             f"{'yes' if triviality['is_trivial'] else 'no'} |" in row,
             f"{case_id}: missing Markdown triviality score",
         )
+        diagnostic = labels["diagnostics"]["text_diff_triviality"]
+        require(
+            set(diagnostic)
+            == {
+                "diff_score",
+                "title_score",
+                "body_score",
+                "text_score",
+                "assessment",
+                "relationship",
+                "score_delta",
+                "potential_confounder",
+                "title_explanation",
+                "body_explanation",
+                "sources",
+            },
+            f"{case_id}: invalid text/diff diagnostic shape",
+        )
+        require(
+            type(diagnostic["diff_score"]) is int and diagnostic["diff_score"] == score,
+            f"{case_id}: diagnostic disagrees with reference triviality",
+        )
+        for key in ("title_score", "body_score", "text_score"):
+            require(
+                diagnostic[key] is None
+                or (type(diagnostic[key]) is int and 0 <= diagnostic[key] <= 4),
+                f"{case_id}: invalid projected text score",
+            )
+        signals = [
+            diagnostic[key] for key in ("title_score", "body_score") if diagnostic[key] is not None
+        ]
+        if not signals:
+            expected_score, expected_assessment, expected_relationship = (
+                None,
+                "not_assessable",
+                "not_assessable",
+            )
+        elif len(set(signals)) > 1:
+            expected_score, expected_assessment, expected_relationship = (
+                None,
+                "conflicting",
+                "conflicting_text",
+            )
+        else:
+            expected_score = signals[0]
+            expected_assessment = (
+                "agreed"
+                if len(signals) == 2
+                else "title_only"
+                if diagnostic["title_score"] is not None
+                else "body_only"
+            )
+            expected_relationship = (
+                "text_understates"
+                if expected_score < score
+                else "text_overstates"
+                if expected_score > score
+                else "aligned"
+            )
+        require(
+            (diagnostic["text_score"], diagnostic["assessment"], diagnostic["relationship"])
+            == (expected_score, expected_assessment, expected_relationship),
+            f"{case_id}: conflicting or missing text was incorrectly resolved",
+        )
+        expected_delta = None if expected_score is None else expected_score - score
+        require(
+            diagnostic["score_delta"] == expected_delta
+            and (diagnostic["score_delta"] is None or type(diagnostic["score_delta"]) is int),
+            f"{case_id}: incorrect text/diff score delta",
+        )
+        confounder = any(value != score for value in signals) if signals else None
+        require(
+            diagnostic["potential_confounder"] is confounder,
+            f"{case_id}: incorrect potential-confounder flag",
+        )
+        require(
+            diagnostic["title_explanation"].strip()
+            and diagnostic["body_explanation"].strip()
+            and diagnostic["sources"]
+            == ["evidence.json#/title", "evidence.json#/body", "evidence.json#/files"],
+            f"{case_id}: missing diagnostic explanations or evidence references",
+        )
+        require(
+            case["text_triviality_score"] == expected_score
+            and case["text_diff_triviality_relationship"] == expected_relationship
+            and case["potential_triviality_confounder"] is confounder,
+            f"{case_id}: stale diagnostic index",
+        )
+        text_display = str(expected_score) if expected_score is not None else "unknown"
+        require(
+            f"| {text_display} / {expected_relationship} |" in row,
+            f"{case_id}: stale Markdown diagnostic",
+        )
+        text_relationship_counts[expected_relationship] += 1
+        text_confounder_count += confounder is True
         for key, criterion in labels["criteria"].items():
             if key != "change_triviality":
                 require(
@@ -313,6 +410,10 @@ def validate(root: Path) -> dict:
         "Stale complexity counts",
     )
     require(
+        dict(text_relationship_counts) == index["text_diff_triviality_counts"],
+        "Stale text/diff diagnostic counts",
+    )
+    require(
         rationale_complexities == {"trivial": 3, "non_trivial": 7},
         "Missing trivial or non-trivial rationale cases",
     )
@@ -327,6 +428,8 @@ def validate(root: Path) -> dict:
         "quality_counts": dict(qualities),
         "triviality_counts": dict(triviality_counts),
         "complexity_counts": dict(complexity_counts),
+        "text_diff_triviality_counts": dict(text_relationship_counts),
+        "potential_triviality_confounders": text_confounder_count,
         "failed_criterion_counts": dict(failures),
         "valid_syntax_gibberish": valid_syntax_gibberish,
     }

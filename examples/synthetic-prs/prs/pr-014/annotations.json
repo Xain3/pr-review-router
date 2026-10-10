@@ -116,6 +116,25 @@
       ]
     }
   },
+  "diagnostics": {
+    "text_diff_triviality": {
+      "diff_score": 2,
+      "title_score": 2,
+      "body_score": 2,
+      "text_score": 2,
+      "assessment": "agreed",
+      "relationship": "aligned",
+      "score_delta": 0,
+      "potential_confounder": false,
+      "title_explanation": "The stated work changes the result for empty input. Title: Handle an empty average input",
+      "body_explanation": "The stated work changes the result for empty input. Summary: Return 0 for an empty values list before division in src/stats.py, and add regression tests for empty and ordinary inputs.",
+      "sources": [
+        "evidence.json#/title",
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    }
+  },
   "reference_change": {
     "summary": "Return 0 for an empty values list before division in src/stats.py, and add regression tests for empty and ordinary inputs.",
     "rationale": "An empty batch currently raises ZeroDivisionError; the reporting contract requires a neutral numeric result for batches with no observations.",

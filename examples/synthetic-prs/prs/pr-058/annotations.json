@@ -116,6 +116,25 @@
       ]
     }
   },
+  "diagnostics": {
+    "text_diff_triviality": {
+      "diff_score": 3,
+      "title_score": 2,
+      "body_score": 3,
+      "text_score": null,
+      "assessment": "conflicting",
+      "relationship": "conflicting_text",
+      "score_delta": null,
+      "potential_confounder": true,
+      "title_explanation": "The title claims a runtime-version configuration change; no new capability or removed public interface is stated. Title: chore(deps): upgrade the runtime to version 22",
+      "body_explanation": "The stated work adds a new serialization helper with format and quoting behavior. Summary: Add csv_text(rows) in src/export.py using csv.writer with LF line endings, and add tests for comma-containing fields and empty input.",
+      "sources": [
+        "evidence.json#/title",
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    }
+  },
   "reference_change": {
     "summary": "Add csv_text(rows) in src/export.py using csv.writer with LF line endings, and add tests for comma-containing fields and empty input.",
     "rationale": "Downstream spreadsheet imports require delimited text; naive joining would corrupt fields that contain commas.",

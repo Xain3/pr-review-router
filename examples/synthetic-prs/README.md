@@ -16,7 +16,7 @@ Each `prs/pr-NNN/` directory contains:
 | --- | --- |
 | `evidence.json` | Repository, PR number, title, Markdown body, base/head identifiers, and changed files with status, line counts, and unified patches. Accepted directly by `PullRequestEvidence` and the `review` CLI. |
 | `metadata.json` | Fictional author, reserved-domain URL, timestamps, branch names, aggregate diff statistics, and ordered `commits`. Each commit has a SHA-shaped identifier, parent, message, author, timestamp, changed paths, and line counts. |
-| `annotations.json` | Family, scenario, tags, expected quality, twelve quality labels and a graded change-triviality criterion with explanations and JSON Pointer evidence references, and a truthful reference summary. |
+| `annotations.json` | Family, scenario, tags, expected quality, twelve quality labels, a graded change-triviality criterion, separate text/diff framing diagnostics, explanations and evidence references, and a truthful reference summary. |
 
 The manifest and annotations use `schema_version: 2`, adding the ordinal
 triviality criterion alongside the twelve status-based quality criteria.
@@ -49,7 +49,7 @@ for case in index["cases"]:
 ```
 
 The manifest includes labels for filtering. Withhold its scenario, tags, quality,
-failed criteria, and triviality/complexity labels, together with annotations and
+failed criteria, triviality/complexity labels, and diagnostics, together with annotations and
 reference summaries, from the system under evaluation. The router's current
 evidence schema does not ingest commit lists. A harness assessing commit/description consistency must provide
 the companion commits explicitly. This manifest is a PR-text benchmark index,
@@ -176,6 +176,49 @@ criteria. This command scores supplied predictions offline; it performs no
 inference and retains the provisional label status in its output. Withhold
 reference triviality labels from model inputs and split by family as described
 above. Perfect scores from copied reference labels only test the scorer.
+
+## Text/diff triviality diagnostics
+
+Every annotation has `diagnostics.text_diff_triviality` for future confounder
+analysis. This is additive metadata outside `criteria`, with no pass/fail
+status, weight, or effect on PR quality or benchmark scoring. Schema version 2
+and the thirteen existing criteria remain unchanged.
+
+The diagnostic separately records the level implied by the **title** and the
+**body**, using the same 0–4 scale. These are provisional author annotations of
+the stated edits, not empirical claims about how a reader or model perceives
+them. Commits and the actual diff are excluded when projecting the text levels;
+the existing diff reference score is used only for comparison. Specific stated
+edits take precedence over generic boilerplate: an explicit option removal
+implies level 4 even if a footer claims all interfaces are preserved.
+
+| Field | Meaning |
+| --- | --- |
+| `diff_score` | The existing `change_triviality` reference score, repeated for convenience. |
+| `title_score`, `body_score` | Separately inferred levels; `null` if the corresponding text lacks an interpretable change claim. |
+| `text_score` | Combined level when available signals agree, or the only available signal; `null` for conflicting or insufficient text. |
+| `assessment` | `agreed`, `title_only`, `body_only`, `conflicting`, or `not_assessable`. |
+| `relationship` | `aligned`, `text_understates`, `text_overstates`, `conflicting_text`, or `not_assessable`. |
+| `score_delta` | Text score minus diff score; negative means understatement. Null when no combined score is available. |
+| `potential_confounder` | True when at least one known text level differs from the diff, false when all available levels agree, or null when neither is assessable. |
+| `title_explanation`, `body_explanation`, `sources` | Reasons for each text projection and references to title, body, and diff. |
+
+For example, `pr-079` has a level-4 response-field removal while its title and
+body claim level-1 formatting with unchanged fields: the diagnostic records
+`text_understates` and a delta of -3. In `pr-072`, the text claims a level-4 CLI
+option removal while the diff only corrects a level-1 help string. In `pr-051`,
+title and body imply different levels, so both projections are retained and no
+combined level is forced. `pr-092` has gibberish plus an empty body; its projected
+levels stay null instead of being labeled trivial.
+
+The index exposes the combined text score, relationship, potential-confounder
+flag, and relationship counts. The 100 cases contain 88 aligned levels, three
+directional mismatches, eight conflicting text signals, and one unassessable
+case. Eleven cases have at least one text level differing from the diff.
+Level agreement does not imply factual agreement: claiming a return value of
+1 instead of 0 can remain level 2. Use the existing consistency criteria for
+that distinction. Diagnostic flags identify candidate confounders without
+establishing causation, and remain withheld from model inputs.
 
 Testing sections describe fictional validation **plans**, never tests that this
 project claims to have executed. They demonstrate relevant PR communication;

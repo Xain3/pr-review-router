@@ -116,6 +116,25 @@
       ]
     }
   },
+  "diagnostics": {
+    "text_diff_triviality": {
+      "diff_score": 0,
+      "title_score": 0,
+      "body_score": 0,
+      "text_score": 0,
+      "assessment": "agreed",
+      "relationship": "aligned",
+      "score_delta": 0,
+      "potential_confounder": false,
+      "title_explanation": "The stated work is a prose correction. Title: docs(guide): remove a repeated word",
+      "body_explanation": "The stated work is a prose correction. Summary: Replace 'Read the the guide' with 'Read the guide' in docs/usage.md.",
+      "sources": [
+        "evidence.json#/title",
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    }
+  },
   "reference_change": {
     "summary": "Replace 'Read the the guide' with 'Read the guide' in docs/usage.md.",
     "rationale": "The repeated word interrupts the onboarding instructions and can confuse readers.",

@@ -117,6 +117,25 @@
       ]
     }
   },
+  "diagnostics": {
+    "text_diff_triviality": {
+      "diff_score": 4,
+      "title_score": 2,
+      "body_score": 4,
+      "text_score": null,
+      "assessment": "conflicting",
+      "relationship": "conflicting_text",
+      "score_delta": null,
+      "potential_confounder": true,
+      "title_explanation": "The title claims a runtime-version configuration change; no new capability or removed public interface is stated. Title: chore(deps): upgrade the runtime to version 22",
+      "body_explanation": "The stated work renames a public response field. Summary: Replace the JSON response key name with full_name in src/users.py and update docs/api.md to show the new response shape.",
+      "sources": [
+        "evidence.json#/title",
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    }
+  },
   "reference_change": {
     "summary": "Replace the JSON response key name with full_name in src/users.py and update docs/api.md to show the new response shape.",
     "rationale": "API consumers confuse the existing name field with a login identifier; the response needs a distinct label for the person's full name.",

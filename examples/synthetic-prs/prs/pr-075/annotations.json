@@ -116,6 +116,25 @@
       ]
     }
   },
+  "diagnostics": {
+    "text_diff_triviality": {
+      "diff_score": 2,
+      "title_score": 2,
+      "body_score": 2,
+      "text_score": 2,
+      "assessment": "agreed",
+      "relationship": "aligned",
+      "score_delta": 0,
+      "potential_confounder": false,
+      "title_explanation": "The claim changes key normalization and lookup semantics. Title: fix(cache): uppercase keys for lookup",
+      "body_explanation": "The claim changes key normalization and lookup semantics. Summary: Uppercase keys before lookup and test resolution against uppercase stored keys.",
+      "sources": [
+        "evidence.json#/title",
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    }
+  },
   "reference_change": {
     "summary": "Lowercase keys before cache lookup in src/cache.py and add a test showing that 'USER' and 'user' resolve to the same stored entry.",
     "rationale": "Callers use different capitalization for keys, causing misses against a store whose keys are already lowercase.",

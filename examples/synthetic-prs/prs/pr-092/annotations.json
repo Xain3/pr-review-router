@@ -119,6 +119,25 @@
       ]
     }
   },
+  "diagnostics": {
+    "text_diff_triviality": {
+      "diff_score": 1,
+      "title_score": null,
+      "body_score": null,
+      "text_score": null,
+      "assessment": "not_assessable",
+      "relationship": "not_assessable",
+      "score_delta": null,
+      "potential_confounder": null,
+      "title_explanation": "The gibberish title provides no interpretable change claim. Title: asdf qwer zxcv 123",
+      "body_explanation": "The empty or placeholder-only body supplies no substantive change claim.",
+      "sources": [
+        "evidence.json#/title",
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    }
+  },
   "reference_change": {
     "summary": "Correct the help string from --ouput to --output in cli/help.js; the parser and option behavior are unchanged.",
     "rationale": "Users copying the help example currently receive an unknown-option error.",

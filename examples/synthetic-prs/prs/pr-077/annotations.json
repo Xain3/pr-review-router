@@ -116,6 +116,25 @@
       ]
     }
   },
+  "diagnostics": {
+    "text_diff_triviality": {
+      "diff_score": 3,
+      "title_score": 3,
+      "body_score": 3,
+      "text_score": 3,
+      "assessment": "agreed",
+      "relationship": "aligned",
+      "score_delta": 0,
+      "potential_confounder": false,
+      "title_explanation": "The claim changes authentication-token matching, which remains security-sensitive even though it describes case normalization rather than a timing-security fix. Title: fix(auth): compare tokens without case sensitivity",
+      "body_explanation": "The claim changes authentication-token matching, which remains security-sensitive even though it describes case normalization rather than a timing-security fix. Summary: Lowercase both tokens before equality comparison and test case-insensitive matches.",
+      "sources": [
+        "evidence.json#/title",
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    }
+  },
   "reference_change": {
     "summary": "Use hmac.compare_digest instead of == in src/auth.py, and add tests for matching and mismatching ASCII tokens.",
     "rationale": "Ordinary equality may reveal the first differing position through timing; token validation should avoid that comparison leak.",

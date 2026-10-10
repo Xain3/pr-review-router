@@ -116,6 +116,25 @@
       ]
     }
   },
+  "diagnostics": {
+    "text_diff_triviality": {
+      "diff_score": 0,
+      "title_score": 2,
+      "body_score": 0,
+      "text_score": null,
+      "assessment": "conflicting",
+      "relationship": "conflicting_text",
+      "score_delta": null,
+      "potential_confounder": true,
+      "title_explanation": "The title claims a runtime-version configuration change; no new capability or removed public interface is stated. Title: chore(deps): upgrade the runtime to version 22",
+      "body_explanation": "The stated work repairs a documentation link. Summary: Fix the README link target from docs/geting-started.md to docs/getting-started.md without changing its label.",
+      "sources": [
+        "evidence.json#/title",
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    }
+  },
   "reference_change": {
     "summary": "Fix the README link target from docs/geting-started.md to docs/getting-started.md without changing its label.",
     "rationale": "The misspelled path leads new users to a missing documentation page.",

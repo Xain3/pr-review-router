@@ -117,6 +117,25 @@
       ]
     }
   },
+  "diagnostics": {
+    "text_diff_triviality": {
+      "diff_score": 4,
+      "title_score": 1,
+      "body_score": 1,
+      "text_score": 1,
+      "assessment": "agreed",
+      "relationship": "text_understates",
+      "score_delta": -3,
+      "potential_confounder": true,
+      "title_explanation": "The claim explicitly presents formatting with unchanged response fields. Title: style(api): reformat the user response without changing fields",
+      "body_explanation": "The claim explicitly presents formatting with unchanged response fields. Summary: Reformat user_response without changing the response keys or updating the API docs.",
+      "sources": [
+        "evidence.json#/title",
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    }
+  },
   "reference_change": {
     "summary": "Replace the JSON response key name with full_name in src/users.py and update docs/api.md to show the new response shape.",
     "rationale": "API consumers confuse the existing name field with a login identifier; the response needs a distinct label for the person's full name.",

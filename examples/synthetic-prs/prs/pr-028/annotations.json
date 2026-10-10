@@ -117,6 +117,25 @@
       ]
     }
   },
+  "diagnostics": {
+    "text_diff_triviality": {
+      "diff_score": 3,
+      "title_score": null,
+      "body_score": 3,
+      "text_score": 3,
+      "assessment": "body_only",
+      "relationship": "aligned",
+      "score_delta": 0,
+      "potential_confounder": false,
+      "title_explanation": "The gibberish title provides no interpretable change claim. Title: fix(core): blorb zzz flarp",
+      "body_explanation": "The stated work adds a new serialization helper with format and quoting behavior. Summary: Add csv_text(rows) in src/export.py using csv.writer with LF line endings, and add tests for comma-containing fields and empty input.",
+      "sources": [
+        "evidence.json#/title",
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    }
+  },
   "reference_change": {
     "summary": "Add csv_text(rows) in src/export.py using csv.writer with LF line endings, and add tests for comma-containing fields and empty input.",
     "rationale": "Downstream spreadsheet imports require delimited text; naive joining would corrupt fields that contain commas.",

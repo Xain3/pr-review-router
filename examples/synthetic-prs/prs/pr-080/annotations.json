@@ -117,6 +117,25 @@
       ]
     }
   },
+  "diagnostics": {
+    "text_diff_triviality": {
+      "diff_score": 4,
+      "title_score": 2,
+      "body_score": 2,
+      "text_score": 2,
+      "assessment": "agreed",
+      "relationship": "text_understates",
+      "score_delta": -2,
+      "potential_confounder": true,
+      "title_explanation": "The claim changes a timeout value while explicitly retaining both configuration paths. Title: chore(config): update defaults in the legacy configuration",
+      "body_explanation": "The claim changes a timeout value while explicitly retaining both configuration paths. Summary: Keep config/legacy.toml and change its timeout_seconds from 10 to 20; leave config/default.toml and setup instructions unchanged.",
+      "sources": [
+        "evidence.json#/title",
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    }
+  },
   "reference_change": {
     "summary": "Delete config/legacy.toml and remove its setup instructions from docs/setup.md; config/default.toml remains the documented configuration.",
     "rationale": "Two documented configuration entrypoints cause operators to select an obsolete file that is no longer maintained.",

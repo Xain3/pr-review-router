@@ -117,6 +117,25 @@
       ]
     }
   },
+  "diagnostics": {
+    "text_diff_triviality": {
+      "diff_score": 2,
+      "title_score": null,
+      "body_score": 2,
+      "text_score": 2,
+      "assessment": "body_only",
+      "relationship": "aligned",
+      "score_delta": 0,
+      "potential_confounder": false,
+      "title_explanation": "The gibberish title provides no interpretable change claim. Title: asdf qwer zxcv 123",
+      "body_explanation": "The stated work changes the result for empty input. Summary: Return 0 for an empty values list before division in src/stats.py, and add regression tests for empty and ordinary inputs.",
+      "sources": [
+        "evidence.json#/title",
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    }
+  },
   "reference_change": {
     "summary": "Return 0 for an empty values list before division in src/stats.py, and add regression tests for empty and ordinary inputs.",
     "rationale": "An empty batch currently raises ZeroDivisionError; the reporting contract requires a neutral numeric result for batches with no observations.",

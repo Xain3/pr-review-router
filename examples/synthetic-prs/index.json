@@ -65,6 +65,13 @@
     "trivial": 30,
     "non_trivial": 70
   },
+  "text_diff_triviality_counts": {
+    "aligned": 88,
+    "conflicting_text": 8,
+    "text_overstates": 1,
+    "text_understates": 2,
+    "not_assessable": 1
+  },
   "scenario_counts": {
     "good": 10,
     "nonconventional_title": 10,
@@ -91,6 +98,9 @@
       "triviality_score": 0,
       "triviality_level": "editorial",
       "is_trivial": true,
+      "text_triviality_score": 0,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "docs(guide): remove a repeated word",
       "expected_quality": "good",
       "tags": [
@@ -111,6 +121,9 @@
       "triviality_score": 1,
       "triviality_level": "mechanical",
       "is_trivial": true,
+      "text_triviality_score": 1,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "fix(cli): correct the output option in help text",
       "expected_quality": "good",
       "tags": [
@@ -131,6 +144,9 @@
       "triviality_score": 0,
       "triviality_level": "editorial",
       "is_trivial": true,
+      "text_triviality_score": 0,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "docs: correct the getting started link",
       "expected_quality": "good",
       "tags": [
@@ -151,6 +167,9 @@
       "triviality_score": 2,
       "triviality_level": "bounded_behavior",
       "is_trivial": false,
+      "text_triviality_score": 2,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "fix(stats): handle an empty average input",
       "expected_quality": "good",
       "tags": [
@@ -171,6 +190,9 @@
       "triviality_score": 2,
       "triviality_level": "bounded_behavior",
       "is_trivial": false,
+      "text_triviality_score": 2,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "fix(cache): normalize keys for lookup",
       "expected_quality": "good",
       "tags": [
@@ -191,6 +213,9 @@
       "triviality_score": 2,
       "triviality_level": "bounded_behavior",
       "is_trivial": false,
+      "text_triviality_score": 2,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "feat(batch): raise the batch limit to 100",
       "expected_quality": "good",
       "tags": [
@@ -211,6 +236,9 @@
       "triviality_score": 3,
       "triviality_level": "substantive",
       "is_trivial": false,
+      "text_triviality_score": 3,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "fix(auth): compare tokens in constant time",
       "expected_quality": "good",
       "tags": [
@@ -231,6 +259,9 @@
       "triviality_score": 3,
       "triviality_level": "substantive",
       "is_trivial": false,
+      "text_triviality_score": 3,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "feat(export): add CSV serialization",
       "expected_quality": "good",
       "tags": [
@@ -251,6 +282,9 @@
       "triviality_score": 4,
       "triviality_level": "incompatible",
       "is_trivial": false,
+      "text_triviality_score": 4,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "feat(api)!: rename the user response field",
       "expected_quality": "good",
       "tags": [
@@ -272,6 +306,9 @@
       "triviality_score": 4,
       "triviality_level": "incompatible",
       "is_trivial": false,
+      "text_triviality_score": 4,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "chore(config)!: remove the legacy configuration",
       "expected_quality": "good",
       "tags": [
@@ -293,6 +330,9 @@
       "triviality_score": 0,
       "triviality_level": "editorial",
       "is_trivial": true,
+      "text_triviality_score": 0,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "Remove a repeated word",
       "expected_quality": "needs_revision",
       "tags": [
@@ -315,6 +355,9 @@
       "triviality_score": 1,
       "triviality_level": "mechanical",
       "is_trivial": true,
+      "text_triviality_score": 1,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "Correct the output option in help text",
       "expected_quality": "needs_revision",
       "tags": [
@@ -337,6 +380,9 @@
       "triviality_score": 0,
       "triviality_level": "editorial",
       "is_trivial": true,
+      "text_triviality_score": 0,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "Correct the getting started link",
       "expected_quality": "needs_revision",
       "tags": [
@@ -359,6 +405,9 @@
       "triviality_score": 2,
       "triviality_level": "bounded_behavior",
       "is_trivial": false,
+      "text_triviality_score": 2,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "Handle an empty average input",
       "expected_quality": "needs_revision",
       "tags": [
@@ -381,6 +430,9 @@
       "triviality_score": 2,
       "triviality_level": "bounded_behavior",
       "is_trivial": false,
+      "text_triviality_score": 2,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "Normalize keys for lookup",
       "expected_quality": "needs_revision",
       "tags": [
@@ -403,6 +455,9 @@
       "triviality_score": 2,
       "triviality_level": "bounded_behavior",
       "is_trivial": false,
+      "text_triviality_score": 2,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "Raise the batch limit to 100",
       "expected_quality": "needs_revision",
       "tags": [
@@ -425,6 +480,9 @@
       "triviality_score": 3,
       "triviality_level": "substantive",
       "is_trivial": false,
+      "text_triviality_score": 3,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "Compare tokens in constant time",
       "expected_quality": "needs_revision",
       "tags": [
@@ -447,6 +505,9 @@
       "triviality_score": 3,
       "triviality_level": "substantive",
       "is_trivial": false,
+      "text_triviality_score": 3,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "Add csv serialization",
       "expected_quality": "needs_revision",
       "tags": [
@@ -469,6 +530,9 @@
       "triviality_score": 4,
       "triviality_level": "incompatible",
       "is_trivial": false,
+      "text_triviality_score": 4,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "Rename the user response field",
       "expected_quality": "needs_revision",
       "tags": [
@@ -492,6 +556,9 @@
       "triviality_score": 4,
       "triviality_level": "incompatible",
       "is_trivial": false,
+      "text_triviality_score": 4,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "Remove the legacy configuration",
       "expected_quality": "needs_revision",
       "tags": [
@@ -515,6 +582,9 @@
       "triviality_score": 0,
       "triviality_level": "editorial",
       "is_trivial": true,
+      "text_triviality_score": 0,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "asdf qwer zxcv 123",
       "expected_quality": "needs_revision",
       "tags": [
@@ -539,6 +609,9 @@
       "triviality_score": 1,
       "triviality_level": "mechanical",
       "is_trivial": true,
+      "text_triviality_score": 1,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "asdf qwer zxcv 123",
       "expected_quality": "needs_revision",
       "tags": [
@@ -563,6 +636,9 @@
       "triviality_score": 0,
       "triviality_level": "editorial",
       "is_trivial": true,
+      "text_triviality_score": 0,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "asdf qwer zxcv 123",
       "expected_quality": "needs_revision",
       "tags": [
@@ -587,6 +663,9 @@
       "triviality_score": 2,
       "triviality_level": "bounded_behavior",
       "is_trivial": false,
+      "text_triviality_score": 2,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "asdf qwer zxcv 123",
       "expected_quality": "needs_revision",
       "tags": [
@@ -611,6 +690,9 @@
       "triviality_score": 2,
       "triviality_level": "bounded_behavior",
       "is_trivial": false,
+      "text_triviality_score": 2,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "asdf qwer zxcv 123",
       "expected_quality": "needs_revision",
       "tags": [
@@ -635,6 +717,9 @@
       "triviality_score": 2,
       "triviality_level": "bounded_behavior",
       "is_trivial": false,
+      "text_triviality_score": 2,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "fix(core): blorb zzz flarp",
       "expected_quality": "needs_revision",
       "tags": [
@@ -658,6 +743,9 @@
       "triviality_score": 3,
       "triviality_level": "substantive",
       "is_trivial": false,
+      "text_triviality_score": 3,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "fix(core): blorb zzz flarp",
       "expected_quality": "needs_revision",
       "tags": [
@@ -681,6 +769,9 @@
       "triviality_score": 3,
       "triviality_level": "substantive",
       "is_trivial": false,
+      "text_triviality_score": 3,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "fix(core): blorb zzz flarp",
       "expected_quality": "needs_revision",
       "tags": [
@@ -704,6 +795,9 @@
       "triviality_score": 4,
       "triviality_level": "incompatible",
       "is_trivial": false,
+      "text_triviality_score": 4,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "fix(core): blorb zzz flarp",
       "expected_quality": "needs_revision",
       "tags": [
@@ -728,6 +822,9 @@
       "triviality_score": 4,
       "triviality_level": "incompatible",
       "is_trivial": false,
+      "text_triviality_score": 4,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "fix(core): blorb zzz flarp",
       "expected_quality": "needs_revision",
       "tags": [
@@ -752,6 +849,9 @@
       "triviality_score": 0,
       "triviality_level": "editorial",
       "is_trivial": true,
+      "text_triviality_score": 0,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "docs(guide): remove a repeated word",
       "expected_quality": "needs_revision",
       "tags": [
@@ -774,6 +874,9 @@
       "triviality_score": 1,
       "triviality_level": "mechanical",
       "is_trivial": true,
+      "text_triviality_score": 1,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "fix(cli): correct the output option in help text",
       "expected_quality": "needs_revision",
       "tags": [
@@ -796,6 +899,9 @@
       "triviality_score": 0,
       "triviality_level": "editorial",
       "is_trivial": true,
+      "text_triviality_score": 0,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "docs: correct the getting started link",
       "expected_quality": "needs_revision",
       "tags": [
@@ -818,6 +924,9 @@
       "triviality_score": 2,
       "triviality_level": "bounded_behavior",
       "is_trivial": false,
+      "text_triviality_score": 2,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "fix(stats): handle an empty average input",
       "expected_quality": "needs_revision",
       "tags": [
@@ -840,6 +949,9 @@
       "triviality_score": 2,
       "triviality_level": "bounded_behavior",
       "is_trivial": false,
+      "text_triviality_score": 2,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "fix(cache): normalize keys for lookup",
       "expected_quality": "needs_revision",
       "tags": [
@@ -862,6 +974,9 @@
       "triviality_score": 2,
       "triviality_level": "bounded_behavior",
       "is_trivial": false,
+      "text_triviality_score": 2,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "feat(batch): raise the batch limit to 100",
       "expected_quality": "needs_revision",
       "tags": [
@@ -884,6 +999,9 @@
       "triviality_score": 3,
       "triviality_level": "substantive",
       "is_trivial": false,
+      "text_triviality_score": 3,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "fix(auth): compare tokens in constant time",
       "expected_quality": "needs_revision",
       "tags": [
@@ -906,6 +1024,9 @@
       "triviality_score": 3,
       "triviality_level": "substantive",
       "is_trivial": false,
+      "text_triviality_score": 3,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "feat(export): add CSV serialization",
       "expected_quality": "needs_revision",
       "tags": [
@@ -928,6 +1049,9 @@
       "triviality_score": 4,
       "triviality_level": "incompatible",
       "is_trivial": false,
+      "text_triviality_score": 4,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "feat(api)!: rename the user response field",
       "expected_quality": "needs_revision",
       "tags": [
@@ -951,6 +1075,9 @@
       "triviality_score": 4,
       "triviality_level": "incompatible",
       "is_trivial": false,
+      "text_triviality_score": 4,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "chore(config)!: remove the legacy configuration",
       "expected_quality": "needs_revision",
       "tags": [
@@ -974,6 +1101,9 @@
       "triviality_score": 0,
       "triviality_level": "editorial",
       "is_trivial": true,
+      "text_triviality_score": 0,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "docs(guide): remove a repeated word",
       "expected_quality": "needs_revision",
       "tags": [
@@ -998,6 +1128,9 @@
       "triviality_score": 1,
       "triviality_level": "mechanical",
       "is_trivial": true,
+      "text_triviality_score": 1,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "fix(cli): correct the output option in help text",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1022,6 +1155,9 @@
       "triviality_score": 0,
       "triviality_level": "editorial",
       "is_trivial": true,
+      "text_triviality_score": 0,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "docs: correct the getting started link",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1046,6 +1182,9 @@
       "triviality_score": 2,
       "triviality_level": "bounded_behavior",
       "is_trivial": false,
+      "text_triviality_score": 2,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "fix(stats): handle an empty average input",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1070,6 +1209,9 @@
       "triviality_score": 2,
       "triviality_level": "bounded_behavior",
       "is_trivial": false,
+      "text_triviality_score": 2,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "fix(cache): normalize keys for lookup",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1094,6 +1236,9 @@
       "triviality_score": 2,
       "triviality_level": "bounded_behavior",
       "is_trivial": false,
+      "text_triviality_score": 2,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "feat(batch): raise the batch limit to 100",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1118,6 +1263,9 @@
       "triviality_score": 3,
       "triviality_level": "substantive",
       "is_trivial": false,
+      "text_triviality_score": 3,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "fix(auth): compare tokens in constant time",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1142,6 +1290,9 @@
       "triviality_score": 3,
       "triviality_level": "substantive",
       "is_trivial": false,
+      "text_triviality_score": 3,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "feat(export): add CSV serialization",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1166,6 +1317,9 @@
       "triviality_score": 4,
       "triviality_level": "incompatible",
       "is_trivial": false,
+      "text_triviality_score": 4,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "feat(api)!: rename the user response field",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1192,6 +1346,9 @@
       "triviality_score": 4,
       "triviality_level": "incompatible",
       "is_trivial": false,
+      "text_triviality_score": 4,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "chore(config)!: remove the legacy configuration",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1218,6 +1375,9 @@
       "triviality_score": 0,
       "triviality_level": "editorial",
       "is_trivial": true,
+      "text_triviality_score": null,
+      "text_diff_triviality_relationship": "conflicting_text",
+      "potential_triviality_confounder": true,
       "title": "chore(deps): upgrade the runtime to version 22",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1241,6 +1401,9 @@
       "triviality_score": 1,
       "triviality_level": "mechanical",
       "is_trivial": true,
+      "text_triviality_score": null,
+      "text_diff_triviality_relationship": "conflicting_text",
+      "potential_triviality_confounder": true,
       "title": "chore(deps): upgrade the runtime to version 22",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1264,6 +1427,9 @@
       "triviality_score": 0,
       "triviality_level": "editorial",
       "is_trivial": true,
+      "text_triviality_score": null,
+      "text_diff_triviality_relationship": "conflicting_text",
+      "potential_triviality_confounder": true,
       "title": "chore(deps): upgrade the runtime to version 22",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1287,6 +1453,9 @@
       "triviality_score": 2,
       "triviality_level": "bounded_behavior",
       "is_trivial": false,
+      "text_triviality_score": 2,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "chore(deps): upgrade the runtime to version 22",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1310,6 +1479,9 @@
       "triviality_score": 2,
       "triviality_level": "bounded_behavior",
       "is_trivial": false,
+      "text_triviality_score": 2,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "chore(deps): upgrade the runtime to version 22",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1333,6 +1505,9 @@
       "triviality_score": 2,
       "triviality_level": "bounded_behavior",
       "is_trivial": false,
+      "text_triviality_score": 2,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "chore(deps): upgrade the runtime to version 22",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1356,6 +1531,9 @@
       "triviality_score": 3,
       "triviality_level": "substantive",
       "is_trivial": false,
+      "text_triviality_score": null,
+      "text_diff_triviality_relationship": "conflicting_text",
+      "potential_triviality_confounder": true,
       "title": "chore(deps): upgrade the runtime to version 22",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1379,6 +1557,9 @@
       "triviality_score": 3,
       "triviality_level": "substantive",
       "is_trivial": false,
+      "text_triviality_score": null,
+      "text_diff_triviality_relationship": "conflicting_text",
+      "potential_triviality_confounder": true,
       "title": "chore(deps): upgrade the runtime to version 22",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1402,6 +1583,9 @@
       "triviality_score": 4,
       "triviality_level": "incompatible",
       "is_trivial": false,
+      "text_triviality_score": null,
+      "text_diff_triviality_relationship": "conflicting_text",
+      "potential_triviality_confounder": true,
       "title": "chore(deps): upgrade the runtime to version 22",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1426,6 +1610,9 @@
       "triviality_score": 4,
       "triviality_level": "incompatible",
       "is_trivial": false,
+      "text_triviality_score": null,
+      "text_diff_triviality_relationship": "conflicting_text",
+      "potential_triviality_confounder": true,
       "title": "chore(deps): upgrade the runtime to version 22",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1450,6 +1637,9 @@
       "triviality_score": 0,
       "triviality_level": "editorial",
       "is_trivial": true,
+      "text_triviality_score": 0,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "docs(guide): remove a repeated word",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1472,6 +1662,9 @@
       "triviality_score": 1,
       "triviality_level": "mechanical",
       "is_trivial": true,
+      "text_triviality_score": 1,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "fix(cli): correct the output option in help text",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1494,6 +1687,9 @@
       "triviality_score": 0,
       "triviality_level": "editorial",
       "is_trivial": true,
+      "text_triviality_score": 0,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "docs: correct the getting started link",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1516,6 +1712,9 @@
       "triviality_score": 2,
       "triviality_level": "bounded_behavior",
       "is_trivial": false,
+      "text_triviality_score": 2,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "fix(stats): handle an empty average input",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1538,6 +1737,9 @@
       "triviality_score": 2,
       "triviality_level": "bounded_behavior",
       "is_trivial": false,
+      "text_triviality_score": 2,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "fix(cache): normalize keys for lookup",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1560,6 +1762,9 @@
       "triviality_score": 2,
       "triviality_level": "bounded_behavior",
       "is_trivial": false,
+      "text_triviality_score": 2,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "feat(batch): raise the batch limit to 100",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1582,6 +1787,9 @@
       "triviality_score": 3,
       "triviality_level": "substantive",
       "is_trivial": false,
+      "text_triviality_score": 3,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "fix(auth): compare tokens in constant time",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1604,6 +1812,9 @@
       "triviality_score": 3,
       "triviality_level": "substantive",
       "is_trivial": false,
+      "text_triviality_score": 3,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "feat(export): add CSV serialization",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1626,6 +1837,9 @@
       "triviality_score": 4,
       "triviality_level": "incompatible",
       "is_trivial": false,
+      "text_triviality_score": 4,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "feat(api)!: rename the user response field",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1649,6 +1863,9 @@
       "triviality_score": 4,
       "triviality_level": "incompatible",
       "is_trivial": false,
+      "text_triviality_score": 4,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "chore(config)!: remove the legacy configuration",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1672,6 +1889,9 @@
       "triviality_score": 0,
       "triviality_level": "editorial",
       "is_trivial": true,
+      "text_triviality_score": 0,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "docs(guide): replace the guide with a video",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1698,6 +1918,9 @@
       "triviality_score": 1,
       "triviality_level": "mechanical",
       "is_trivial": true,
+      "text_triviality_score": 4,
+      "text_diff_triviality_relationship": "text_overstates",
+      "potential_triviality_confounder": true,
       "title": "feat(cli): rename the output option to --destination",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1724,6 +1947,9 @@
       "triviality_score": 0,
       "triviality_level": "editorial",
       "is_trivial": true,
+      "text_triviality_score": 0,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "docs: move the getting started guide to the website",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1750,6 +1976,9 @@
       "triviality_score": 2,
       "triviality_level": "bounded_behavior",
       "is_trivial": false,
+      "text_triviality_score": 2,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "fix(stats): return one for an empty average input",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1776,6 +2005,9 @@
       "triviality_score": 2,
       "triviality_level": "bounded_behavior",
       "is_trivial": false,
+      "text_triviality_score": 2,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "fix(cache): uppercase keys for lookup",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1802,6 +2034,9 @@
       "triviality_score": 2,
       "triviality_level": "bounded_behavior",
       "is_trivial": false,
+      "text_triviality_score": 2,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "feat(batch): raise the batch limit to 200",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1828,6 +2063,9 @@
       "triviality_score": 3,
       "triviality_level": "substantive",
       "is_trivial": false,
+      "text_triviality_score": 3,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "fix(auth): compare tokens without case sensitivity",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1854,6 +2092,9 @@
       "triviality_score": 3,
       "triviality_level": "substantive",
       "is_trivial": false,
+      "text_triviality_score": 3,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "feat(export): add JSON serialization",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1880,6 +2121,9 @@
       "triviality_score": 4,
       "triviality_level": "incompatible",
       "is_trivial": false,
+      "text_triviality_score": 1,
+      "text_diff_triviality_relationship": "text_understates",
+      "potential_triviality_confounder": true,
       "title": "style(api): reformat the user response without changing fields",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1908,6 +2152,9 @@
       "triviality_score": 4,
       "triviality_level": "incompatible",
       "is_trivial": false,
+      "text_triviality_score": 2,
+      "text_diff_triviality_relationship": "text_understates",
+      "potential_triviality_confounder": true,
       "title": "chore(config): update defaults in the legacy configuration",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1936,6 +2183,9 @@
       "triviality_score": 0,
       "triviality_level": "editorial",
       "is_trivial": true,
+      "text_triviality_score": 0,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "docs(guide): remove a repeated word",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1963,6 +2213,9 @@
       "triviality_score": 1,
       "triviality_level": "mechanical",
       "is_trivial": true,
+      "text_triviality_score": 1,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "fix(cli): correct the output option in help text",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1990,6 +2243,9 @@
       "triviality_score": 0,
       "triviality_level": "editorial",
       "is_trivial": true,
+      "text_triviality_score": 0,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "docs: correct the getting started link",
       "expected_quality": "needs_revision",
       "tags": [
@@ -2017,6 +2273,9 @@
       "triviality_score": 2,
       "triviality_level": "bounded_behavior",
       "is_trivial": false,
+      "text_triviality_score": 2,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "fix(stats): handle an empty average input",
       "expected_quality": "needs_revision",
       "tags": [
@@ -2044,6 +2303,9 @@
       "triviality_score": 2,
       "triviality_level": "bounded_behavior",
       "is_trivial": false,
+      "text_triviality_score": 2,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "fix(cache): normalize keys for lookup",
       "expected_quality": "needs_revision",
       "tags": [
@@ -2067,6 +2329,9 @@
       "triviality_score": 2,
       "triviality_level": "bounded_behavior",
       "is_trivial": false,
+      "text_triviality_score": 2,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "feat(batch): raise the batch limit to 100",
       "expected_quality": "needs_revision",
       "tags": [
@@ -2090,6 +2355,9 @@
       "triviality_score": 3,
       "triviality_level": "substantive",
       "is_trivial": false,
+      "text_triviality_score": 3,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "fix(auth): compare tokens in constant time",
       "expected_quality": "needs_revision",
       "tags": [
@@ -2113,6 +2381,9 @@
       "triviality_score": 3,
       "triviality_level": "substantive",
       "is_trivial": false,
+      "text_triviality_score": 3,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "feat(export): add CSV serialization",
       "expected_quality": "needs_revision",
       "tags": [
@@ -2137,6 +2408,9 @@
       "triviality_score": 4,
       "triviality_level": "incompatible",
       "is_trivial": false,
+      "text_triviality_score": 4,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "feat(api)!: rename the user response field",
       "expected_quality": "needs_revision",
       "tags": [
@@ -2162,6 +2436,9 @@
       "triviality_score": 4,
       "triviality_level": "incompatible",
       "is_trivial": false,
+      "text_triviality_score": 4,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "chore(config)!: remove the legacy configuration",
       "expected_quality": "needs_revision",
       "tags": [
@@ -2187,6 +2464,9 @@
       "triviality_score": 0,
       "triviality_level": "editorial",
       "is_trivial": true,
+      "text_triviality_score": 0,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "Remove a repeated word",
       "expected_quality": "needs_revision",
       "tags": [
@@ -2212,6 +2492,9 @@
       "triviality_score": 1,
       "triviality_level": "mechanical",
       "is_trivial": true,
+      "text_triviality_score": null,
+      "text_diff_triviality_relationship": "not_assessable",
+      "potential_triviality_confounder": null,
       "title": "asdf qwer zxcv 123",
       "expected_quality": "needs_revision",
       "tags": [
@@ -2243,6 +2526,9 @@
       "triviality_score": 0,
       "triviality_level": "editorial",
       "is_trivial": true,
+      "text_triviality_score": null,
+      "text_diff_triviality_relationship": "conflicting_text",
+      "potential_triviality_confounder": true,
       "title": "chore(deps): upgrade the runtime to version 22",
       "expected_quality": "needs_revision",
       "tags": [
@@ -2269,6 +2555,9 @@
       "triviality_score": 2,
       "triviality_level": "bounded_behavior",
       "is_trivial": false,
+      "text_triviality_score": 2,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "fix(stats): handle an empty average input",
       "expected_quality": "needs_revision",
       "tags": [
@@ -2297,6 +2586,9 @@
       "triviality_score": 2,
       "triviality_level": "bounded_behavior",
       "is_trivial": false,
+      "text_triviality_score": 2,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "Normalize keys for lookup",
       "expected_quality": "needs_revision",
       "tags": [
@@ -2324,6 +2616,9 @@
       "triviality_score": 2,
       "triviality_level": "bounded_behavior",
       "is_trivial": false,
+      "text_triviality_score": 2,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "feat(batch): raise the batch limit to 100",
       "expected_quality": "needs_revision",
       "tags": [
@@ -2349,6 +2644,9 @@
       "triviality_score": 3,
       "triviality_level": "substantive",
       "is_trivial": false,
+      "text_triviality_score": 3,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "fix(auth): compare tokens in constant time",
       "expected_quality": "needs_revision",
       "tags": [
@@ -2374,6 +2672,9 @@
       "triviality_score": 3,
       "triviality_level": "substantive",
       "is_trivial": false,
+      "text_triviality_score": 3,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "fix(core): blorb zzz flarp",
       "expected_quality": "needs_revision",
       "tags": [
@@ -2401,6 +2702,9 @@
       "triviality_score": 4,
       "triviality_level": "incompatible",
       "is_trivial": false,
+      "text_triviality_score": 4,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "Rename the user response field",
       "expected_quality": "needs_revision",
       "tags": [
@@ -2430,6 +2734,9 @@
       "triviality_score": 4,
       "triviality_level": "incompatible",
       "is_trivial": false,
+      "text_triviality_score": 4,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
       "title": "chore(config)!: remove the legacy configuration",
       "expected_quality": "needs_revision",
       "tags": [

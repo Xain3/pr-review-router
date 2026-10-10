@@ -117,6 +117,25 @@
       ]
     }
   },
+  "diagnostics": {
+    "text_diff_triviality": {
+      "diff_score": 3,
+      "title_score": 3,
+      "body_score": 3,
+      "text_score": 3,
+      "assessment": "agreed",
+      "relationship": "aligned",
+      "score_delta": 0,
+      "potential_confounder": false,
+      "title_explanation": "The stated work changes a comparison primitive to address timing security. Title: fix(auth): compare tokens in constant time",
+      "body_explanation": "The stated work changes a comparison primitive to address timing security. Summary: Use hmac.compare_digest instead of == in src/auth.py, and add tests for matching and mismatching ASCII tokens.",
+      "sources": [
+        "evidence.json#/title",
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    }
+  },
   "reference_change": {
     "summary": "Use hmac.compare_digest instead of == in src/auth.py, and add tests for matching and mismatching ASCII tokens.",
     "rationale": "Ordinary equality may reveal the first differing position through timing; token validation should avoid that comparison leak.",

@@ -116,6 +116,25 @@
       ]
     }
   },
+  "diagnostics": {
+    "text_diff_triviality": {
+      "diff_score": 2,
+      "title_score": 2,
+      "body_score": 2,
+      "text_score": 2,
+      "assessment": "agreed",
+      "relationship": "aligned",
+      "score_delta": 0,
+      "potential_confounder": false,
+      "title_explanation": "The stated work changes the accepted batch-size boundary. Title: Raise the batch limit to 100",
+      "body_explanation": "The stated work changes the accepted batch-size boundary. Summary: Increase MAX_BATCH_SIZE from 50 to 100 in src/batch.py and add boundary tests that accept 100 items and reject 101.",
+      "sources": [
+        "evidence.json#/title",
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    }
+  },
   "reference_change": {
     "summary": "Increase MAX_BATCH_SIZE from 50 to 100 in src/batch.py and add boundary tests that accept 100 items and reject 101.",
     "rationale": "The import worker supplies up to 100 items per page; the current limit rejects valid pages and forces an unnecessary split.",

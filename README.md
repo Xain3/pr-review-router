@@ -115,6 +115,8 @@ The [synthetic PR corpus](examples/synthetic-prs/README.md) provides 100 fiction
 PRs with metadata, commit lists, complete patches, and provisional annotations
 for title, rationale, description consistency, limitations, compatibility, and
 change triviality on a 0–4 scale, with an offline triviality benchmark scorer.
+Separate diagnostics record differences between the triviality implied by PR
+text and the actual diff for future confounder analysis.
 Use its [index](examples/synthetic-prs/INDEX.md) to browse good cases, individual
 failures, and combined failures.
 
