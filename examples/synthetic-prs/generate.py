@@ -372,7 +372,82 @@ PROFILES = (
     "combined_failures",
 )
 
+TRIVIALITY_LEVELS = [
+    {
+        "score": 0,
+        "label": "editorial",
+        "description": "Prose or link correction with no runtime or interface change.",
+    },
+    {
+        "score": 1,
+        "label": "mechanical",
+        "description": "Localized mechanical or presentation edit in code; functional behavior and public interfaces are preserved.",
+    },
+    {
+        "score": 2,
+        "label": "bounded_behavior",
+        "description": "Localized behavior or configuration change requiring edge-case review.",
+    },
+    {
+        "score": 3,
+        "label": "substantive",
+        "description": "New capability or security-sensitive behavior requiring broader review.",
+    },
+    {
+        "score": 4,
+        "label": "incompatible",
+        "description": "Supported public interface or configuration removal requiring migration.",
+    },
+]
+
+TRIVIALITY_ASSESSMENTS = {
+    "guide-typo": (0, "Only a repeated word in prose is removed; no runtime behavior changes."),
+    "cli-help": (
+        1,
+        "Only the displayed option spelling changes in a help string; "
+        "the option parser and accepted option are unchanged.",
+    ),
+    "readme-link": (0, "Only a misspelled relative documentation link is corrected."),
+    "empty-average": (
+        2,
+        "Empty input changes from a division error to a numeric result; "
+        "this needs edge-case review despite the small patch.",
+    ),
+    "cache-key": (
+        2,
+        "Lowercasing changes lookup semantics and can affect stores "
+        "with differently capitalized keys.",
+    ),
+    "batch-limit": (
+        2,
+        "The accepted batch-size boundary changes from 50 to 100, "
+        "affecting validation and potential memory use.",
+    ),
+    "token-compare": (
+        3,
+        "The comparison primitive changes in security-sensitive "
+        "authentication logic; a short diff does not make this trivial.",
+    ),
+    "csv-export": (
+        3,
+        "A new serialization helper introduces quoting, empty-input, "
+        "and format behavior beyond an editorial or mechanical edit.",
+    ),
+    "api-field": (
+        4,
+        "The supported response key name is removed and replaced "
+        "with full_name; existing consumers must migrate.",
+    ),
+    "legacy-config": (
+        4,
+        "A supported configuration entrypoint is deleted; "
+        "deployment scripts referencing it must migrate.",
+    ),
+}
+
 CRITERIA = {
+    "change_triviality": "Ordinal 0–4 assessment of the actual diff: higher scores mean "
+    "less trivial changes; scores 0–1 are trivial.",
     "title_format": "Title follows the router's Conventional Commits syntax.",
     "title_meaningful": "Title conveys an intelligible change rather than gibberish.",
     "title_diff_consistency": "Meaningful title agrees with the actual diff.",
@@ -870,7 +945,16 @@ def make_case(number: int, family: Family, profile: str, family_index: int) -> t
         "deletions": sum(f["deletions"] for f in files),
         "commits": commits,
     }
+    score, explanation = TRIVIALITY_ASSESSMENTS[family.identifier]
+    criteria["change_triviality"] = {
+        "type": "ordinal",
+        "score": score,
+        "level": TRIVIALITY_LEVELS[score]["label"],
+        "is_trivial": score <= 1,
+        "explanation": explanation,
+    }
     source_map = {
+        "change_triviality": ["evidence.json#/files"],
         "title_format": ["evidence.json#/title"],
         "title_meaningful": ["evidence.json#/title"],
         "title_diff_consistency": ["evidence.json#/title", "evidence.json#/files"],
@@ -887,7 +971,7 @@ def make_case(number: int, family: Family, profile: str, family_index: int) -> t
     for key, result in criteria.items():
         result["sources"] = source_map[key]
     annotation = {
-        "schema_version": 1,
+        "schema_version": 2,
         "case_id": case_id,
         "label_status": "provisional",
         "label_origin": "synthetic_author_intent",
@@ -897,7 +981,7 @@ def make_case(number: int, family: Family, profile: str, family_index: int) -> t
         "complexity": family.complexity,
         "has_breaking_change": family.incompatible,
         "expected_quality": "needs_revision"
-        if any(item["status"] == "failed" for item in criteria.values())
+        if any(item.get("status") == "failed" for item in criteria.values())
         else "good",
         "tags": sorted(set(tags)),
         "criteria": criteria,
@@ -942,13 +1026,16 @@ def main() -> None:
                     "scenario": profile,
                     "variant": annotation["variant"],
                     "complexity": family.complexity,
+                    "triviality_score": annotation["criteria"]["change_triviality"]["score"],
+                    "triviality_level": annotation["criteria"]["change_triviality"]["level"],
+                    "is_trivial": annotation["criteria"]["change_triviality"]["is_trivial"],
                     "title": evidence["title"],
                     "expected_quality": annotation["expected_quality"],
                     "tags": annotation["tags"],
                     "failed_criteria": sorted(
                         key
                         for key, value in annotation["criteria"].items()
-                        if value["status"] == "failed"
+                        if value.get("status") == "failed"
                     ),
                     "evidence": directory + "/evidence.json",
                     "metadata": directory + "/metadata.json",
@@ -958,11 +1045,22 @@ def main() -> None:
     write_json(
         ROOT / "index.json",
         {
-            "schema_version": 1,
+            "schema_version": 2,
             "synthetic": True,
             "label_status": "provisional",
             "case_count": len(cases),
             "criteria": CRITERIA,
+            "triviality_scale": {
+                "minimum_score": 0,
+                "maximum_score": 4,
+                "direction": "higher_scores_are_less_trivial",
+                "trivial_scores": [0, 1],
+                "levels": TRIVIALITY_LEVELS,
+            },
+            "triviality_counts": dict(
+                sorted(Counter(str(case["triviality_score"]) for case in cases).items())
+            ),
+            "complexity_counts": dict(Counter(case["complexity"] for case in cases)),
             "scenario_counts": dict(Counter(case["scenario"] for case in cases)),
             "quality_counts": dict(Counter(case["expected_quality"] for case in cases)),
             "cases": cases,
@@ -975,8 +1073,12 @@ def main() -> None:
         "for the rubric and loading instructions. Each ID links to CLI-compatible evidence; "
         "the adjacent files contain commits and independent labels.",
         "",
-        "| PR | Family | Scenario / variant | Quality | Failed criteria | Companions |",
-        "| --- | --- | --- | --- | --- | --- |",
+        "Triviality: 0 editorial, 1 mechanical, 2 bounded behavior, "
+        "3 substantive/security-sensitive, 4 incompatible. Scores 0–1 are trivial. "
+        "Scores describe the actual diff independently of description quality.",
+        "",
+        "| PR | Family | Triviality (0–4) | Trivial? | Scenario / variant | Quality | Failed criteria | Companions |",
+        "| --- | --- | --- | --- | --- | --- | --- | --- |",
     ]
     for case in cases:
         failures = ", ".join(case["failed_criteria"]) or "None"
@@ -985,6 +1087,8 @@ def main() -> None:
         )
         lines.append(
             f"| [{case['case_id']}]({case['evidence']}) | {case['family_id']} | "
+            f"{case['triviality_score']} ({case['triviality_level']}) | "
+            f"{'yes' if case['is_trivial'] else 'no'} | "
             f"{variant} | {case['expected_quality']} | {failures} | "
             f"[commits]({case['metadata']}) / [labels]({case['annotations']}) |"
         )

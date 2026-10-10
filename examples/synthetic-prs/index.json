@@ -1,9 +1,10 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "synthetic": true,
   "label_status": "provisional",
   "case_count": 100,
   "criteria": {
+    "change_triviality": "Ordinal 0–4 assessment of the actual diff: higher scores mean less trivial changes; scores 0–1 are trivial.",
     "title_format": "Title follows the router's Conventional Commits syntax.",
     "title_meaningful": "Title conveys an intelligible change rather than gibberish.",
     "title_diff_consistency": "Meaningful title agrees with the actual diff.",
@@ -16,6 +17,53 @@
     "limitations": "Body identifies relevant scope boundaries, risks, or limitations.",
     "breaking_changes": "Body accurately discloses and explains migration for an incompatible change.",
     "testing": "Body describes relevant validation or a specific reason testing does not apply."
+  },
+  "triviality_scale": {
+    "minimum_score": 0,
+    "maximum_score": 4,
+    "direction": "higher_scores_are_less_trivial",
+    "trivial_scores": [
+      0,
+      1
+    ],
+    "levels": [
+      {
+        "score": 0,
+        "label": "editorial",
+        "description": "Prose or link correction with no runtime or interface change."
+      },
+      {
+        "score": 1,
+        "label": "mechanical",
+        "description": "Localized mechanical or presentation edit in code; functional behavior and public interfaces are preserved."
+      },
+      {
+        "score": 2,
+        "label": "bounded_behavior",
+        "description": "Localized behavior or configuration change requiring edge-case review."
+      },
+      {
+        "score": 3,
+        "label": "substantive",
+        "description": "New capability or security-sensitive behavior requiring broader review."
+      },
+      {
+        "score": 4,
+        "label": "incompatible",
+        "description": "Supported public interface or configuration removal requiring migration."
+      }
+    ]
+  },
+  "triviality_counts": {
+    "0": 20,
+    "1": 10,
+    "2": 30,
+    "3": 20,
+    "4": 20
+  },
+  "complexity_counts": {
+    "trivial": 30,
+    "non_trivial": 70
   },
   "scenario_counts": {
     "good": 10,
@@ -40,6 +88,9 @@
       "scenario": "good",
       "variant": "good",
       "complexity": "trivial",
+      "triviality_score": 0,
+      "triviality_level": "editorial",
+      "is_trivial": true,
       "title": "docs(guide): remove a repeated word",
       "expected_quality": "good",
       "tags": [
@@ -57,6 +108,9 @@
       "scenario": "good",
       "variant": "good",
       "complexity": "trivial",
+      "triviality_score": 1,
+      "triviality_level": "mechanical",
+      "is_trivial": true,
       "title": "fix(cli): correct the output option in help text",
       "expected_quality": "good",
       "tags": [
@@ -74,6 +128,9 @@
       "scenario": "good",
       "variant": "good",
       "complexity": "trivial",
+      "triviality_score": 0,
+      "triviality_level": "editorial",
+      "is_trivial": true,
       "title": "docs: correct the getting started link",
       "expected_quality": "good",
       "tags": [
@@ -91,6 +148,9 @@
       "scenario": "good",
       "variant": "good",
       "complexity": "non_trivial",
+      "triviality_score": 2,
+      "triviality_level": "bounded_behavior",
+      "is_trivial": false,
       "title": "fix(stats): handle an empty average input",
       "expected_quality": "good",
       "tags": [
@@ -108,6 +168,9 @@
       "scenario": "good",
       "variant": "good",
       "complexity": "non_trivial",
+      "triviality_score": 2,
+      "triviality_level": "bounded_behavior",
+      "is_trivial": false,
       "title": "fix(cache): normalize keys for lookup",
       "expected_quality": "good",
       "tags": [
@@ -125,6 +188,9 @@
       "scenario": "good",
       "variant": "good",
       "complexity": "non_trivial",
+      "triviality_score": 2,
+      "triviality_level": "bounded_behavior",
+      "is_trivial": false,
       "title": "feat(batch): raise the batch limit to 100",
       "expected_quality": "good",
       "tags": [
@@ -142,6 +208,9 @@
       "scenario": "good",
       "variant": "good",
       "complexity": "non_trivial",
+      "triviality_score": 3,
+      "triviality_level": "substantive",
+      "is_trivial": false,
       "title": "fix(auth): compare tokens in constant time",
       "expected_quality": "good",
       "tags": [
@@ -159,6 +228,9 @@
       "scenario": "good",
       "variant": "good",
       "complexity": "non_trivial",
+      "triviality_score": 3,
+      "triviality_level": "substantive",
+      "is_trivial": false,
       "title": "feat(export): add CSV serialization",
       "expected_quality": "good",
       "tags": [
@@ -176,6 +248,9 @@
       "scenario": "good",
       "variant": "good",
       "complexity": "non_trivial",
+      "triviality_score": 4,
+      "triviality_level": "incompatible",
+      "is_trivial": false,
       "title": "feat(api)!: rename the user response field",
       "expected_quality": "good",
       "tags": [
@@ -194,6 +269,9 @@
       "scenario": "good",
       "variant": "good",
       "complexity": "non_trivial",
+      "triviality_score": 4,
+      "triviality_level": "incompatible",
+      "is_trivial": false,
       "title": "chore(config)!: remove the legacy configuration",
       "expected_quality": "good",
       "tags": [
@@ -212,6 +290,9 @@
       "scenario": "nonconventional_title",
       "variant": "nonconventional_title",
       "complexity": "trivial",
+      "triviality_score": 0,
+      "triviality_level": "editorial",
+      "is_trivial": true,
       "title": "Remove a repeated word",
       "expected_quality": "needs_revision",
       "tags": [
@@ -231,6 +312,9 @@
       "scenario": "nonconventional_title",
       "variant": "nonconventional_title",
       "complexity": "trivial",
+      "triviality_score": 1,
+      "triviality_level": "mechanical",
+      "is_trivial": true,
       "title": "Correct the output option in help text",
       "expected_quality": "needs_revision",
       "tags": [
@@ -250,6 +334,9 @@
       "scenario": "nonconventional_title",
       "variant": "nonconventional_title",
       "complexity": "trivial",
+      "triviality_score": 0,
+      "triviality_level": "editorial",
+      "is_trivial": true,
       "title": "Correct the getting started link",
       "expected_quality": "needs_revision",
       "tags": [
@@ -269,6 +356,9 @@
       "scenario": "nonconventional_title",
       "variant": "nonconventional_title",
       "complexity": "non_trivial",
+      "triviality_score": 2,
+      "triviality_level": "bounded_behavior",
+      "is_trivial": false,
       "title": "Handle an empty average input",
       "expected_quality": "needs_revision",
       "tags": [
@@ -288,6 +378,9 @@
       "scenario": "nonconventional_title",
       "variant": "nonconventional_title",
       "complexity": "non_trivial",
+      "triviality_score": 2,
+      "triviality_level": "bounded_behavior",
+      "is_trivial": false,
       "title": "Normalize keys for lookup",
       "expected_quality": "needs_revision",
       "tags": [
@@ -307,6 +400,9 @@
       "scenario": "nonconventional_title",
       "variant": "nonconventional_title",
       "complexity": "non_trivial",
+      "triviality_score": 2,
+      "triviality_level": "bounded_behavior",
+      "is_trivial": false,
       "title": "Raise the batch limit to 100",
       "expected_quality": "needs_revision",
       "tags": [
@@ -326,6 +422,9 @@
       "scenario": "nonconventional_title",
       "variant": "nonconventional_title",
       "complexity": "non_trivial",
+      "triviality_score": 3,
+      "triviality_level": "substantive",
+      "is_trivial": false,
       "title": "Compare tokens in constant time",
       "expected_quality": "needs_revision",
       "tags": [
@@ -345,6 +444,9 @@
       "scenario": "nonconventional_title",
       "variant": "nonconventional_title",
       "complexity": "non_trivial",
+      "triviality_score": 3,
+      "triviality_level": "substantive",
+      "is_trivial": false,
       "title": "Add csv serialization",
       "expected_quality": "needs_revision",
       "tags": [
@@ -364,6 +466,9 @@
       "scenario": "nonconventional_title",
       "variant": "nonconventional_title",
       "complexity": "non_trivial",
+      "triviality_score": 4,
+      "triviality_level": "incompatible",
+      "is_trivial": false,
       "title": "Rename the user response field",
       "expected_quality": "needs_revision",
       "tags": [
@@ -384,6 +489,9 @@
       "scenario": "nonconventional_title",
       "variant": "nonconventional_title",
       "complexity": "non_trivial",
+      "triviality_score": 4,
+      "triviality_level": "incompatible",
+      "is_trivial": false,
       "title": "Remove the legacy configuration",
       "expected_quality": "needs_revision",
       "tags": [
@@ -404,6 +512,9 @@
       "scenario": "gibberish_title",
       "variant": "gibberish_title",
       "complexity": "trivial",
+      "triviality_score": 0,
+      "triviality_level": "editorial",
+      "is_trivial": true,
       "title": "asdf qwer zxcv 123",
       "expected_quality": "needs_revision",
       "tags": [
@@ -425,6 +536,9 @@
       "scenario": "gibberish_title",
       "variant": "gibberish_title",
       "complexity": "trivial",
+      "triviality_score": 1,
+      "triviality_level": "mechanical",
+      "is_trivial": true,
       "title": "asdf qwer zxcv 123",
       "expected_quality": "needs_revision",
       "tags": [
@@ -446,6 +560,9 @@
       "scenario": "gibberish_title",
       "variant": "gibberish_title",
       "complexity": "trivial",
+      "triviality_score": 0,
+      "triviality_level": "editorial",
+      "is_trivial": true,
       "title": "asdf qwer zxcv 123",
       "expected_quality": "needs_revision",
       "tags": [
@@ -467,6 +584,9 @@
       "scenario": "gibberish_title",
       "variant": "gibberish_title",
       "complexity": "non_trivial",
+      "triviality_score": 2,
+      "triviality_level": "bounded_behavior",
+      "is_trivial": false,
       "title": "asdf qwer zxcv 123",
       "expected_quality": "needs_revision",
       "tags": [
@@ -488,6 +608,9 @@
       "scenario": "gibberish_title",
       "variant": "gibberish_title",
       "complexity": "non_trivial",
+      "triviality_score": 2,
+      "triviality_level": "bounded_behavior",
+      "is_trivial": false,
       "title": "asdf qwer zxcv 123",
       "expected_quality": "needs_revision",
       "tags": [
@@ -509,6 +632,9 @@
       "scenario": "gibberish_title",
       "variant": "gibberish_title",
       "complexity": "non_trivial",
+      "triviality_score": 2,
+      "triviality_level": "bounded_behavior",
+      "is_trivial": false,
       "title": "fix(core): blorb zzz flarp",
       "expected_quality": "needs_revision",
       "tags": [
@@ -529,6 +655,9 @@
       "scenario": "gibberish_title",
       "variant": "gibberish_title",
       "complexity": "non_trivial",
+      "triviality_score": 3,
+      "triviality_level": "substantive",
+      "is_trivial": false,
       "title": "fix(core): blorb zzz flarp",
       "expected_quality": "needs_revision",
       "tags": [
@@ -549,6 +678,9 @@
       "scenario": "gibberish_title",
       "variant": "gibberish_title",
       "complexity": "non_trivial",
+      "triviality_score": 3,
+      "triviality_level": "substantive",
+      "is_trivial": false,
       "title": "fix(core): blorb zzz flarp",
       "expected_quality": "needs_revision",
       "tags": [
@@ -569,6 +701,9 @@
       "scenario": "gibberish_title",
       "variant": "gibberish_title",
       "complexity": "non_trivial",
+      "triviality_score": 4,
+      "triviality_level": "incompatible",
+      "is_trivial": false,
       "title": "fix(core): blorb zzz flarp",
       "expected_quality": "needs_revision",
       "tags": [
@@ -590,6 +725,9 @@
       "scenario": "gibberish_title",
       "variant": "gibberish_title",
       "complexity": "non_trivial",
+      "triviality_score": 4,
+      "triviality_level": "incompatible",
+      "is_trivial": false,
       "title": "fix(core): blorb zzz flarp",
       "expected_quality": "needs_revision",
       "tags": [
@@ -611,6 +749,9 @@
       "scenario": "missing_rationale",
       "variant": "missing_rationale",
       "complexity": "trivial",
+      "triviality_score": 0,
+      "triviality_level": "editorial",
+      "is_trivial": true,
       "title": "docs(guide): remove a repeated word",
       "expected_quality": "needs_revision",
       "tags": [
@@ -630,6 +771,9 @@
       "scenario": "missing_rationale",
       "variant": "missing_rationale",
       "complexity": "trivial",
+      "triviality_score": 1,
+      "triviality_level": "mechanical",
+      "is_trivial": true,
       "title": "fix(cli): correct the output option in help text",
       "expected_quality": "needs_revision",
       "tags": [
@@ -649,6 +793,9 @@
       "scenario": "missing_rationale",
       "variant": "missing_rationale",
       "complexity": "trivial",
+      "triviality_score": 0,
+      "triviality_level": "editorial",
+      "is_trivial": true,
       "title": "docs: correct the getting started link",
       "expected_quality": "needs_revision",
       "tags": [
@@ -668,6 +815,9 @@
       "scenario": "missing_rationale",
       "variant": "missing_rationale",
       "complexity": "non_trivial",
+      "triviality_score": 2,
+      "triviality_level": "bounded_behavior",
+      "is_trivial": false,
       "title": "fix(stats): handle an empty average input",
       "expected_quality": "needs_revision",
       "tags": [
@@ -687,6 +837,9 @@
       "scenario": "missing_rationale",
       "variant": "missing_rationale",
       "complexity": "non_trivial",
+      "triviality_score": 2,
+      "triviality_level": "bounded_behavior",
+      "is_trivial": false,
       "title": "fix(cache): normalize keys for lookup",
       "expected_quality": "needs_revision",
       "tags": [
@@ -706,6 +859,9 @@
       "scenario": "missing_rationale",
       "variant": "missing_rationale",
       "complexity": "non_trivial",
+      "triviality_score": 2,
+      "triviality_level": "bounded_behavior",
+      "is_trivial": false,
       "title": "feat(batch): raise the batch limit to 100",
       "expected_quality": "needs_revision",
       "tags": [
@@ -725,6 +881,9 @@
       "scenario": "missing_rationale",
       "variant": "missing_rationale",
       "complexity": "non_trivial",
+      "triviality_score": 3,
+      "triviality_level": "substantive",
+      "is_trivial": false,
       "title": "fix(auth): compare tokens in constant time",
       "expected_quality": "needs_revision",
       "tags": [
@@ -744,6 +903,9 @@
       "scenario": "missing_rationale",
       "variant": "missing_rationale",
       "complexity": "non_trivial",
+      "triviality_score": 3,
+      "triviality_level": "substantive",
+      "is_trivial": false,
       "title": "feat(export): add CSV serialization",
       "expected_quality": "needs_revision",
       "tags": [
@@ -763,6 +925,9 @@
       "scenario": "missing_rationale",
       "variant": "missing_rationale",
       "complexity": "non_trivial",
+      "triviality_score": 4,
+      "triviality_level": "incompatible",
+      "is_trivial": false,
       "title": "feat(api)!: rename the user response field",
       "expected_quality": "needs_revision",
       "tags": [
@@ -783,6 +948,9 @@
       "scenario": "missing_rationale",
       "variant": "missing_rationale",
       "complexity": "non_trivial",
+      "triviality_score": 4,
+      "triviality_level": "incompatible",
+      "is_trivial": false,
       "title": "chore(config)!: remove the legacy configuration",
       "expected_quality": "needs_revision",
       "tags": [
@@ -803,6 +971,9 @@
       "scenario": "missing_change_description",
       "variant": "missing_change_description",
       "complexity": "trivial",
+      "triviality_score": 0,
+      "triviality_level": "editorial",
+      "is_trivial": true,
       "title": "docs(guide): remove a repeated word",
       "expected_quality": "needs_revision",
       "tags": [
@@ -824,6 +995,9 @@
       "scenario": "missing_change_description",
       "variant": "missing_change_description",
       "complexity": "trivial",
+      "triviality_score": 1,
+      "triviality_level": "mechanical",
+      "is_trivial": true,
       "title": "fix(cli): correct the output option in help text",
       "expected_quality": "needs_revision",
       "tags": [
@@ -845,6 +1019,9 @@
       "scenario": "missing_change_description",
       "variant": "missing_change_description",
       "complexity": "trivial",
+      "triviality_score": 0,
+      "triviality_level": "editorial",
+      "is_trivial": true,
       "title": "docs: correct the getting started link",
       "expected_quality": "needs_revision",
       "tags": [
@@ -866,6 +1043,9 @@
       "scenario": "missing_change_description",
       "variant": "missing_change_description",
       "complexity": "non_trivial",
+      "triviality_score": 2,
+      "triviality_level": "bounded_behavior",
+      "is_trivial": false,
       "title": "fix(stats): handle an empty average input",
       "expected_quality": "needs_revision",
       "tags": [
@@ -887,6 +1067,9 @@
       "scenario": "missing_change_description",
       "variant": "missing_change_description",
       "complexity": "non_trivial",
+      "triviality_score": 2,
+      "triviality_level": "bounded_behavior",
+      "is_trivial": false,
       "title": "fix(cache): normalize keys for lookup",
       "expected_quality": "needs_revision",
       "tags": [
@@ -908,6 +1091,9 @@
       "scenario": "missing_change_description",
       "variant": "missing_change_description",
       "complexity": "non_trivial",
+      "triviality_score": 2,
+      "triviality_level": "bounded_behavior",
+      "is_trivial": false,
       "title": "feat(batch): raise the batch limit to 100",
       "expected_quality": "needs_revision",
       "tags": [
@@ -929,6 +1115,9 @@
       "scenario": "missing_change_description",
       "variant": "missing_change_description",
       "complexity": "non_trivial",
+      "triviality_score": 3,
+      "triviality_level": "substantive",
+      "is_trivial": false,
       "title": "fix(auth): compare tokens in constant time",
       "expected_quality": "needs_revision",
       "tags": [
@@ -950,6 +1139,9 @@
       "scenario": "missing_change_description",
       "variant": "missing_change_description",
       "complexity": "non_trivial",
+      "triviality_score": 3,
+      "triviality_level": "substantive",
+      "is_trivial": false,
       "title": "feat(export): add CSV serialization",
       "expected_quality": "needs_revision",
       "tags": [
@@ -971,6 +1163,9 @@
       "scenario": "missing_change_description",
       "variant": "missing_change_description",
       "complexity": "non_trivial",
+      "triviality_score": 4,
+      "triviality_level": "incompatible",
+      "is_trivial": false,
       "title": "feat(api)!: rename the user response field",
       "expected_quality": "needs_revision",
       "tags": [
@@ -994,6 +1189,9 @@
       "scenario": "missing_change_description",
       "variant": "missing_change_description",
       "complexity": "non_trivial",
+      "triviality_score": 4,
+      "triviality_level": "incompatible",
+      "is_trivial": false,
       "title": "chore(config)!: remove the legacy configuration",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1017,6 +1215,9 @@
       "scenario": "title_description_mismatch",
       "variant": "title_description_mismatch",
       "complexity": "trivial",
+      "triviality_score": 0,
+      "triviality_level": "editorial",
+      "is_trivial": true,
       "title": "chore(deps): upgrade the runtime to version 22",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1037,6 +1238,9 @@
       "scenario": "title_description_mismatch",
       "variant": "title_description_mismatch",
       "complexity": "trivial",
+      "triviality_score": 1,
+      "triviality_level": "mechanical",
+      "is_trivial": true,
       "title": "chore(deps): upgrade the runtime to version 22",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1057,6 +1261,9 @@
       "scenario": "title_description_mismatch",
       "variant": "title_description_mismatch",
       "complexity": "trivial",
+      "triviality_score": 0,
+      "triviality_level": "editorial",
+      "is_trivial": true,
       "title": "chore(deps): upgrade the runtime to version 22",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1077,6 +1284,9 @@
       "scenario": "title_description_mismatch",
       "variant": "title_description_mismatch",
       "complexity": "non_trivial",
+      "triviality_score": 2,
+      "triviality_level": "bounded_behavior",
+      "is_trivial": false,
       "title": "chore(deps): upgrade the runtime to version 22",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1097,6 +1307,9 @@
       "scenario": "title_description_mismatch",
       "variant": "title_description_mismatch",
       "complexity": "non_trivial",
+      "triviality_score": 2,
+      "triviality_level": "bounded_behavior",
+      "is_trivial": false,
       "title": "chore(deps): upgrade the runtime to version 22",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1117,6 +1330,9 @@
       "scenario": "title_description_mismatch",
       "variant": "title_description_mismatch",
       "complexity": "non_trivial",
+      "triviality_score": 2,
+      "triviality_level": "bounded_behavior",
+      "is_trivial": false,
       "title": "chore(deps): upgrade the runtime to version 22",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1137,6 +1353,9 @@
       "scenario": "title_description_mismatch",
       "variant": "title_description_mismatch",
       "complexity": "non_trivial",
+      "triviality_score": 3,
+      "triviality_level": "substantive",
+      "is_trivial": false,
       "title": "chore(deps): upgrade the runtime to version 22",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1157,6 +1376,9 @@
       "scenario": "title_description_mismatch",
       "variant": "title_description_mismatch",
       "complexity": "non_trivial",
+      "triviality_score": 3,
+      "triviality_level": "substantive",
+      "is_trivial": false,
       "title": "chore(deps): upgrade the runtime to version 22",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1177,6 +1399,9 @@
       "scenario": "title_description_mismatch",
       "variant": "title_description_mismatch",
       "complexity": "non_trivial",
+      "triviality_score": 4,
+      "triviality_level": "incompatible",
+      "is_trivial": false,
       "title": "chore(deps): upgrade the runtime to version 22",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1198,6 +1423,9 @@
       "scenario": "title_description_mismatch",
       "variant": "title_description_mismatch",
       "complexity": "non_trivial",
+      "triviality_score": 4,
+      "triviality_level": "incompatible",
+      "is_trivial": false,
       "title": "chore(deps): upgrade the runtime to version 22",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1219,6 +1447,9 @@
       "scenario": "commit_description_mismatch",
       "variant": "commit_description_mismatch",
       "complexity": "trivial",
+      "triviality_score": 0,
+      "triviality_level": "editorial",
+      "is_trivial": true,
       "title": "docs(guide): remove a repeated word",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1238,6 +1469,9 @@
       "scenario": "commit_description_mismatch",
       "variant": "commit_description_mismatch",
       "complexity": "trivial",
+      "triviality_score": 1,
+      "triviality_level": "mechanical",
+      "is_trivial": true,
       "title": "fix(cli): correct the output option in help text",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1257,6 +1491,9 @@
       "scenario": "commit_description_mismatch",
       "variant": "commit_description_mismatch",
       "complexity": "trivial",
+      "triviality_score": 0,
+      "triviality_level": "editorial",
+      "is_trivial": true,
       "title": "docs: correct the getting started link",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1276,6 +1513,9 @@
       "scenario": "commit_description_mismatch",
       "variant": "commit_description_mismatch",
       "complexity": "non_trivial",
+      "triviality_score": 2,
+      "triviality_level": "bounded_behavior",
+      "is_trivial": false,
       "title": "fix(stats): handle an empty average input",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1295,6 +1535,9 @@
       "scenario": "commit_description_mismatch",
       "variant": "commit_description_mismatch",
       "complexity": "non_trivial",
+      "triviality_score": 2,
+      "triviality_level": "bounded_behavior",
+      "is_trivial": false,
       "title": "fix(cache): normalize keys for lookup",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1314,6 +1557,9 @@
       "scenario": "commit_description_mismatch",
       "variant": "commit_description_mismatch",
       "complexity": "non_trivial",
+      "triviality_score": 2,
+      "triviality_level": "bounded_behavior",
+      "is_trivial": false,
       "title": "feat(batch): raise the batch limit to 100",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1333,6 +1579,9 @@
       "scenario": "commit_description_mismatch",
       "variant": "commit_description_mismatch",
       "complexity": "non_trivial",
+      "triviality_score": 3,
+      "triviality_level": "substantive",
+      "is_trivial": false,
       "title": "fix(auth): compare tokens in constant time",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1352,6 +1601,9 @@
       "scenario": "commit_description_mismatch",
       "variant": "commit_description_mismatch",
       "complexity": "non_trivial",
+      "triviality_score": 3,
+      "triviality_level": "substantive",
+      "is_trivial": false,
       "title": "feat(export): add CSV serialization",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1371,6 +1623,9 @@
       "scenario": "commit_description_mismatch",
       "variant": "commit_description_mismatch",
       "complexity": "non_trivial",
+      "triviality_score": 4,
+      "triviality_level": "incompatible",
+      "is_trivial": false,
       "title": "feat(api)!: rename the user response field",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1391,6 +1646,9 @@
       "scenario": "commit_description_mismatch",
       "variant": "commit_description_mismatch",
       "complexity": "non_trivial",
+      "triviality_score": 4,
+      "triviality_level": "incompatible",
+      "is_trivial": false,
       "title": "chore(config)!: remove the legacy configuration",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1411,6 +1669,9 @@
       "scenario": "diff_description_mismatch",
       "variant": "diff_description_mismatch",
       "complexity": "trivial",
+      "triviality_score": 0,
+      "triviality_level": "editorial",
+      "is_trivial": true,
       "title": "docs(guide): replace the guide with a video",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1434,6 +1695,9 @@
       "scenario": "diff_description_mismatch",
       "variant": "diff_description_mismatch",
       "complexity": "trivial",
+      "triviality_score": 1,
+      "triviality_level": "mechanical",
+      "is_trivial": true,
       "title": "feat(cli): rename the output option to --destination",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1457,6 +1721,9 @@
       "scenario": "diff_description_mismatch",
       "variant": "diff_description_mismatch",
       "complexity": "trivial",
+      "triviality_score": 0,
+      "triviality_level": "editorial",
+      "is_trivial": true,
       "title": "docs: move the getting started guide to the website",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1480,6 +1747,9 @@
       "scenario": "diff_description_mismatch",
       "variant": "diff_description_mismatch",
       "complexity": "non_trivial",
+      "triviality_score": 2,
+      "triviality_level": "bounded_behavior",
+      "is_trivial": false,
       "title": "fix(stats): return one for an empty average input",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1503,6 +1773,9 @@
       "scenario": "diff_description_mismatch",
       "variant": "diff_description_mismatch",
       "complexity": "non_trivial",
+      "triviality_score": 2,
+      "triviality_level": "bounded_behavior",
+      "is_trivial": false,
       "title": "fix(cache): uppercase keys for lookup",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1526,6 +1799,9 @@
       "scenario": "diff_description_mismatch",
       "variant": "diff_description_mismatch",
       "complexity": "non_trivial",
+      "triviality_score": 2,
+      "triviality_level": "bounded_behavior",
+      "is_trivial": false,
       "title": "feat(batch): raise the batch limit to 200",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1549,6 +1825,9 @@
       "scenario": "diff_description_mismatch",
       "variant": "diff_description_mismatch",
       "complexity": "non_trivial",
+      "triviality_score": 3,
+      "triviality_level": "substantive",
+      "is_trivial": false,
       "title": "fix(auth): compare tokens without case sensitivity",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1572,6 +1851,9 @@
       "scenario": "diff_description_mismatch",
       "variant": "diff_description_mismatch",
       "complexity": "non_trivial",
+      "triviality_score": 3,
+      "triviality_level": "substantive",
+      "is_trivial": false,
       "title": "feat(export): add JSON serialization",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1595,6 +1877,9 @@
       "scenario": "diff_description_mismatch",
       "variant": "diff_description_mismatch",
       "complexity": "non_trivial",
+      "triviality_score": 4,
+      "triviality_level": "incompatible",
+      "is_trivial": false,
       "title": "style(api): reformat the user response without changing fields",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1620,6 +1905,9 @@
       "scenario": "diff_description_mismatch",
       "variant": "diff_description_mismatch",
       "complexity": "non_trivial",
+      "triviality_score": 4,
+      "triviality_level": "incompatible",
+      "is_trivial": false,
       "title": "chore(config): update defaults in the legacy configuration",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1645,6 +1933,9 @@
       "scenario": "additional_cases",
       "variant": "empty_description",
       "complexity": "trivial",
+      "triviality_score": 0,
+      "triviality_level": "editorial",
+      "is_trivial": true,
       "title": "docs(guide): remove a repeated word",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1669,6 +1960,9 @@
       "scenario": "additional_cases",
       "variant": "whitespace_description",
       "complexity": "trivial",
+      "triviality_score": 1,
+      "triviality_level": "mechanical",
+      "is_trivial": true,
       "title": "fix(cli): correct the output option in help text",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1693,6 +1987,9 @@
       "scenario": "additional_cases",
       "variant": "placeholder_description",
       "complexity": "trivial",
+      "triviality_score": 0,
+      "triviality_level": "editorial",
+      "is_trivial": true,
       "title": "docs: correct the getting started link",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1717,6 +2014,9 @@
       "scenario": "additional_cases",
       "variant": "empty_headings",
       "complexity": "non_trivial",
+      "triviality_score": 2,
+      "triviality_level": "bounded_behavior",
+      "is_trivial": false,
       "title": "fix(stats): handle an empty average input",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1741,6 +2041,9 @@
       "scenario": "additional_cases",
       "variant": "vague_rationale",
       "complexity": "non_trivial",
+      "triviality_score": 2,
+      "triviality_level": "bounded_behavior",
+      "is_trivial": false,
       "title": "fix(cache): normalize keys for lookup",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1761,6 +2064,9 @@
       "scenario": "additional_cases",
       "variant": "missing_limitations",
       "complexity": "non_trivial",
+      "triviality_score": 2,
+      "triviality_level": "bounded_behavior",
+      "is_trivial": false,
       "title": "feat(batch): raise the batch limit to 100",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1781,6 +2087,9 @@
       "scenario": "additional_cases",
       "variant": "missing_testing",
       "complexity": "non_trivial",
+      "triviality_score": 3,
+      "triviality_level": "substantive",
+      "is_trivial": false,
       "title": "fix(auth): compare tokens in constant time",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1801,6 +2110,9 @@
       "scenario": "additional_cases",
       "variant": "partial_description",
       "complexity": "non_trivial",
+      "triviality_score": 3,
+      "triviality_level": "substantive",
+      "is_trivial": false,
       "title": "feat(export): add CSV serialization",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1822,6 +2134,9 @@
       "scenario": "additional_cases",
       "variant": "undocumented_breaking_change",
       "complexity": "non_trivial",
+      "triviality_score": 4,
+      "triviality_level": "incompatible",
+      "is_trivial": false,
       "title": "feat(api)!: rename the user response field",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1844,6 +2159,9 @@
       "scenario": "additional_cases",
       "variant": "undocumented_breaking_change",
       "complexity": "non_trivial",
+      "triviality_score": 4,
+      "triviality_level": "incompatible",
+      "is_trivial": false,
       "title": "chore(config)!: remove the legacy configuration",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1866,6 +2184,9 @@
       "scenario": "combined_failures",
       "variant": "combined_failures",
       "complexity": "trivial",
+      "triviality_score": 0,
+      "triviality_level": "editorial",
+      "is_trivial": true,
       "title": "Remove a repeated word",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1888,6 +2209,9 @@
       "scenario": "combined_failures",
       "variant": "combined_failures",
       "complexity": "trivial",
+      "triviality_score": 1,
+      "triviality_level": "mechanical",
+      "is_trivial": true,
       "title": "asdf qwer zxcv 123",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1916,6 +2240,9 @@
       "scenario": "combined_failures",
       "variant": "combined_failures",
       "complexity": "trivial",
+      "triviality_score": 0,
+      "triviality_level": "editorial",
+      "is_trivial": true,
       "title": "chore(deps): upgrade the runtime to version 22",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1939,6 +2266,9 @@
       "scenario": "combined_failures",
       "variant": "combined_failures",
       "complexity": "non_trivial",
+      "triviality_score": 2,
+      "triviality_level": "bounded_behavior",
+      "is_trivial": false,
       "title": "fix(stats): handle an empty average input",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1964,6 +2294,9 @@
       "scenario": "combined_failures",
       "variant": "combined_failures",
       "complexity": "non_trivial",
+      "triviality_score": 2,
+      "triviality_level": "bounded_behavior",
+      "is_trivial": false,
       "title": "Normalize keys for lookup",
       "expected_quality": "needs_revision",
       "tags": [
@@ -1988,6 +2321,9 @@
       "scenario": "combined_failures",
       "variant": "combined_failures",
       "complexity": "non_trivial",
+      "triviality_score": 2,
+      "triviality_level": "bounded_behavior",
+      "is_trivial": false,
       "title": "feat(batch): raise the batch limit to 100",
       "expected_quality": "needs_revision",
       "tags": [
@@ -2010,6 +2346,9 @@
       "scenario": "combined_failures",
       "variant": "combined_failures",
       "complexity": "non_trivial",
+      "triviality_score": 3,
+      "triviality_level": "substantive",
+      "is_trivial": false,
       "title": "fix(auth): compare tokens in constant time",
       "expected_quality": "needs_revision",
       "tags": [
@@ -2032,6 +2371,9 @@
       "scenario": "combined_failures",
       "variant": "combined_failures",
       "complexity": "non_trivial",
+      "triviality_score": 3,
+      "triviality_level": "substantive",
+      "is_trivial": false,
       "title": "fix(core): blorb zzz flarp",
       "expected_quality": "needs_revision",
       "tags": [
@@ -2056,6 +2398,9 @@
       "scenario": "combined_failures",
       "variant": "combined_failures",
       "complexity": "non_trivial",
+      "triviality_score": 4,
+      "triviality_level": "incompatible",
+      "is_trivial": false,
       "title": "Rename the user response field",
       "expected_quality": "needs_revision",
       "tags": [
@@ -2082,6 +2427,9 @@
       "scenario": "combined_failures",
       "variant": "combined_failures",
       "complexity": "non_trivial",
+      "triviality_score": 4,
+      "triviality_level": "incompatible",
+      "is_trivial": false,
       "title": "chore(config)!: remove the legacy configuration",
       "expected_quality": "needs_revision",
       "tags": [

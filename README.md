@@ -113,7 +113,8 @@ the [rubric examples](examples/rubric/README.md).
 
 The [synthetic PR corpus](examples/synthetic-prs/README.md) provides 100 fictional
 PRs with metadata, commit lists, complete patches, and provisional annotations
-for title, rationale, description consistency, limitations, and compatibility.
+for title, rationale, description consistency, limitations, compatibility, and
+change triviality on a 0–4 scale, with an offline triviality benchmark scorer.
 Use its [index](examples/synthetic-prs/INDEX.md) to browse good cases, individual
 failures, and combined failures.
 

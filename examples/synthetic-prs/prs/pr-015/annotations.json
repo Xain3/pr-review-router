@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "case_id": "pr-015",
   "label_status": "provisional",
   "label_origin": "synthetic_author_intent",
@@ -102,6 +102,16 @@
       "explanation": "The description gives a relevant validation plan, without claiming execution.",
       "sources": [
         "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "change_triviality": {
+      "type": "ordinal",
+      "score": 2,
+      "level": "bounded_behavior",
+      "is_trivial": false,
+      "explanation": "Lowercasing changes lookup semantics and can affect stores with differently capitalized keys.",
+      "sources": [
         "evidence.json#/files"
       ]
     }

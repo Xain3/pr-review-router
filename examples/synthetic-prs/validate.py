@@ -50,7 +50,7 @@ def validate(root: Path) -> dict:
     root = root.resolve()
     index = read_json(root, "index.json")
     require(
-        index["schema_version"] == 1 and index["synthetic"] is True,
+        index["schema_version"] == 2 and index["synthetic"] is True,
         "Unsupported or non-synthetic corpus",
     )
     require(index["label_status"] == "provisional", "Labels must retain synthetic provenance")
@@ -63,7 +63,24 @@ def validate(root: Path) -> dict:
         {path.name for path in (root / "prs").iterdir()} == expected_ids,
         "Unindexed or missing PR directories",
     )
-    require(len(index["criteria"]) == 12, "Expected the complete 12-criterion rubric")
+    require(
+        len(index["criteria"]) == 13 and "change_triviality" in index["criteria"],
+        "Expected twelve quality criteria and an ordinal change-triviality criterion",
+    )
+    scale = index["triviality_scale"]
+    require(
+        scale["minimum_score"] == 0
+        and scale["maximum_score"] == 4
+        and scale["direction"] == "higher_scores_are_less_trivial"
+        and scale["trivial_scores"] == [0, 1],
+        "Invalid triviality scale",
+    )
+    require(
+        [level["score"] for level in scale["levels"]] == list(range(5))
+        and len({level["label"] for level in scale["levels"]}) == 5
+        and all(level["description"].strip() for level in scale["levels"]),
+        "Triviality scale must define all five distinct ordered levels",
+    )
     scenarios = Counter()
     qualities = Counter()
     families = Counter()
@@ -71,6 +88,9 @@ def validate(root: Path) -> dict:
     tags = Counter()
     rationale_complexities = Counter()
     failures = Counter()
+    triviality_counts = Counter()
+    complexity_counts = Counter()
+    family_scores = {}
     valid_syntax_gibberish = 0
     commit_count = 0
     sha_pattern = re.compile(r"[0-9a-f]{40}")
@@ -88,7 +108,7 @@ def validate(root: Path) -> dict:
         )
         require(evidence.number == int(case_id.removeprefix("pr-")), f"{case_id}: wrong PR number")
         require(
-            metadata["schema_version"] == labels["schema_version"] == 1,
+            metadata["schema_version"] == 1 and labels["schema_version"] == 2,
             f"{case_id}: unknown companion schema",
         )
         require(metadata["synthetic"] is True, f"{case_id}: missing synthetic marker")
@@ -111,11 +131,56 @@ def validate(root: Path) -> dict:
             set(labels["criteria"]) == set(index["criteria"]),
             f"{case_id}: incomplete rubric labels",
         )
+        triviality = labels["criteria"]["change_triviality"]
+        require(
+            set(triviality) == {"type", "score", "level", "is_trivial", "explanation", "sources"}
+            and triviality["type"] == "ordinal",
+            f"{case_id}: invalid ordinal criterion",
+        )
+        score = triviality["score"]
+        require(type(score) is int and 0 <= score <= 4, f"{case_id}: invalid triviality score")
+        require(
+            type(triviality["is_trivial"]) is bool
+            and triviality["is_trivial"] == (score <= 1)
+            and triviality["level"] == scale["levels"][score]["label"],
+            f"{case_id}: triviality classification disagrees with the scale",
+        )
+        require(
+            labels["complexity"] == ("trivial" if score <= 1 else "non_trivial"),
+            f"{case_id}: existing complexity label disagrees with triviality",
+        )
+        require(
+            case["triviality_score"] == score
+            and case["triviality_level"] == triviality["level"]
+            and type(case["is_trivial"]) is bool
+            and case["is_trivial"] == triviality["is_trivial"],
+            f"{case_id}: stale triviality index",
+        )
+        require(
+            triviality["sources"] == ["evidence.json#/files"],
+            f"{case_id}: triviality must be grounded in the actual diff",
+        )
+        family_id = labels["family_id"]
+        require(
+            family_scores.setdefault(family_id, score) == score,
+            f"{case_id}: matched diffs have inconsistent triviality scores",
+        )
+        row = next(
+            line
+            for line in table.splitlines()
+            if line.startswith(f"| [{case_id}]({case['evidence']}) |")
+        )
+        require(
+            f"| {score} ({triviality['level']}) | "
+            f"{'yes' if triviality['is_trivial'] else 'no'} |" in row,
+            f"{case_id}: missing Markdown triviality score",
+        )
         for key, criterion in labels["criteria"].items():
-            require(
-                criterion["status"] in {"passed", "failed", "not_assessable", "not_applicable"},
-                f"{case_id}: invalid status for {key}",
-            )
+            if key != "change_triviality":
+                require(
+                    criterion["status"] in {"passed", "failed", "not_assessable", "not_applicable"},
+                    f"{case_id}: invalid status for {key}",
+                )
             require(
                 bool(criterion["explanation"].strip()) and bool(criterion["sources"]),
                 f"{case_id}: missing explanation or evidence references for {key}",
@@ -131,7 +196,9 @@ def validate(root: Path) -> dict:
                     token = token.replace("~1", "/").replace("~0", "~")
                     value = value[int(token)] if isinstance(value, list) else value[token]
         failed = sorted(
-            key for key, criterion in labels["criteria"].items() if criterion["status"] == "failed"
+            key
+            for key, criterion in labels["criteria"].items()
+            if criterion.get("status") == "failed"
         )
         require(failed == case["failed_criteria"], f"{case_id}: stale failure index")
         require(
@@ -142,7 +209,8 @@ def validate(root: Path) -> dict:
             require(
                 all(
                     item["status"] in {"passed", "not_applicable"}
-                    for item in labels["criteria"].values()
+                    for key, item in labels["criteria"].items()
+                    if key != "change_triviality"
                 ),
                 f"{case_id}: good case contains unassessed criteria",
             )
@@ -214,6 +282,8 @@ def validate(root: Path) -> dict:
         scenarios[labels["scenario"]] += 1
         qualities[labels["expected_quality"]] += 1
         families[labels["family_id"]] += 1
+        triviality_counts[str(score)] += 1
+        complexity_counts[labels["complexity"]] += 1
         family_scenarios.add((labels["family_id"], labels["scenario"]))
         tags.update(labels["tags"])
         failures.update(failed)
@@ -233,6 +303,16 @@ def validate(root: Path) -> dict:
     require(len(families) == 10 and set(families.values()) == {10}, "Unbalanced change families")
     require(len(family_scenarios) == 100, "Duplicate family/scenario pairs")
     require(
+        dict(triviality_counts)
+        == index["triviality_counts"]
+        == {"0": 20, "1": 10, "2": 30, "3": 20, "4": 20},
+        "Incomplete triviality coverage or stale score counts",
+    )
+    require(
+        dict(complexity_counts) == index["complexity_counts"] == {"trivial": 30, "non_trivial": 70},
+        "Stale complexity counts",
+    )
+    require(
         rationale_complexities == {"trivial": 3, "non_trivial": 7},
         "Missing trivial or non-trivial rationale cases",
     )
@@ -245,6 +325,8 @@ def validate(root: Path) -> dict:
         "commit_count": commit_count,
         "scenario_counts": dict(scenarios),
         "quality_counts": dict(qualities),
+        "triviality_counts": dict(triviality_counts),
+        "complexity_counts": dict(complexity_counts),
         "failed_criterion_counts": dict(failures),
         "valid_syntax_gibberish": valid_syntax_gibberish,
     }

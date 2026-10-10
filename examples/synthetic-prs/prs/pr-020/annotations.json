@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "case_id": "pr-020",
   "label_status": "provisional",
   "label_origin": "synthetic_author_intent",
@@ -103,6 +103,16 @@
       "explanation": "The description gives a relevant validation plan, without claiming execution.",
       "sources": [
         "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "change_triviality": {
+      "type": "ordinal",
+      "score": 4,
+      "level": "incompatible",
+      "is_trivial": false,
+      "explanation": "A supported configuration entrypoint is deleted; deployment scripts referencing it must migrate.",
+      "sources": [
         "evidence.json#/files"
       ]
     }

@@ -21,7 +21,7 @@ depths, not separate provider roles. See the
 | [`rubric/`](rubric/README.md) | Weighted title/body criteria, hard and soft blockers, and the resulting aggregate score and routing behavior. | [Rubric examples](rubric/README.md) |
 | [`local-models/`](local-models/README.md) | Independent local adapters, shadow skips, provisional evaluation labels, and explicitly synthetic offline HTTP replay. | [Local models and replay](local-models/README.md) |
 | [`rubric-review/`](rubric-review/README.md) | Six formal/semantic criteria applied to PR text and a supplied review, with blockers, suggestions, and advisory skip/approval recommendations. | [PR and review rubric](rubric-review/README.md) |
-| [`synthetic-prs/`](synthetic-prs/README.md) | 100 fictional PRs with metadata, commit lists, complete patches, and independent quality annotations. | [Corpus guide](synthetic-prs/README.md) and [index](synthetic-prs/INDEX.md) |
+| [`synthetic-prs/`](synthetic-prs/README.md) | 100 fictional PRs with metadata, commits, complete patches, quality annotations, and a graded triviality benchmark. | [Corpus guide](synthetic-prs/README.md) and [index](synthetic-prs/INDEX.md) |
 
 ## Run the examples
 

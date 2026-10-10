@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "case_id": "pr-052",
   "label_status": "provisional",
   "label_origin": "synthetic_author_intent",
@@ -102,6 +102,16 @@
       "explanation": "The description gives a relevant validation plan, without claiming execution.",
       "sources": [
         "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "change_triviality": {
+      "type": "ordinal",
+      "score": 1,
+      "level": "mechanical",
+      "is_trivial": true,
+      "explanation": "Only the displayed option spelling changes in a help string; the option parser and accepted option are unchanged.",
+      "sources": [
         "evidence.json#/files"
       ]
     }

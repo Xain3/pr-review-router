@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "case_id": "pr-088",
   "label_status": "provisional",
   "label_origin": "synthetic_author_intent",
@@ -103,6 +103,16 @@
       "explanation": "The description gives a relevant validation plan, without claiming execution.",
       "sources": [
         "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "change_triviality": {
+      "type": "ordinal",
+      "score": 3,
+      "level": "substantive",
+      "is_trivial": false,
+      "explanation": "A new serialization helper introduces quoting, empty-input, and format behavior beyond an editorial or mechanical edit.",
+      "sources": [
         "evidence.json#/files"
       ]
     }

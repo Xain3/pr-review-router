@@ -1,9 +1,10 @@
 # Synthetic PR quality corpus
 
 100 fictional, sanitized pull requests for benchmarking PR title and description
-quality. Each has metadata, a one- or two-commit list, complete unified file
-patches, and independent criterion annotations. Everything is checked in;
-loading, regeneration, and validation need no network or credentials.
+quality and actual change triviality. Each has metadata, a one- or two-commit
+list, complete unified file patches, and independent criterion annotations.
+Everything is checked in; loading, regeneration, and validation need no network
+or credentials.
 
 Start with the [human-readable index](INDEX.md) or [machine-readable manifest](index.json).
 
@@ -15,11 +16,15 @@ Each `prs/pr-NNN/` directory contains:
 | --- | --- |
 | `evidence.json` | Repository, PR number, title, Markdown body, base/head identifiers, and changed files with status, line counts, and unified patches. Accepted directly by `PullRequestEvidence` and the `review` CLI. |
 | `metadata.json` | Fictional author, reserved-domain URL, timestamps, branch names, aggregate diff statistics, and ordered `commits`. Each commit has a SHA-shaped identifier, parent, message, author, timestamp, changed paths, and line counts. |
-| `annotations.json` | Family, scenario, tags, expected quality, twelve criterion labels with explanations and JSON Pointer evidence references, and a truthful reference summary. |
+| `annotations.json` | Family, scenario, tags, expected quality, twelve quality labels and a graded change-triviality criterion with explanations and JSON Pointer evidence references, and a truthful reference summary. |
 
-The manifest uses `schema_version: 1` and relative paths to these three files.
-Companion objects also use schema version 1. Identifiers are deterministic fake
-values rather than real Git object hashes; no repositories need to be fetched.
+The manifest and annotations use `schema_version: 2`, adding the ordinal
+triviality criterion alongside the twelve status-based quality criteria.
+Metadata retains schema version 1, and CLI evidence is unchanged. Consumers of
+version 1 should handle the new ordinal shape before reading version 2.
+The manifest uses relative paths to these three files. Identifiers are
+deterministic fake values rather than real Git object hashes; no repositories
+need to be fetched.
 Each commit changes exactly one file once, in listed order, so its changed path
 identifies its complete patch in `evidence.json`. Commit parents form a linear
 chain from `base_sha` to `head_sha`; commit statistics sum to PR statistics.
@@ -38,13 +43,15 @@ for case in index["cases"]:
     model_input = {"pull_request": evidence, "commits": metadata["commits"]}
     # Send only model_input to the system being benchmarked.
     oracle = json.loads((root / case["annotations"]).read_text())
-    # Compare predicted criterion statuses with oracle["criteria"].
+    # Compare predicted quality statuses with oracle["criteria"].
+    triviality = oracle["criteria"]["change_triviality"]
+    # Compare the model's integer triviality score with triviality["score"].
 ```
 
 The manifest includes labels for filtering. Withhold its scenario, tags, quality,
-and failed criteria, together with annotations and reference summaries, from the
-system under evaluation. The router's current evidence schema does not ingest
-commit lists. A harness assessing commit/description consistency must provide
+failed criteria, and triviality/complexity labels, together with annotations and
+reference summaries, from the system under evaluation. The router's current
+evidence schema does not ingest commit lists. A harness assessing commit/description consistency must provide
 the companion commits explicitly. This manifest is a PR-text benchmark index,
 not the routing CLI's separate `evaluate --corpus` schema.
 
@@ -87,14 +94,18 @@ it can later be supplemented with sanitized real PRs using the same layout.
 All labels have `label_status: "provisional"` and
 `label_origin: "synthetic_author_intent"`. They encode planted case expectations,
 independently of provider outputs, and have not been labeled by external human
-reviewers. They assess supplied PR communication, not code correctness,
-authorization to merge, or model calibration.
+reviewers. They assess supplied PR communication and diff triviality, not code
+correctness, authorization to merge, or model calibration.
 
-Each criterion has `status`, `explanation`, and `sources`. Sources such as
-`evidence.json#/body` and `metadata.json#/commits` are file-relative JSON Pointers.
+Quality criteria have `status`, `explanation`, and `sources`. The ordinal
+`change_triviality` criterion has `type: "ordinal"`, integer `score`, `level`,
+boolean `is_trivial`, `explanation`, and `sources`; it has no pass/fail status.
+Sources such as `evidence.json#/body` and `metadata.json#/commits` are file-relative
+JSON Pointers.
 
 | Criterion | Interpretation |
 | --- | --- |
+| `change_triviality` | The actual diff's 0–4 triviality score, grounded in behavior, interfaces, and review scope rather than the title, body, commit messages, or line count. |
 | `title_format` | Conventional Commits syntax accepted by the router. A gibberish subject can pass syntax. |
 | `title_meaningful` | The title conveys an intelligible change. |
 | `title_diff_consistency` | A meaningful title agrees with the actual patches. |
@@ -114,7 +125,57 @@ account to compare; it is not an observed contradiction. `not_applicable` is
 used for breaking-change disclosure when the family removes no supported public
 interface. Missing rationale can fail even for trivial edits. Missing content
 is labeled separately from conflicting content, and `expected_quality` is
-`needs_revision` when any criterion fails.
+`needs_revision` when any quality criterion fails. Non-trivial changes do not
+fail PR communication quality merely because of their triviality score.
+
+## Change triviality scale and benchmark
+
+Higher scores mean less trivial changes. Use the highest applicable level for
+the actual diff; evaluate each matched family consistently even when its title,
+body, or commit messages are misleading. A one-line security or public-interface
+change can score higher than a larger prose edit. This is an ordinal assessment
+of review scope and impact, not a calibrated safety or defect probability.
+
+| Score | Level | Definition | Corpus examples | Cases |
+| ---: | --- | --- | --- | ---: |
+| 0 | `editorial` | Prose or link correction; no runtime/interface change | Guide typo, README link | 20 |
+| 1 | `mechanical` | Local mechanical or presentation change in code preserving functional behavior and public interfaces | CLI help string correction | 10 |
+| 2 | `bounded_behavior` | Local behavior/configuration change requiring edge-case review | Empty average, key normalization, batch boundary | 30 |
+| 3 | `substantive` | New capability or security-sensitive behavior requiring broader review | CSV helper, authentication comparison | 20 |
+| 4 | `incompatible` | Supported interface/configuration removal requiring migration | Response-field rename, deleted legacy config | 20 |
+
+Scores 0–1 are `is_trivial: true`, retaining the existing `complexity: "trivial"`
+classification. Scores 2–4 are `is_trivial: false` and `complexity: "non_trivial"`.
+The full corpus contains 30 trivial and 70 non-trivial changes. Both indexes
+expose the score, level, and binary classification; the manifest defines the
+scale and its counts. Every annotation includes a diff-based explanation.
+
+After running your system on the inputs, write all 100 predictions in this form
+(this excerpt shows only two of the required records):
+
+```json
+{
+  "schema_version": 1,
+  "predictions": [
+    {"case_id": "pr-001", "score": 0},
+    {"case_id": "pr-002", "score": 1}
+  ]
+}
+```
+
+```sh
+uv run python examples/synthetic-prs/evaluate_triviality.py reports/triviality-predictions.json
+```
+
+The scorer requires exactly one integer 0–4 prediction for every case; duplicate,
+unknown, missing, and out-of-range predictions are rejected. It reports exact
+score accuracy, mean absolute error, binary trivial/non-trivial accuracy, a
+reference-by-prediction confusion matrix, and accuracy by PR communication
+quality. Compare scores for this criterion and statuses for the twelve quality
+criteria. This command scores supplied predictions offline; it performs no
+inference and retains the provisional label status in its output. Withhold
+reference triviality labels from model inputs and split by family as described
+above. Perfect scores from copied reference labels only test the scorer.
 
 Testing sections describe fictional validation **plans**, never tests that this
 project claims to have executed. They demonstrate relevant PR communication;

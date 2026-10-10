@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "case_id": "pr-041",
   "label_status": "provisional",
   "label_origin": "synthetic_author_intent",
@@ -102,6 +102,16 @@
       "explanation": "No relevant checks or validation plan are described.",
       "sources": [
         "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "change_triviality": {
+      "type": "ordinal",
+      "score": 0,
+      "level": "editorial",
+      "is_trivial": true,
+      "explanation": "Only a repeated word in prose is removed; no runtime behavior changes.",
+      "sources": [
         "evidence.json#/files"
       ]
     }
