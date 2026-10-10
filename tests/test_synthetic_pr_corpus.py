@@ -29,6 +29,26 @@ def test_synthetic_pr_corpus_integrity():
     assert summary["potential_triviality_confounders"] == 11
 
 
+def test_synthetic_pr_corpus_regenerates_deterministically(tmp_path):
+    namespace = runpy.run_path(str(CORPUS / "generate.py"))
+    namespace["main"](tmp_path)
+
+    generated_files = {
+        path.relative_to(tmp_path): path.read_bytes()
+        for path in tmp_path.rglob("*")
+        if path.is_file()
+    }
+    expected_paths = {path.relative_to(CORPUS) for path in CORPUS.rglob("*.json")}
+    expected_paths.add(Path("INDEX.md"))
+
+    assert len(generated_files) == 302
+    assert set(generated_files) == expected_paths
+    assert all(
+        content == (CORPUS / relative_path).read_bytes()
+        for relative_path, content in generated_files.items()
+    )
+
+
 @pytest.mark.parametrize(
     ("case_id", "title_score", "body_score", "text_score", "relationship", "confounder"),
     [

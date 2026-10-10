@@ -1143,8 +1143,11 @@ def write_json(path: Path, value: dict) -> None:
     path.write_text(json.dumps(value, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
 
-def main() -> None:
-    """Regenerate the checked-in 100-case corpus and both indexes without network access."""
+def main(output_root: Path = ROOT) -> None:
+    """Regenerate the 100-case corpus and both indexes without network access.
+
+    :param output_root: Directory in which to write the generated artifacts.
+    """
     cases = []
     for profile_index, profile in enumerate(PROFILES):
         for family_index, family in enumerate(FAMILIES):
@@ -1156,7 +1159,7 @@ def main() -> None:
                 ("metadata", metadata),
                 ("annotations", annotation),
             ):
-                write_json(ROOT / directory / f"{name}.json", value)
+                write_json(output_root / directory / f"{name}.json", value)
             cases.append(
                 {
                     "case_id": annotation["case_id"],
@@ -1190,7 +1193,7 @@ def main() -> None:
                 }
             )
     write_json(
-        ROOT / "index.json",
+        output_root / "index.json",
         {
             "schema_version": 2,
             "synthetic": True,
@@ -1247,8 +1250,8 @@ def main() -> None:
             f"{variant} | {case['expected_quality']} | {failures} | "
             f"[commits]({case['metadata']}) / [labels]({case['annotations']}) |"
         )
-    (ROOT / "INDEX.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
-    print(f"Generated {len(cases)} fictional PRs under {ROOT}.")
+    (output_root / "INDEX.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    print(f"Generated {len(cases)} fictional PRs under {output_root}.")
 
 
 if __name__ == "__main__":
