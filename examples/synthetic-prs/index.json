@@ -2558,7 +2558,7 @@
       "text_triviality_score": 2,
       "text_diff_triviality_relationship": "aligned",
       "potential_triviality_confounder": false,
-      "title": "fix(stats): handle an empty average input",
+      "title": "fix(stats): return zero for an empty average input",
       "expected_quality": "needs_revision",
       "tags": [
         "combined_failures",

@@ -49,6 +49,15 @@ def test_synthetic_pr_corpus_regenerates_deterministically(tmp_path):
     )
 
 
+def test_combined_empty_average_case_title_conflicts_with_false_summary():
+    evidence = json.loads((CORPUS / "prs" / "pr-094" / "evidence.json").read_text())
+    annotation = json.loads((CORPUS / "prs" / "pr-094" / "annotations.json").read_text())
+
+    assert evidence["title"] == "fix(stats): return zero for an empty average input"
+    assert annotation["criteria"]["description_title_consistency"]["status"] == "failed"
+    assert annotation["criteria"]["title_diff_consistency"]["status"] == "passed"
+
+
 @pytest.mark.parametrize(
     ("case_id", "title_score", "body_score", "text_score", "relationship", "confounder"),
     [

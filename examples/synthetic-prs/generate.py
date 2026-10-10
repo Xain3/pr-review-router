@@ -815,10 +815,12 @@ def make_case(number: int, family: Family, profile: str, family_index: int) -> t
                 "chore: support the behavior described in the PR summary" for _ in messages[1:]
             ]
         else:
+            if family.identifier == "empty-average":
+                title = "fix(stats): return zero for an empty average input"
             mark(
                 "description_title_consistency",
                 "failed",
-                "The false summary contradicts the title's actual change.",
+                "The false summary contradicts the title's stated result.",
             )
             mark(
                 "description_commit_consistency",
@@ -830,7 +832,7 @@ def make_case(number: int, family: Family, profile: str, family_index: int) -> t
             "failed" if align_text else "passed",
             "The title follows the false summary rather than the patch."
             if align_text
-            else "The unchanged title still describes the genuine patch.",
+            else "The title still describes the genuine patch.",
         )
         mark(
             "description_diff_consistency",

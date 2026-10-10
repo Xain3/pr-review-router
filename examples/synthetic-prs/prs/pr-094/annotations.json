@@ -31,7 +31,7 @@
     },
     "title_diff_consistency": {
       "status": "passed",
-      "explanation": "The unchanged title still describes the genuine patch.",
+      "explanation": "The title still describes the genuine patch.",
       "sources": [
         "evidence.json#/title",
         "evidence.json#/files"
@@ -60,7 +60,7 @@
     },
     "description_title_consistency": {
       "status": "failed",
-      "explanation": "The false summary contradicts the title's actual change.",
+      "explanation": "The false summary contradicts the title's stated result.",
       "sources": [
         "evidence.json#/body",
         "evidence.json#/title"
@@ -127,7 +127,7 @@
       "relationship": "aligned",
       "score_delta": 0,
       "potential_confounder": false,
-      "title_explanation": "The stated work changes the result for empty input. Title: fix(stats): handle an empty average input",
+      "title_explanation": "The stated work changes the result for empty input. Title: fix(stats): return zero for an empty average input",
       "body_explanation": "The claim changes empty-input behavior to a numeric result. Summary: Return 1 for an empty values list, and add tests expecting 1 for [].",
       "sources": [
         "evidence.json#/title",

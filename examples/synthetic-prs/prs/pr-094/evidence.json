@@ -3,7 +3,7 @@
   "number": 94,
   "base_sha": "ebbf30c3e069a318ad71161b7574e6171addda2b",
   "head_sha": "d34f6415bf00b6d3f9a17e080f5b4351f748a6bb",
-  "title": "fix(stats): handle an empty average input",
+  "title": "fix(stats): return zero for an empty average input",
   "body": "## Summary\nReturn 1 for an empty values list, and add tests expecting 1 for [].\n\n## Rationale\nThe change described above is needed for a new consumer workflow.\n\n## Testing\nValidation has not been performed; test selection is pending.\n\n## Limitations\nRemaining edge cases have not been investigated.\n\n## Breaking changes\nNone; all existing public interfaces are preserved.\n",
   "files_complete": true,
   "files": [
