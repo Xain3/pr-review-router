@@ -1,4 +1,5 @@
 import json
+import sys
 from typing import Literal
 
 import pytest
@@ -186,6 +187,109 @@ def test_pr_text_accepts_section_heading_with_three_space_indentation(evidence):
     report = run(evidence, policy=policy)
 
     assert report.pr_text.valid
+
+
+def test_nonsemantic_regex_check_passes_and_reports_result(evidence):
+    policy = Policy.model_validate(
+        {
+            "nonsemantic_checks": [
+                {
+                    "check_id": "title-prefix",
+                    "description": "Titles use the expected prefix.",
+                    "kind": "regex",
+                    "target": "title",
+                    "pattern": r"^Fix\b",
+                }
+            ]
+        }
+    )
+    evidence.title = "Fix duplicate words"
+
+    report = run(evidence, policy=policy)
+
+    assert report.nonsemantic_checks.enabled
+    assert report.nonsemantic_checks.passed
+    assert report.nonsemantic_checks.checks[0].passed
+    assert report.outcome == "skipped"
+
+
+def test_nonsemantic_regex_failure_hands_off_before_provider_calls(evidence):
+    policy = Policy(
+        nonsemantic_checks=[
+            {
+                "check_id": "no-debug-marker",
+                "description": "Debug markers are forbidden.",
+                "kind": "regex",
+                "target": "title",
+                "pattern": r"^does-not-match$",
+            }
+        ]
+    )
+    decider = ScriptedDecision("skip_review")
+
+    report = run(evidence, policy=policy, decision=decider)
+
+    assert report.outcome == "needs_human_review"
+    assert not report.nonsemantic_checks.passed
+    assert decider.calls == 0
+    assert any("no-debug-marker" in reason for reason in report.reasons)
+
+
+@pytest.mark.parametrize("exit_code", [0, 1])
+def test_nonsemantic_script_receives_evidence_and_uses_exit_status(evidence, exit_code):
+    command = [
+        sys.executable,
+        "-c",
+        (
+            "import json,sys; "
+            f"data=json.load(sys.stdin); sys.exit({exit_code} if data['repository'] else 1)"
+        ),
+    ]
+    policy = Policy(
+        nonsemantic_checks=[
+            {
+                "check_id": "external-check",
+                "description": "The external check validates evidence.",
+                "kind": "script",
+                "command": command,
+            }
+        ]
+    )
+    decider = ScriptedDecision("skip_review")
+
+    report = run(evidence, policy=policy, decision=decider)
+
+    assert report.nonsemantic_checks.checks[0].passed is (exit_code == 0)
+    assert decider.calls == (1 if exit_code == 0 else 0)
+    assert report.outcome == ("skipped" if exit_code == 0 else "needs_human_review")
+
+
+@pytest.mark.parametrize(
+    "check",
+    [
+        {
+            "check_id": "missing-target",
+            "description": "Invalid regex.",
+            "kind": "regex",
+            "pattern": "x",
+        },
+        {
+            "check_id": "invalid-pattern",
+            "description": "Invalid regex.",
+            "kind": "regex",
+            "target": "body",
+            "pattern": "[",
+        },
+        {
+            "check_id": "missing-command",
+            "description": "Invalid script.",
+            "kind": "script",
+        },
+    ],
+)
+def test_invalid_nonsemantic_policy_is_rejected(check):
+    with pytest.raises(ValidationError):
+        Policy.model_validate({"nonsemantic_checks": [check]})
 
 
 def test_rubric_scores_weighted_criteria_and_reports_soft_failures(evidence):
