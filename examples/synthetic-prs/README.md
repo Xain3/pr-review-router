@@ -119,6 +119,29 @@ JSON Pointers.
 | `breaking_changes` | An incompatible public-interface removal is disclosed with migration guidance. |
 | `testing` | Relevant validation is described, or a specific reason it does not apply is given. |
 
+### Regex-checkable vs semantic criteria
+
+This benchmark intentionally mixes deterministic format checks and semantic
+review judgments.
+
+- Regex / programmatic checks: `title_format` is the only fully regex-oriented
+  criterion in the core quality set. It can be validated with a Conventional
+  Commits parser or a permissive regex, without reading the actual diff.
+- Semantic / evidence-based checks: `title_meaningful`,
+  `title_diff_consistency`, `description_present`, `rationale`,
+  `changes_described`, `description_title_consistency`,
+  `description_commit_consistency`, `description_diff_consistency`,
+  `limitations`, `breaking_changes`, and `testing` all depend on meaning and
+  cross-checking the title, body, commit messages, and actual patch. They are
+  not reducible to a simple regex over the PR text.
+- Diff-based ordinal assessment: `change_triviality` is also semantic in the
+  sense that it is grounded in behavior, interfaces, and review scope; it is
+  not inferred from the title or body text alone.
+
+`description_present` is a borderline case: a regex can reject empty or
+placeholder bodies, but the benchmark treats it as a semantic judgment because
+it distinguishes meaningful prose from boilerplate or TODOs.
+
 `passed` means the criterion is satisfied; `failed` means a known omission or
 contradiction. `not_assessable` means there is no meaningful title or change
 account to compare; it is not an observed contradiction. `not_applicable` is
