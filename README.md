@@ -111,6 +111,42 @@ fixture. They check structure only, not whether the description is accurate.
 For multiple weighted criteria, hard/soft blockers, and aggregate scores, see
 the [rubric examples](examples/rubric/README.md).
 
+Policies can also define non-semantic checks with regular expressions or
+external scripts. Regex checks target the title, body, combined patches, or
+changed paths. Script checks receive the validated evidence JSON on standard
+input and pass only with exit status 0; commands are run without a shell and
+have a configurable timeout. These checks run before providers, are reported
+under `nonsemantic_checks`, and fail closed to the configured human/rejected
+unresolved outcome. They are deterministic gates and do not perform semantic
+code review.
+
+```toml
+check_timeout_seconds = 10
+
+[[nonsemantic_checks]]
+check_id = "no-debug-marker"
+description = "Do not ship debug markers."
+kind = "regex"
+target = "patch"
+pattern = "TODO\\(debug\\)"
+must_match = false
+
+[[nonsemantic_checks]]
+check_id = "external-policy"
+description = "Run the repository's offline policy script."
+kind = "script"
+command = ["./ci/check-pr.py"]
+```
+
+The [synthetic PR corpus](examples/synthetic-prs/README.md) provides 100 fictional
+PRs with metadata, commit lists, complete patches, and provisional annotations
+for title, rationale, description consistency, limitations, compatibility, and
+change triviality on a 0–4 scale, with an offline triviality benchmark scorer.
+Separate diagnostics record differences between the triviality implied by PR
+text and the actual diff for future confounder analysis.
+Use its [index](examples/synthetic-prs/INDEX.md) to browse good cases, individual
+failures, and combined failures.
+
 Reports include commit identifiers, coverage issues, the decision-provider
 recommendation and confidence provenance, review stages and results, routing
 reasons, deduplicated findings, and the number of omitted findings. The

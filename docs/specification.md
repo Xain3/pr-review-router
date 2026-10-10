@@ -53,6 +53,8 @@ The TOML file contains top-level fields; partial configurations use defaults.
 | `required_body_sections` | `[]` | Unique, nonempty, trimmed, single-line section names |
 | `rubric_minimum_score` | `70` | Finite score in [0, 100] |
 | `rubric_criteria` | `[]` | List of unique, validated weighted criteria |
+| `nonsemantic_checks` | `[]` | Unique deterministic regex or script checks |
+| `check_timeout_seconds` | `10` | External-check timeout in seconds, from 1 through 60 |
 
 When configured, `title_format = "conventional_commit"` requires a lowercase
 type, an optional non-whitespace scope, an optional breaking-change marker, and
@@ -81,6 +83,21 @@ of criterion scores. Any failed hard criterion prevents an automated pass
 regardless of the aggregate score. Soft criteria lower the aggregate score; a
 score below `rubric_minimum_score` also requires human review. Individual
 results and their deterministic explanations are included in `rubric`.
+
+`nonsemantic_checks` adds deterministic policy gates without presenting them as
+semantic review. A regex check has a unique `check_id`, `description`, `kind =
+"regex"`, a `target` (`"title"`, `"body"`, `"patch"`, or `"file_paths"`), and a
+Python regular-expression `pattern`. It passes when the pattern matches unless
+`must_match = false` is configured. A script check has `kind = "script"` and a
+nonempty TOML `command` array; the validated evidence JSON is sent to the
+command's standard input, and exit status zero means pass. Commands are started
+without a shell and are bounded by `check_timeout_seconds`.
+
+Checks run after coverage and alongside the existing PR-text and rubric gates,
+before either provider is called. Every result is included under
+`nonsemantic_checks`; a failed, timed-out, or unstartable check requires the
+configured unresolved outcome. Check output is not included in reports, which
+avoids leaking script output or PR content.
 
 The input budget measures the UTF-8 bytes of the validated evidence's compact
 JSON representation, including metadata and patches. A budget violation prevents
