@@ -109,7 +109,56 @@ invalid title or body is reported under `pr_text` and handed off before review.
 See the [PR-text examples](examples/pr-text/README.md) for a passing and failing
 fixture. They check structure only, not whether the description is accurate.
 For multiple weighted criteria, hard/soft blockers, and aggregate scores, see
-the [rubric examples](examples/rubric/README.md).
+the [rubric examples](examples/rubric/README.md). For the assessment-rubric
+framework that combines deterministic format checks with semantic questions
+about the supplied diff and review, see the
+[mixed formal/semantic examples](examples/rubric-review/README.md).
+
+```sh
+# Exercise deterministic and semantic rubric checks using synthetic offline replay.
+uv run pr-review-router evaluate \
+  --corpus examples/rubric-review/corpus.json \
+  --providers-config examples/local-models/replay.toml \
+  --replay-dir examples/rubric-review/recordings \
+  --output-dir reports/rubric-review-replay
+```
+
+Policies can also define non-semantic checks with regular expressions or
+external scripts. Regex checks target the title, body, combined patches, or
+changed paths and run in a killable worker bounded by the check timeout. Script
+checks receive the validated evidence JSON on standard input and pass only with
+exit status 0; commands are run without a shell, and timed-out process trees are
+terminated. These checks run before providers, are reported
+under `nonsemantic_checks`, and fail closed to the configured human/rejected
+unresolved outcome. They are deterministic gates and do not perform semantic
+code review.
+
+```toml
+check_timeout_seconds = 10
+
+[[nonsemantic_checks]]
+check_id = "no-debug-marker"
+description = "Do not ship debug markers."
+kind = "regex"
+target = "patch"
+pattern = "TODO\\(debug\\)"
+must_match = false
+
+[[nonsemantic_checks]]
+check_id = "external-policy"
+description = "Run the repository's offline policy script."
+kind = "script"
+command = ["./ci/check-pr.py"]
+```
+
+The [synthetic PR corpus](examples/synthetic-prs/README.md) provides 100 fictional
+PRs with metadata, commit lists, complete patches, and provisional annotations
+for title, rationale, description consistency, limitations, compatibility, and
+change triviality on a 0–4 scale, with an offline triviality benchmark scorer.
+Separate diagnostics record differences between the triviality implied by PR
+text and the actual diff for future confounder analysis.
+Use its [index](examples/synthetic-prs/INDEX.md) to browse good cases, individual
+failures, and combined failures.
 
 The [synthetic PR corpus](examples/synthetic-prs/README.md) provides 100 fictional
 PRs with metadata, commit lists, complete patches, and provisional annotations
@@ -129,7 +178,7 @@ Optional [direct-routing examples](examples/direct/README.md) demonstrate blocki
 decider rejection, non-blocking reviewer feedback, direct decider acceptance,
 and acceptance followed by feedback. Each behavior is independently configurable
 and can combine with PR-text/rubric gates. Defaults preserve the existing routes.
-Reports use schema version 3; acceptance/rejection remain advisory signals for
+Reports use schema version 4; acceptance/rejection remain advisory signals for
 consumers and never change a PR.
 
 ## Local models and reproducible CI
@@ -138,7 +187,7 @@ Use `review --providers-config PATH` to select Ollaya decisions and Ollama
 reviews independently. Provider TOML is separate from routing policy. Local
 experiments shadow skip recommendations and require direct decisions to be
 disabled. They retain original decisions and model provenance in separate
-artifacts without changing report schema version 3.
+artifacts without changing report schema version 4.
 
 ```sh
 # Exercise the real adapters offline using explicitly synthetic HTTP tapes.

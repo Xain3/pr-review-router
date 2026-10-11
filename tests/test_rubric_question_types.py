@@ -53,6 +53,34 @@ def numeric_run(kind, value):
     )
 
 
+@pytest.mark.parametrize("kind", ["choice", "noul", "score"])
+def test_semantic_question_instructions_include_the_criterion_description(kind):
+    """Ensure every semantic question tells the provider which criterion to assess.
+
+    :param kind: Rubric question encoding whose generated instructions are inspected.
+    """
+    _, evidence, _, review = inputs()
+    filename = "rubric.toml" if kind == "choice" else f"rubric-{kind}.toml"
+    rubric = load_assessment_rubric(EXAMPLES / filename)
+    server = RubricServer()
+    run_experiment(
+        evidence,
+        Policy(),
+        fixture_config(),
+        rubric=rubric,
+        review_text=review,
+        http_transport=httpx.MockTransport(server.handle),
+    )
+
+    request = next(req for req in server.requests if req.url.path == "/v1/systemone")
+    questions = json.loads(request.content)["questions"]
+    semantic_criteria = [item for item in rubric.criteria if item.check == "semantic"]
+    assert all(
+        criterion.description in questions[criterion.criterion_id]["instructions"]
+        for criterion in semantic_criteria
+    )
+
+
 @pytest.mark.parametrize(
     "kind,value,status",
     [

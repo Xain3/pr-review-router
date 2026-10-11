@@ -66,7 +66,7 @@ def test_shadow_skip_preserves_original_and_native_confidence():
     assert result.artifact["review"]["models"]["fixture-review:latest"]["digest"]
     assert result.artifact["review"]["models"]["fixture-review:latest"]["server_version"]
     assert result.report.advisory_only
-    assert result.report.schema_version == "3"
+    assert result.report.schema_version == "4"
 
 
 def test_actual_http_payloads_isolate_evidence_and_constrain_output():

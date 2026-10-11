@@ -277,7 +277,7 @@ def test_installed_cli_replays_nine_case_rubric_corpus(tmp_path):
     assert summary["cases"][6]["rubric"]["suggestions"][0]["criterion_id"] == "testing-explanation"
     report = json.loads((tmp_path / "evaluation/all-pass.report.json").read_text())
     assert report["advisory_only"] is True
-    assert report["schema_version"] == "3"
+    assert report["schema_version"] == "4"
     assert report["outcome"] == "reviewed"
 
 

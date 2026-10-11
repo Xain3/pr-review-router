@@ -16,3 +16,5 @@ title_format = "any"
 required_body_sections = []
 rubric_minimum_score = 70
 rubric_criteria = []
+nonsemantic_checks = []
+check_timeout_seconds = 10

@@ -20,7 +20,7 @@ depths, not separate provider roles. See the
 | [`pr-text/`](pr-text/README.md) | Optional Conventional Commits title and non-empty `Summary` and `Testing` section checks, including passing and failing inputs. | [PR-text examples](pr-text/README.md) |
 | [`rubric/`](rubric/README.md) | Weighted title/body criteria, hard and soft blockers, and the resulting aggregate score and routing behavior. | [Rubric examples](rubric/README.md) |
 | [`local-models/`](local-models/README.md) | Independent local adapters, shadow skips, provisional evaluation labels, and explicitly synthetic offline HTTP replay. | [Local models and replay](local-models/README.md) |
-| [`rubric-review/`](rubric-review/README.md) | Six formal/semantic criteria applied to PR text and a supplied review, with blockers, suggestions, and advisory skip/approval recommendations. | [PR and review rubric](rubric-review/README.md) |
+| [`rubric-review/`](rubric-review/README.md) | Assessment-rubric examples combining deterministic title/section checks with semantic questions about rationale, diff coverage, review coverage, and testing. Includes offline replay. | [PR and review rubric](rubric-review/README.md) |
 | [`synthetic-prs/`](synthetic-prs/README.md) | 100 fictional PRs with metadata, commits, complete patches, quality annotations, and a graded triviality benchmark. | [Corpus guide](synthetic-prs/README.md) and [index](synthetic-prs/INDEX.md) |
 
 ## Run the examples
@@ -38,6 +38,13 @@ uv run pr-review-router review --input examples/pr-text/invalid.json --config ex
 uv run pr-review-router review --input examples/rubric/valid.json --config examples/rubric/policy.toml
 uv run pr-review-router review --input examples/rubric/soft_blocker.json --config examples/rubric/policy.toml
 uv run pr-review-router review --input examples/rubric/hard_blocker.json --config examples/rubric/policy.toml
+
+# Combined deterministic and semantic assessment-rubric checks (synthetic offline replay)
+uv run pr-review-router evaluate \
+  --corpus examples/rubric-review/corpus.json \
+  --providers-config examples/local-models/replay.toml \
+  --replay-dir examples/rubric-review/recordings \
+  --output-dir reports/rubric-review-replay
 ```
 
 The CLI prints JSON reports to stdout unless `--output` is specified. A

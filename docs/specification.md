@@ -53,6 +53,8 @@ The TOML file contains top-level fields; partial configurations use defaults.
 | `required_body_sections` | `[]` | Unique, nonempty, trimmed, single-line section names |
 | `rubric_minimum_score` | `70` | Finite score in [0, 100] |
 | `rubric_criteria` | `[]` | List of unique, validated weighted criteria |
+| `nonsemantic_checks` | `[]` | Unique deterministic regex or script checks |
+| `check_timeout_seconds` | `10` | External-check timeout in seconds, from 1 through 60 |
 
 When configured, `title_format = "conventional_commit"` requires a lowercase
 type, an optional non-whitespace scope, an optional breaking-change marker, and
@@ -81,6 +83,22 @@ of criterion scores. Any failed hard criterion prevents an automated pass
 regardless of the aggregate score. Soft criteria lower the aggregate score; a
 score below `rubric_minimum_score` also requires human review. Individual
 results and their deterministic explanations are included in `rubric`.
+
+`nonsemantic_checks` adds deterministic policy gates without presenting them as
+semantic review. A regex check has a unique `check_id`, `description`, `kind =
+"regex"`, a `target` (`"title"`, `"body"`, `"patch"`, or `"file_paths"`), and a
+Python regular-expression `pattern`. It passes when the pattern matches unless
+`must_match = false` is configured. A script check has `kind = "script"` and a
+nonempty TOML `command` array; the validated evidence JSON is sent to the
+command's standard input, and exit status zero means pass. Regexes run in a worker process bounded by `check_timeout_seconds`. Commands are
+started without a shell in an isolated process group and are bounded by the same
+timeout; timeout terminates the command and its descendants.
+
+Checks run after coverage and alongside the existing PR-text and rubric gates,
+before either provider is called. Every result is included under
+`nonsemantic_checks`; a failed, timed-out, or unstartable check requires the
+configured unresolved outcome. Check output is not included in reports, which
+avoids leaking script output or PR content.
 
 The input budget measures the UTF-8 bytes of the validated evidence's compact
 JSON representation, including metadata and patches. A budget violation prevents
@@ -178,7 +196,7 @@ standard review escalates to deep review, and unresolved deep review requires
 human review. Provider exceptions and malformed responses require human review;
 exception text is excluded from reports.
 
-Report schema version `"3"` includes:
+Report schema version `"4"` includes:
 
 - `advisory_only: true`, repository, PR number, base/head identifiers.
 - `outcome`: `skipped`, `reviewed`, `needs_human_review`, `accepted`, `rejected`, or `feedback`.
@@ -186,13 +204,16 @@ Report schema version `"3"` includes:
 - Reasons, coverage, optional decision, and executed review stages.
 - `pr_text`, with whether policy checks are enabled, whether they pass, and any
   format issues.
+- `nonsemantic_checks`, with whether checks are enabled and pass, plus each
+  check's identifier, description, kind, result, and detail.
 - `rubric`, with an optional weighted score, criterion scores/explanations,
   failed hard blockers, failed soft criteria, and whether the rubric passes.
 - Deduplicated findings capped by policy and a unique `findings_omitted` count.
 
-Version 3 adds direct decisions and feedback outcomes/routes; its contract rejects
-older schema versions. Consumers of stored reports must retain an older parser
-or migrate those reports before validation.
+Version 3 added direct decisions and feedback outcomes/routes. Version 4 adds
+the required `nonsemantic_checks` field; its contract rejects older schema
+versions. Consumers of stored reports must retain an older parser or migrate
+those reports before validation.
 
 Stage finding lists are also capped individually. Escalation examines the complete
 provider results before capping. Findings from earlier stages cannot be silently
@@ -240,7 +261,7 @@ with `strict_schema=True`. Raw provider errors never enter advisory reports.
 Experiments require `shadow_skips = true` and reject policies enabling direct
 acceptance or rejection. A wrapper retains original validated decisions and
 turns skip recommendations into review requests with an explicit reason, outside
-the engine. Report schema remains version 3. Separate artifacts contain original
+the engine. Report schema remains version 4. Separate artifacts contain original
 and native decisions, uncapped reviews, model metadata, generation settings,
 prompt/schema revision, usage, timing, and schema/transport failure counts.
 
@@ -298,8 +319,10 @@ It configures unique criterion IDs, descriptions, failure actions (`block` or
 `body_section`, or `semantic`). Formal checks reuse existing title/section
 validators. A formal blocker prevents all HTTP calls and leaves semantic
 criteria explicitly unassessed. Semantic criteria carry instructions and a
-description/review target and use the configured Ollaya decision adapter. The
-entire PR evidence and separately supplied review are untrusted state data;
+description/review target and use the configured Ollaya decision adapter. Every
+semantic question includes its configured description and criterion-specific
+instructions, regardless of question type. The entire PR evidence and separately
+supplied review are untrusted state data;
 criterion instructions are separate. Document/review coverage is not proof of
 code correctness, and review-provider responsibilities remain unchanged.
 
@@ -346,7 +369,7 @@ cancel a blocking failure, and task confidence is never invented.
 
 The rubric decision provider requests human review for blockers/uncertainty,
 normal review for suggestions, and skip for all-pass advice. Existing shadow
-mode records the original skip and continues reviewing. Report schema version 3
+mode records the original skip and continues reviewing. Report schema version 4
 is unchanged; rubric advice is saved under `assessment_rubric` in experiment
 artifacts and summaries. It cannot override coverage or unresolved review and
 never approves or changes a PR. Policy direct decisions remain disabled.
