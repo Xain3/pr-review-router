@@ -274,7 +274,10 @@ def _terminate_process_tree(process: subprocess.Popen[str]) -> None:
                 process.kill()
     else:
         process.kill()
-    process.communicate()
+    try:
+        process.communicate()
+    except (OSError, ValueError):
+        process.wait()
 
 
 def assess_nonsemantic_checks(evidence: PullRequestEvidence, policy: Policy) -> NonSemanticChecks:
@@ -354,6 +357,7 @@ def assess_nonsemantic_checks(evidence: PullRequestEvidence, policy: Policy) -> 
                     passed = False
                     detail = "External check timed out."
                 except (OSError, ValueError):
+                    _terminate_process_tree(process)
                     passed = False
                     detail = "External check could not be completed."
                 else:
