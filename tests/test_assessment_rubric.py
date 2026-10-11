@@ -28,6 +28,7 @@ def inputs(index=0):
     """
     corpus, evidence, _ = load_corpus(EXAMPLES / "corpus.json")
     rubric, reviews, _ = load_corpus_rubric(EXAMPLES / "corpus.json", corpus)
+    assert rubric is not None
     return corpus.cases[index], evidence[index], rubric, reviews[index]
 
 
