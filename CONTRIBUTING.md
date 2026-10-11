@@ -18,6 +18,7 @@ Prefer these fields over Google- or NumPy-style sections.
 
 ```sh
 uv sync --locked
+uv run pyright
 uv run ruff check .
 uv run ruff format --check .
 uv run codespell
