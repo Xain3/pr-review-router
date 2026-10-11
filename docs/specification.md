@@ -315,8 +315,10 @@ It configures unique criterion IDs, descriptions, failure actions (`block` or
 `body_section`, or `semantic`). Formal checks reuse existing title/section
 validators. A formal blocker prevents all HTTP calls and leaves semantic
 criteria explicitly unassessed. Semantic criteria carry instructions and a
-description/review target and use the configured Ollaya decision adapter. The
-entire PR evidence and separately supplied review are untrusted state data;
+description/review target and use the configured Ollaya decision adapter. Every
+semantic question includes its configured description and criterion-specific
+instructions, regardless of question type. The entire PR evidence and separately
+supplied review are untrusted state data;
 criterion instructions are separate. Document/review coverage is not proof of
 code correctness, and review-provider responsibilities remain unchanged.
 

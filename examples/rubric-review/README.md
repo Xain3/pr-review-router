@@ -95,8 +95,9 @@ uv run pr-review-router evaluate \
 ```
 
 All semantic criteria, including mixed question types, are batched in one
-`/v1/systemone` request. Missing review
-text is recorded as unavailable rather than asking the model to invent a review.
+`/v1/systemone` request. Each question includes its criterion description and
+specific instructions. Missing review text is recorded as unavailable rather
+than asking the model to invent a review.
 The complete request, including review text and instructions, must fit the
 policy input budget. Native context truncation, invalid/missing/extra answers,
 and transport failures cannot produce approval. Schema failures get the existing
