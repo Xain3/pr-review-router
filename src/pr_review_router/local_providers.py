@@ -128,10 +128,10 @@ def adapter_versions() -> dict[str, Any]:
     }
 
 
-class _LocalProvider:
+class _LocalProvider[SettingsT: LocalSettings]:
     """Lazily inspect model metadata after the engine has passed its evidence gates."""
 
-    def __init__(self, settings: LocalSettings, session: Session) -> None:
+    def __init__(self, settings: SettingsT, session: Session) -> None:
         """Bind independent model settings to the shared experiment session.
 
         :param settings: Local provider settings.
@@ -238,7 +238,7 @@ class _LocalProvider:
         }
 
 
-class OllayaDecisionProvider(_LocalProvider):
+class OllayaDecisionProvider(_LocalProvider[DecisionSettings]):
     """Map a native routing classification to the decision-provider contract."""
 
     def __init__(self, settings: DecisionSettings, session: Session) -> None:
@@ -297,7 +297,7 @@ class OllayaDecisionProvider(_LocalProvider):
         )
 
 
-class OllamaReviewProvider(_LocalProvider):
+class OllamaReviewProvider(_LocalProvider[ReviewSettings]):
     """Request constrained JSON review using the local chat compatibility endpoint."""
 
     def __init__(self, settings: ReviewSettings, session: Session) -> None:
