@@ -470,7 +470,11 @@ def apply_choice_routing_rules(
     labels = _choice_labels(answers)
     routed = set()
     for rule in rubric.routing_rules:
-        if rule.target_criterion_id in routed or not _conditions_match(rule.when, labels):
+        if (
+            rule.target_criterion_id not in labels
+            or rule.target_criterion_id in routed
+            or not _conditions_match(rule.when, labels)
+        ):
             continue
         result = results[rule.target_criterion_id]
         results[rule.target_criterion_id] = result.model_copy(
@@ -629,7 +633,8 @@ class RubricDecisionProvider:
         unsupported = [
             criterion.criterion_id
             for criterion in rubric.criteria
-            if criterion.question_type == "choice"
+            if criterion.check == "semantic"
+            and criterion.question_type == "choice"
             and len(criterion.choice_options) > provider.settings.max_choice_options
         ]
         if unsupported:

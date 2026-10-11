@@ -330,6 +330,37 @@ def test_unmapped_choices_support_ordered_multi_criterion_routing_rules():
     assert assessment["blockers"] == ["change-rationale"]
 
 
+def test_choice_routing_does_not_overwrite_an_unanswered_target():
+    """Keep an unavailable criterion uncertain when its routing rule conditions match."""
+    _, evidence, rubric, _ = inputs()
+    rubric.routing_rules = [
+        ChoiceRoutingRule(
+            target_criterion_id="review-coverage",
+            when={"change-rationale": ["passed"]},
+            status="passed",
+        )
+    ]
+    server = RubricServer()
+
+    result = run_experiment(
+        evidence,
+        Policy(),
+        fixture_config(),
+        rubric=rubric,
+        review_text="",
+        http_transport=httpx.MockTransport(server.handle),
+    )
+
+    assessment = result.artifact["assessment_rubric"]
+    review = next(
+        item for item in assessment["criteria"] if item["criterion_id"] == "review-coverage"
+    )
+    assert review["status"] == "uncertain"
+    assert review["source"] == "unavailable"
+    assert "Routing rule set" not in review["explanation"]
+    assert not assessment["approval_recommended"]
+
+
 def test_provider_choice_capability_allows_extra_labels_with_shared_routing_statuses():
     """Allow rich categorical answers when the selected decision model supports them."""
     _, evidence, rubric, review = inputs()
@@ -378,6 +409,50 @@ def test_provider_choice_capability_allows_extra_labels_with_shared_routing_stat
     assessment = result.artifact["assessment_rubric"]["criteria"][2]
     assert assessment["status"] == "failed"
     assert assessment["native_answer"]["choice"] == "partial"
+
+
+def test_provider_choice_capability_ignores_formal_criteria():
+    """Allow formal criteria when all semantic choices fit the provider limit."""
+    _, evidence, rubric, review = inputs()
+    for criterion in rubric.criteria:
+        if criterion.check == "semantic" and criterion.question_type == "choice":
+            criterion.choices = [
+                ChoiceOption(label="passed", description="The criterion is satisfied."),
+                ChoiceOption(label="failed", description="The criterion is not satisfied."),
+            ]
+    config = fixture_config()
+    config = config.model_copy(
+        update={
+            "decision": config.decision.model_copy(update={"max_choice_options": 2}),
+        }
+    )
+    server = RubricServer()
+
+    def response(request):
+        """Return a valid native response for the configured two-choice questions.
+
+        :param request: Actual outgoing request.
+        :returns: Synthetic HTTP response with only configured choice labels.
+        """
+        result = server.handle(request)
+        if request.url.path != "/v1/systemone":
+            return result
+        body = result.json()
+        for answer in body["answers"].values():
+            answer["probabilities"] = {"passed": 0.99, "failed": 0.01}
+        return httpx.Response(200, json=body)
+
+    result = run_experiment(
+        evidence,
+        Policy(),
+        config,
+        rubric=rubric,
+        review_text=review,
+        http_transport=httpx.MockTransport(response),
+    )
+
+    assert server.decision_calls == 1
+    assert result.artifact["assessment_rubric"]["criteria"][0]["source"] == "deterministic"
 
 
 def test_provider_choice_capability_rejects_unsupported_rubric_before_http():

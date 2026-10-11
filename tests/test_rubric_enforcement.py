@@ -15,6 +15,8 @@ from pr_review_router.assessment_rubric import (
 from pr_review_router.config import Policy
 from pr_review_router.experiments import run_experiment
 
+pytestmark = pytest.mark.unit
+
 SCALE_LABELS = ["trivial", "minor", "moderate", "substantial", "major"]
 KEPT_CRITERIA = {"title-format", "summary-section", "change-rationale", "description-coverage"}
 BLOCKING_RULES = [

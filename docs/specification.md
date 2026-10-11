@@ -408,13 +408,14 @@ The complete request, including supplied review and rubric instructions, must
 fit the policy input budget before any model/metadata request. Existing engine
 preflight still prevents every provider call for incomplete evidence.
 
-Known failed blocking criteria yield `block`; otherwise any uncertain criterion
-yields `needs_human_review`; otherwise failed suggestion criteria yield
-`suggest_changes`; only all passed criteria yield `skip_and_approve`. Results
-include criterion statuses/sources, blockers, configured suggestions, and
-`skip_recommended` / `approval_recommended`. Advice is always `advisory_only`
-with `automation_authorized: false`. There is no aggregate threshold that can
-cancel a blocking failure, and task confidence is never invented.
+Known failed enforced blocking requirements yield `block`; otherwise uncertainty
+in an enforced requirement yields `needs_human_review`; otherwise failed
+soft-enforced requirements yield `suggest_changes`; `skip_and_approve` requires
+all enforced requirements to pass. Results include criterion statuses/sources,
+blockers, configured suggestions, and `skip_recommended` / `approval_recommended`.
+Advice is always `advisory_only` with `automation_authorized: false`. There is no
+aggregate threshold that can cancel a blocking failure, and task confidence is
+never invented.
 
 The rubric decision provider requests human review for blockers/uncertainty,
 normal review for suggestions, and skip for all-pass advice. Existing shadow
