@@ -286,6 +286,7 @@ def main(argv: list[str] | None = None) -> int:
         return _evaluate(args, parser)
     policy, evidence = _load_inputs(args.input, args.config, parser)
     result = None
+    artifact_path = None
     if args.providers_config:
         config = _provider_inputs(args.providers_config, policy, parser)
         # Derive a safe default name even when supplied commit identifiers contain path syntax.
@@ -310,7 +311,7 @@ def main(argv: list[str] | None = None) -> int:
         report = review_pull_request(evidence, policy, MockDecisionProvider(), MockReviewProvider())
     content = report.model_dump_json(indent=2) + "\n"
     try:
-        if result:
+        if result is not None and artifact_path is not None:
             _write_report(artifact_path, json.dumps(result.artifact, indent=2) + "\n")
             if args.record and result.tape:
                 _write_report(args.record, result.tape.model_dump_json(indent=2) + "\n")

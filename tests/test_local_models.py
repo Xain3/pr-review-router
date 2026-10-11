@@ -295,6 +295,32 @@ def test_remote_model_metadata_prevents_local_review_generation():
     assert server.review_calls == 0
 
 
+@pytest.mark.parametrize(
+    "inventory",
+    [
+        [],
+        "invalid",
+        None,
+        {"models": "invalid"},
+        {"models": [None]},
+        {"models": [{"name": []}]},
+    ],
+)
+def test_malformed_model_inventory_raises_transport_failure(inventory):
+    def malformed_inventory(request):
+        if request.url.path == "/api/version":
+            return httpx.Response(200, json={"version": "synthetic-server-v1"})
+        if request.url.path == "/api/tags":
+            return httpx.Response(200, content=json.dumps(inventory))
+        pytest.fail(f"Unexpected fixture endpoint: {request.url.path}")
+
+    session = Session("test", http_transport=httpx.MockTransport(malformed_inventory))
+    provider = OllamaReviewProvider(fixture_config().review, session)
+
+    with pytest.raises(TransportFailure, match="inventory is unavailable"):
+        provider.inspect_model("fixture-review:latest")
+
+
 @pytest.mark.parametrize("fault", ["incomplete", "refusal", "wrong_model"])
 def test_review_envelope_failures_cannot_clear_review(fault):
     server = SyntheticServer()

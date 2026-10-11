@@ -30,7 +30,8 @@ do not describe the mock providers as performing substantive code review.
 - Use sanitized fixtures in `examples/`; never commit credentials, raw pull
   request exports, or private reports. Keep runtime output under `reports/`.
 - Run the relevant checks from `CONTRIBUTING.md` for the change, including
-  focused tests where practical, and report which checks actually ran.
+  focused tests where practical. Suggested checks include `uv run pyright`;
+  report which checks actually ran.
 - Use Conventional Commits for commit messages when a commit is requested.
 - Do not select a project license without owner direction.
 
