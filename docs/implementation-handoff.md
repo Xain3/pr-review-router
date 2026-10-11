@@ -9,7 +9,7 @@ in the [specification](specification.md); runnable inputs are in
 Optional [direct-routing examples](../examples/direct/README.md) now demonstrate
 independent acceptance/rejection permissions and thresholds, feedback depth/mode,
 acceptance with feedback, and unresolved human-handoff versus blocking policy.
-The report contract is version 3. Default policy preserves existing routing.
+The report contract is version 4. Default policy preserves existing routing.
 
 ## Architecture
 

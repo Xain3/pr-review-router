@@ -289,7 +289,7 @@ def test_direct_examples(fixture, policy, outcome, route, reviews, findings):
     )
     assert completed.returncode == 0, completed.stderr
     report = json.loads(completed.stdout)
-    assert report["schema_version"] == "3"
+    assert report["schema_version"] == "4"
     assert report["advisory_only"] is True
     assert report["outcome"] == outcome
     assert report["route"] == route

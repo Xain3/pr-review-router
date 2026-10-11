@@ -28,11 +28,14 @@ not substituted for a newly executed provider review.
 
 ## Routing examples
 
-- `all-pass`: all six statuses are passed. The rubric recommends
-  `skip_and_approve`, with `skip_recommended` and `approval_recommended` true.
-- `invalid-title` and `missing-summary`: formal blockers fail. No model or
-  metadata requests run; semantic criteria are recorded as unassessed/uncertain.
-- `vague-rationale`: meaningful rationale fails despite a populated heading.
+- `all-pass`: deterministic title and Summary checks pass, as do all four
+  semantic assessments. The rubric recommends `skip_and_approve`, with
+  `skip_recommended` and `approval_recommended` true.
+- `invalid-title` and `missing-summary`: a deterministic formal blocker fails.
+  No model or metadata requests run; semantic criteria are recorded as
+  unassessed/uncertain.
+- `vague-rationale`: both formal checks pass, but semantic assessment rejects
+  the generic rationale despite its populated heading.
 - `partial-description`: the description omits the batch-limit change, its
   rationale, and testing. Blocking failures coexist with a testing suggestion.
 - `partial-review`: the supplied review addresses only the empty-input guard.
@@ -49,13 +52,24 @@ passed criteria produce `skip_and_approve`. A high average or native confidence
 cannot compensate for a blocker or unavailable criterion. There is no aggregate
 score or invented task calibration.
 
+| Fixture | Deterministic checks | Semantic checks | Example result |
+| --- | --- | --- | --- |
+| `all-pass.json` | Conventional title and populated Summary pass | Rationale, diff coverage, review coverage, and testing pass | All-pass advisory recommendation |
+| `invalid-title.json` | Title check fails | Not requested because the formal blocker stops preflight | Human handoff without inference |
+| `vague-rationale.json` | Title and Summary pass | Rationale fails despite the section being present | Blocking semantic failure |
+| `partial-description.json` | Title and Summary pass | Rationale, diff coverage, and testing fail; review coverage passes | Blockers and a testing suggestion |
+
+These are evidence-quality checks, not claims about code correctness. In
+particular, a deterministic section check only establishes that the heading has
+content; the semantic criterion evaluates whether that content is meaningful.
+
 Approval is an **advisory recommendation**, never a GitHub approval or permission
 to merge. Artifacts always have `advisory_only: true` and
 `automation_authorized: false`. Existing experiments retain shadow skips, so an
 all-pass rubric's original skip recommendation is recorded while the actual
 router continues reviewing. Neither a rubric pass nor its approval flag can
 override incomplete coverage, provider failures, or unresolved code review.
-Advisory report schema version 3 and policy semantics remain unchanged.
+Advisory report schema version 4 and policy semantics remain unchanged.
 
 ## Run offline in CI
 
@@ -95,8 +109,9 @@ uv run pr-review-router evaluate \
 ```
 
 All semantic criteria, including mixed question types, are batched in one
-`/v1/systemone` request. Missing review
-text is recorded as unavailable rather than asking the model to invent a review.
+`/v1/systemone` request. Each question includes its criterion description and
+specific instructions. Missing review text is recorded as unavailable rather
+than asking the model to invent a review.
 The complete request, including review text and instructions, must fit the
 policy input budget. Native context truncation, invalid/missing/extra answers,
 and transport failures cannot produce approval. Schema failures get the existing

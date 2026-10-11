@@ -1,12 +1,19 @@
 """Provider-independent advisory routing; incomplete evidence fails closed."""
 
+import json
+import os
 import re
+import signal
+import subprocess
+import sys
 from typing import Literal
 
 from .config import Policy, RubricCriterion
 from .contracts import (
     Coverage,
     Finding,
+    NonSemanticCheckResult,
+    NonSemanticChecks,
     PRTextValidation,
     PullRequestEvidence,
     ReviewReport,
@@ -224,6 +231,154 @@ def assess_pr_text_rubric(evidence: PullRequestEvidence, policy: Policy) -> Rubr
     )
 
 
+def _check_target(evidence: PullRequestEvidence, target: str) -> str:
+    """Build the text selected by a regex policy check.
+
+    :param evidence: Validated pull request evidence.
+    :param target: Configured evidence field to inspect.
+    :returns: Text representation of the selected field.
+    """
+    if target == "title":
+        return evidence.title
+    if target == "body":
+        return evidence.body
+    if target == "patch":
+        return "\n".join(file.patch or "" for file in evidence.files)
+    return "\n".join(file.path for file in evidence.files)
+
+
+def _terminate_process_tree(process: subprocess.Popen[str]) -> None:
+    """Terminate a timed-out check and its descendants.
+
+    :param process: The process started in its own group or session.
+    """
+    if os.name == "posix":
+        try:
+            os.killpg(process.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+    elif os.name == "nt":
+        try:
+            completed = subprocess.run(
+                ["taskkill", "/PID", str(process.pid), "/T", "/F"],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                timeout=5,
+                check=False,
+                shell=False,
+            )
+        except (OSError, subprocess.TimeoutExpired):
+            process.kill()
+        else:
+            if completed.returncode != 0 and process.poll() is None:
+                process.kill()
+    else:
+        process.kill()
+    process.communicate()
+
+
+def assess_nonsemantic_checks(evidence: PullRequestEvidence, policy: Policy) -> NonSemanticChecks:
+    """Run configured regex and external-script policy checks.
+
+    Regexes run against the configured evidence field. Scripts receive compact
+    validated evidence JSON on stdin and must exit with status zero to pass.
+
+    :param evidence: Validated pull request evidence to check.
+    :param policy: Non-semantic checks and execution timeout.
+    :returns: Individual check outcomes and the aggregate pass status.
+    """
+    results = []
+    serialized = evidence.model_dump_json()
+    for check in policy.nonsemantic_checks:
+        if check.kind == "regex":
+            assert check.target is not None and check.pattern is not None
+            try:
+                completed = subprocess.run(
+                    [sys.executable, "-m", "pr_review_router.regex_worker"],
+                    input=json.dumps(
+                        {
+                            "pattern": check.pattern,
+                            "text": _check_target(evidence, check.target),
+                        }
+                    ),
+                    text=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.DEVNULL,
+                    timeout=policy.check_timeout_seconds,
+                    check=False,
+                    shell=False,
+                )
+            except subprocess.TimeoutExpired:
+                passed = False
+                detail = "Regex check timed out."
+            except (OSError, ValueError):
+                passed = False
+                detail = "Regex check could not be started."
+            else:
+                matched_output = completed.stdout.strip()
+                if completed.returncode != 0 or matched_output not in {"true", "false"}:
+                    passed = False
+                    detail = "Regex check could not be completed."
+                else:
+                    matched = matched_output == "true"
+                    passed = matched == check.must_match
+                    expectation = "match" if check.must_match else "not match"
+                    detail = (
+                        f"Regex {expectation} succeeded."
+                        if passed
+                        else f"Regex {expectation} failed."
+                    )
+        else:
+            assert check.command is not None
+            try:
+                process = subprocess.Popen(
+                    check.command,
+                    stdin=subprocess.PIPE,
+                    text=True,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    shell=False,
+                    **(
+                        {"start_new_session": True}
+                        if os.name == "posix"
+                        else {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP}
+                        if os.name == "nt"
+                        else {}
+                    ),
+                )
+                completed = process.communicate(
+                    input=serialized, timeout=policy.check_timeout_seconds
+                )
+            except subprocess.TimeoutExpired:
+                _terminate_process_tree(process)
+                passed = False
+                detail = "External check timed out."
+            except (OSError, ValueError):
+                passed = False
+                detail = "External check could not be started."
+            else:
+                passed = process.returncode == 0
+                detail = (
+                    "External check passed."
+                    if passed
+                    else f"External check exited with status {process.returncode}."
+                )
+        results.append(
+            NonSemanticCheckResult(
+                check_id=check.check_id,
+                description=check.description,
+                kind=check.kind,
+                passed=passed,
+                detail=detail,
+            )
+        )
+    return NonSemanticChecks(
+        enabled=bool(results),
+        passed=all(result.passed for result in results),
+        checks=results,
+    )
+
+
 def _findings(reviews: list[ReviewStage]) -> list[Finding]:
     """Collect findings once each, preserving their first-seen review order.
 
@@ -260,10 +415,16 @@ def review_pull_request(
     """
     coverage = assess_coverage(evidence, policy)
     pr_text = assess_pr_text(evidence, policy)
+    nonsemantic_checks = assess_nonsemantic_checks(evidence, policy)
     rubric = assess_pr_text_rubric(evidence, policy)
     decision = None
     reviews: list[ReviewStage] = []
     reasons = [*coverage.issues, *pr_text.issues]
+    reasons.extend(
+        f"Non-semantic check failed: {check.check_id} ({check.detail})"
+        for check in nonsemantic_checks.checks
+        if not check.passed
+    )
     reasons.extend(
         f"Rubric hard blocker failed: {criterion_id}."
         for criterion_id in rubric.failed_hard_blockers
@@ -307,6 +468,7 @@ def review_pull_request(
             reasons=reasons,
             coverage=coverage,
             pr_text=pr_text,
+            nonsemantic_checks=nonsemantic_checks,
             rubric=rubric,
             decision=decision,
             reviews=exported,
@@ -324,7 +486,12 @@ def review_pull_request(
             return report("rejected", "blocked")
         return report("needs_human_review", "human")
 
-    if not coverage.complete or not pr_text.valid or not rubric.passed:
+    if (
+        not coverage.complete
+        or not pr_text.valid
+        or not nonsemantic_checks.passed
+        or not rubric.passed
+    ):
         return unresolved()
     try:
         decision = request_decision(decision_provider, evidence)

@@ -53,5 +53,5 @@ routing and cannot judge code correctness.
 Reports remain advisory (`advisory_only: true`); no PR is approved, closed, or
 merged. A consumer must enforce `outcome: "rejected"` as blocking. CLI status 0
 means a valid report was generated, including rejected reports. `feedback` is
-not an acceptance decision. The report schema is now version 3; consumers must
+not an acceptance decision. The report schema is now version 4; consumers must
 handle the additional outcomes and routes.
