@@ -199,6 +199,13 @@ coverage of the diff, supplied-review coverage, and relevant testing. It shows
 blocking failures, suggestions, uncertainty, and all-pass advisory skip/approval
 recommendations while preserving shadow mode. Semantic criteria support `choice`,
 `noul`, and ordinal `score` questions with explicit experimental numeric bands.
+Choice criteria can configure provider-visible labels that map back to the
+default `passed`, `failed`, and `uncertain` routing statuses. The selected
+decision provider configures its `max_choice_options` capability (default `3`).
+Labels without a direct mapping can be handled by ordered, multi-criterion
+assessment-rubric routing rules. Ordered enforcement rules can select which
+semantic criteria apply to a scale, including any-of alternatives. Each rule can
+block through `enforce` or only suggest through `soft_enforce`.
 Assessment rubrics accept JSON or TOML through the same validated contract;
 JSON examples are available for every question format.
 Run `uv run python examples/rubric-review/compare.py` to compare all three formats
