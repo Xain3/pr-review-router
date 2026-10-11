@@ -204,6 +204,8 @@ Report schema version `"4"` includes:
 - Reasons, coverage, optional decision, and executed review stages.
 - `pr_text`, with whether policy checks are enabled, whether they pass, and any
   format issues.
+- `nonsemantic_checks`, with whether checks are enabled and pass, plus each
+  check's identifier, description, kind, result, and detail.
 - `rubric`, with an optional weighted score, criterion scores/explanations,
   failed hard blockers, failed soft criteria, and whether the rubric passes.
 - Deduplicated findings capped by policy and a unique `findings_omitted` count.
