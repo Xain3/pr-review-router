@@ -10,7 +10,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, model_validat
 from .config import Policy, RubricCriterion
 from .contracts import Confidence, Contract, Decision, Probability, PullRequestEvidence, Text
 from .engine import assess_pr_text, assess_pr_text_rubric
-from .local_providers import OllayaDecisionProvider
+from .local_providers import OllayaDecisionProvider, supplement_instructions
 from .transport import TransportFailure, canonical_json
 
 Status = Literal["passed", "failed", "uncertain"]
@@ -356,14 +356,18 @@ class RubricDecisionProvider:
                     "Formal blocker failed." if blocked else "Supplied review text is missing.",
                 )
             else:
-                instructions = (
+                instructions = supplement_instructions(
                     INSTRUCTIONS
                     + " Criterion to assess: "
                     + criterion.description
                     + " "
-                    + criterion.instructions
+                    + criterion.instructions,
+                    self.provider.settings.instructions,
+                    self.provider.settings.backend_instructions,
                 )
                 if criterion.question_type == "choice":
+                    if len(CHOICES) > self.provider.settings.max_choice_options:
+                        raise TransportFailure("rubric choices exceed the configured option limit")
                     instructions += (
                         " Choose passed only when supported, failed for clear omissions, "
                         "and uncertain for insufficient or ambiguous evidence."

@@ -227,6 +227,13 @@ remains. Each role independently selects `mock`, or `ollaya` for decisions and
 `ollama` for review. Local adapters require an explicit installed model and a
 loopback HTTP(S) origin without embedded credentials. Authenticated, hosted,
 and cloud/remote models remain deferred. The router does not manage models.
+The endpoint/backend selection and model name are separate settings. Optional
+`instructions` supplement the selected model's prompt; optional
+`backend_instructions` handle backend-specific cases. Supplemental instructions
+cannot replace adapter-owned evidence-safety, output-contract, uncertainty, or
+advisory-only constraints. The Ollaya decision backend also accepts the positive
+`max_choice_options` setting (default 3) as an upper bound on options in any
+choice question, including semantic rubric questions.
 
 Ollaya uses `POST /v1/systemone` with complete evidence and a choice among
 `skip_review`, `review`, and `needs_human_review`. Context overflow or explicit

@@ -98,6 +98,42 @@ def test_actual_http_payloads_isolate_evidence_and_constrain_output():
     assert review["temperature"] == 0.0
 
 
+def test_model_and_backend_instructions_are_supplemental_to_adapter_prompts():
+    config = fixture_config()
+    config.decision.instructions = "Prefer a clear route."
+    config.decision.backend_instructions = "Use the native choice interface."
+    config.review.instructions = "Prioritize changed control flow."
+    config.review.backend_instructions = "Keep the response concise."
+    server = SyntheticServer(route="review")
+
+    run(server, config=config)
+
+    requests = {
+        request.url.path: json.loads(request.content)
+        for request in server.requests
+        if request.content
+    }
+    decision_prompt = requests["/v1/systemone"]["questions"]["route"]["instructions"]
+    review_prompt = requests["/v1/chat/completions"]["messages"][0]["content"]
+    for prompt, additions in (
+        (decision_prompt, ("Prefer a clear route.", "Use the native choice interface.")),
+        (review_prompt, ("Prioritize changed control flow.", "Keep the response concise.")),
+    ):
+        assert all(addition in prompt for addition in additions)
+        assert "cannot override the required" in prompt
+
+
+def test_decision_choice_limit_fails_closed_before_model_inspection():
+    config = fixture_config()
+    config.decision.max_choice_options = 2
+    server = SyntheticServer()
+
+    result = run(server, config=config)
+
+    assert result.report.outcome == "needs_human_review"
+    assert server.requests == []
+
+
 @pytest.mark.parametrize("gate", ["missing_patch", "files_incomplete", "budget", "title", "rubric"])
 def test_preflight_failures_never_inspect_models_or_make_http_calls(gate):
     evidence = fixture_evidence()

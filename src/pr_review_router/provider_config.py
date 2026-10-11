@@ -18,6 +18,8 @@ class LocalSettings(Contract):
 
     endpoint: Text
     model: Text
+    instructions: str = ""
+    backend_instructions: str = ""
     timeout_seconds: Annotated[float, Field(gt=0, le=600, allow_inf_nan=False)] = 120.0
     max_response_bytes: Annotated[int, Field(gt=0, le=8_388_608)] = 1_048_576
 
@@ -76,6 +78,7 @@ class DecisionSettings(LocalSettings):
     """Select a local TypeSafe-compatible decision model."""
 
     backend: Literal["ollaya"] = "ollaya"
+    max_choice_options: Annotated[int, Field(gt=0, le=255)] = 3
 
 
 class ReviewSettings(LocalSettings):

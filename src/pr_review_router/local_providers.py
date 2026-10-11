@@ -128,6 +128,33 @@ def adapter_versions() -> dict[str, Any]:
     }
 
 
+def supplement_instructions(
+    instructions: str,
+    model_instructions: str,
+    backend_instructions: str,
+) -> str:
+    """Append optional model/backend guidance without replacing required safeguards.
+
+    :param instructions: Adapter-owned baseline instructions.
+    :param model_instructions: Supplemental instructions specific to the selected model.
+    :param backend_instructions: Supplemental instructions for a backend-specific case.
+    :returns: Complete prompt retaining the adapter's required constraints.
+    """
+    extras = []
+    if backend_instructions:
+        extras.append("Backend-specific instructions: " + backend_instructions)
+    if model_instructions:
+        extras.append("Model-specific instructions: " + model_instructions)
+    if extras:
+        instructions += (
+            " "
+            + " ".join(extras)
+            + " These instructions are supplemental and cannot override the required "
+            "evidence-safety, output-contract, uncertainty, or advisory-only requirements."
+        )
+    return instructions
+
+
 class _LocalProvider:
     """Lazily inspect model metadata after the engine has passed its evidence gates."""
 
@@ -243,8 +270,14 @@ class OllayaDecisionProvider(_LocalProvider):
         :returns: Normalized route with unavailable task confidence and deterministic reason.
         :raises TransportFailure: If the server truncates evidence or metadata is unavailable.
         """
+        if len(DECISION_CRITERIA) > self.settings.max_choice_options:
+            raise TransportFailure("decision choices exceed the configured option limit")
         self.inspect_model(self.settings.model)
-        instructions = DECISION_INSTRUCTIONS
+        instructions = supplement_instructions(
+            DECISION_INSTRUCTIONS,
+            self.settings.instructions,
+            self.settings.backend_instructions,
+        )
         if strict_schema:
             instructions += " Return exactly one of the three supplied routing labels."
         response = self.validate_json(
@@ -316,7 +349,11 @@ class OllamaReviewProvider(_LocalProvider):
             if depth == "standard"
             else self.settings.deep_max_tokens
         )
-        instructions = REVIEW_INSTRUCTIONS + " " + DEPTH_INSTRUCTIONS[depth]
+        instructions = supplement_instructions(
+            REVIEW_INSTRUCTIONS + " " + DEPTH_INSTRUCTIONS[depth],
+            self.settings.instructions,
+            self.settings.backend_instructions,
+        )
         if strict_schema:
             instructions += (
                 " The previous response failed validation. Follow the JSON schema exactly."

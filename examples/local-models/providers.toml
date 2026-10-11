@@ -6,6 +6,7 @@ backend = "ollaya"
 endpoint = "http://localhost:11435"
 model = "winnow:e4b"
 timeout_seconds = 120.0
+max_choice_options = 3
 
 [review]
 backend = "ollama"
