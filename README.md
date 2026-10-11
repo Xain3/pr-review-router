@@ -109,7 +109,19 @@ invalid title or body is reported under `pr_text` and handed off before review.
 See the [PR-text examples](examples/pr-text/README.md) for a passing and failing
 fixture. They check structure only, not whether the description is accurate.
 For multiple weighted criteria, hard/soft blockers, and aggregate scores, see
-the [rubric examples](examples/rubric/README.md).
+the [rubric examples](examples/rubric/README.md). For the assessment-rubric
+framework that combines deterministic format checks with semantic questions
+about the supplied diff and review, see the
+[mixed formal/semantic examples](examples/rubric-review/README.md).
+
+```sh
+# Exercise deterministic and semantic rubric checks using synthetic offline replay.
+uv run pr-review-router evaluate \
+  --corpus examples/rubric-review/corpus.json \
+  --providers-config examples/local-models/replay.toml \
+  --replay-dir examples/rubric-review/recordings \
+  --output-dir reports/rubric-review-replay
+```
 
 Policies can also define non-semantic checks with regular expressions or
 external scripts. Regex checks target the title, body, combined patches, or
