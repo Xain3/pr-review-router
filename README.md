@@ -222,6 +222,7 @@ uv run pr-review-router evaluate --corpus examples/rubric-review/corpus.json --p
 
 ```sh
 uv sync --locked
+uv run pyright
 uv run ruff check .
 uv run ruff format --check .
 uv run codespell

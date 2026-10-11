@@ -6,9 +6,10 @@ from typing import Literal
 import pytest
 from pydantic import ValidationError
 
+import pr_review_router.engine as engine
 from pr_review_router.config import Policy
 from pr_review_router.contracts import Confidence, Decision, Finding, ReviewReport, ReviewResult
-from pr_review_router.engine import review_pull_request
+from pr_review_router.engine import assess_nonsemantic_checks, review_pull_request
 from pr_review_router.providers import MockDecisionProvider, MockReviewProvider
 
 Source = Literal["mock", "self_reported", "calibrated", "unavailable"]
@@ -342,6 +343,44 @@ def test_nonsemantic_script_with_embedded_nul_fails_closed(evidence):
     assert report.outcome == "needs_human_review"
     assert report.nonsemantic_checks.checks[0].detail == "External check could not be started."
     assert decider.calls == 0
+
+
+def test_nonsemantic_script_communication_failure_terminates_and_reaps(evidence, monkeypatch):
+    class BrokenCommunicateProcess:
+        returncode = None
+        killed = False
+        reaped = False
+
+        def communicate(self, **_kwargs):
+            raise OSError("closed pipe")
+
+        def kill(self):
+            self.killed = True
+
+        def wait(self):
+            self.reaped = True
+            self.returncode = -9
+
+    process = BrokenCommunicateProcess()
+    monkeypatch.setattr(engine.subprocess, "Popen", lambda *_args, **_kwargs: process)
+    monkeypatch.setattr(engine.os, "name", "unsupported-platform")
+    policy = Policy(
+        nonsemantic_checks=[
+            {
+                "check_id": "broken-communication",
+                "description": "Communication failures terminate the process.",
+                "kind": "script",
+                "command": ["unused"],
+            }
+        ]
+    )
+
+    checks = assess_nonsemantic_checks(evidence, policy)
+
+    assert process.killed
+    assert process.reaped
+    assert not checks.checks[0].passed
+    assert checks.checks[0].detail == "External check could not be completed."
 
 
 @pytest.mark.parametrize(
