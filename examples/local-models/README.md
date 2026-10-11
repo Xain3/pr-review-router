@@ -65,6 +65,9 @@ and loopback `endpoint` origin, without `/v1` or credentials. Defaults are a
 120-second total HTTP deadline and 1 MiB response limit. Review defaults are
 context 32768, standard/deep output 1024/2048, temperature 0, seed 0, and
 `reasoning_effort = "none"`; select another supported effort for your model.
+The Ollaya decision model's `max_choice_options` advertises how many labels it
+can accept in an assessment-rubric choice question; it defaults to `3` and may
+be configured from `2` through `100` per selected model.
 Both depths use the same model with distinct prompts and budgets, which does
 not establish independent corroboration. Fixed settings do not guarantee
 identical live generations.

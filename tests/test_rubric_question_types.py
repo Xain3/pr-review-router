@@ -11,9 +11,15 @@ from pydantic import ValidationError
 from rubric_model_helpers import EXAMPLES, RubricServer
 from test_assessment_rubric import inputs
 
-from pr_review_router.assessment_rubric import AssessmentCriterion, load_assessment_rubric
+from pr_review_router.assessment_rubric import (
+    AssessmentCriterion,
+    ChoiceOption,
+    ChoiceRoutingRule,
+    load_assessment_rubric,
+)
 from pr_review_router.config import Policy
 from pr_review_router.experiments import evaluate_case, run_experiment
+from pr_review_router.provider_config import DecisionSettings
 from pr_review_router.transport import ReplayMismatch
 
 pytestmark = pytest.mark.unit
@@ -140,6 +146,346 @@ def test_invalid_numeric_configuration_is_rejected(changes):
         AssessmentCriterion.model_validate(criterion)
 
 
+@pytest.mark.parametrize(
+    "choices",
+    [
+        [
+            {"label": "satisfied", "description": "Satisfied.", "status": "passed"},
+            {"label": "satisfied", "description": "Missing.", "status": "failed"},
+            {"label": "ambiguous", "description": "Ambiguous.", "status": "uncertain"},
+        ],
+    ],
+)
+def test_invalid_choice_configuration_is_rejected(choices):
+    """Require distinct provider labels while permitting optional status mappings."""
+    _, _, rubric, _ = inputs()
+    criterion = rubric.criteria[2].model_dump()
+    criterion["choices"] = choices
+    with pytest.raises(ValidationError):
+        AssessmentCriterion.model_validate(criterion)
+
+
+@pytest.mark.parametrize(
+    "rule",
+    [
+        {
+            "target_criterion_id": "title-format",
+            "when": {"change-rationale": ["passed"]},
+            "status": "failed",
+        },
+        {
+            "target_criterion_id": "change-rationale",
+            "when": {"title-format": ["passed"]},
+            "status": "failed",
+        },
+        {
+            "target_criterion_id": "change-rationale",
+            "when": {"change-rationale": ["unknown"]},
+            "status": "failed",
+        },
+    ],
+)
+def test_invalid_choice_routing_rule_is_rejected(rule):
+    """Require routing rules to target and inspect configured semantic choices."""
+    _, _, rubric, _ = inputs()
+    document = rubric.model_dump()
+    document["routing_rules"] = [rule]
+    with pytest.raises(ValidationError):
+        type(rubric).model_validate(document)
+
+
+def test_formal_choice_criteria_cannot_configure_provider_labels():
+    """Keep custom provider choices separate from deterministic formal checks."""
+    _, _, rubric, _ = inputs()
+    criterion = rubric.criteria[0].model_dump()
+    criterion["choices"] = [
+        {"label": "satisfied", "description": "Satisfied.", "status": "passed"},
+        {"label": "missing", "description": "Missing.", "status": "failed"},
+        {"label": "ambiguous", "description": "Ambiguous.", "status": "uncertain"},
+    ]
+    with pytest.raises(ValidationError):
+        AssessmentCriterion.model_validate(criterion)
+
+
+def test_custom_choice_labels_are_sent_validated_and_normalized_to_routing_statuses():
+    """Map custom provider labels to stable passed, failed, and uncertain statuses."""
+    _, evidence, rubric, review = inputs()
+    rubric.criteria[2].choices = [
+        ChoiceOption(label="satisfied", description="The rationale is complete.", status="passed"),
+        ChoiceOption(label="missing", description="The rationale is absent.", status="failed"),
+        ChoiceOption(
+            label="ambiguous",
+            description="The evidence cannot establish a rationale.",
+            status="uncertain",
+        ),
+    ]
+    server = RubricServer()
+
+    def response(request):
+        """Return a custom categorical answer for the criterion being customized.
+
+        :param request: Actual outgoing request.
+        :returns: Synthetic HTTP response with the configured native labels.
+        """
+        result = server.handle(request)
+        if request.url.path != "/v1/systemone":
+            return result
+        body = result.json()
+        body["answers"]["change-rationale"].update(
+            {
+                "choice": "satisfied",
+                "probabilities": {"satisfied": 0.99, "missing": 0.005, "ambiguous": 0.005},
+            }
+        )
+        return httpx.Response(200, json=body)
+
+    result = run_experiment(
+        evidence,
+        Policy(),
+        fixture_config(),
+        rubric=rubric,
+        review_text=review,
+        http_transport=httpx.MockTransport(response),
+    )
+    request = next(request for request in server.requests if request.url.path == "/v1/systemone")
+    question = json.loads(request.content)["questions"]["change-rationale"]
+    assessment = result.artifact["assessment_rubric"]["criteria"][2]
+    assert question["criteria"] == {
+        "satisfied": "The rationale is complete.",
+        "missing": "The rationale is absent.",
+        "ambiguous": "The evidence cannot establish a rationale.",
+    }
+    assert assessment["status"] == "passed"
+    assert assessment["native_answer"]["choice"] == "satisfied"
+    assert assessment["explanation"].startswith("Model selected satisfied, which maps to passed.")
+
+
+def test_unmapped_choices_support_ordered_multi_criterion_routing_rules():
+    """Route an unmapped native label after inspecting multiple criterion answers."""
+    _, evidence, rubric, review = inputs()
+    rationale = rubric.criteria[2]
+    coverage = rubric.criteria[3]
+    rationale.choices = [
+        ChoiceOption(label="complete", description="All rationale is present.", status="passed"),
+        ChoiceOption(label="partial", description="Only some rationale is present."),
+        ChoiceOption(label="ambiguous", description="Evidence is ambiguous.", status="uncertain"),
+    ]
+    coverage.choices = [
+        ChoiceOption(label="complete", description="All changes are covered.", status="passed"),
+        ChoiceOption(
+            label="partial", description="Only some changes are covered.", status="failed"
+        ),
+        ChoiceOption(label="ambiguous", description="Evidence is ambiguous.", status="uncertain"),
+    ]
+    rubric.routing_rules = [
+        ChoiceRoutingRule(
+            target_criterion_id="change-rationale",
+            when={
+                "change-rationale": ["partial"],
+                "description-coverage": ["complete"],
+            },
+            status="failed",
+        )
+    ]
+    server = RubricServer()
+
+    def response(request):
+        """Return native labels that exercise the composite routing rule.
+
+        :param request: Actual outgoing request.
+        :returns: Synthetic HTTP response with configured native labels.
+        """
+        result = server.handle(request)
+        if request.url.path != "/v1/systemone":
+            return result
+        body = result.json()
+        body["answers"]["change-rationale"].update(
+            {
+                "choice": "partial",
+                "probabilities": {"complete": 0.005, "partial": 0.99, "ambiguous": 0.005},
+            }
+        )
+        body["answers"]["description-coverage"].update(
+            {
+                "choice": "complete",
+                "probabilities": {"complete": 0.99, "partial": 0.005, "ambiguous": 0.005},
+            }
+        )
+        return httpx.Response(200, json=body)
+
+    result = run_experiment(
+        evidence,
+        Policy(),
+        fixture_config(),
+        rubric=rubric,
+        review_text=review,
+        http_transport=httpx.MockTransport(response),
+    )
+    assessment = result.artifact["assessment_rubric"]
+    rationale_result = assessment["criteria"][2]
+    assert rationale_result["native_answer"]["choice"] == "partial"
+    assert rationale_result["status"] == "failed"
+    assert "has no direct status mapping" in rationale_result["explanation"]
+    assert "Routing rule set status to failed" in rationale_result["explanation"]
+    assert assessment["blockers"] == ["change-rationale"]
+
+
+def test_choice_routing_does_not_overwrite_an_unanswered_target():
+    """Keep an unavailable criterion uncertain when its routing rule conditions match."""
+    _, evidence, rubric, _ = inputs()
+    rubric.routing_rules = [
+        ChoiceRoutingRule(
+            target_criterion_id="review-coverage",
+            when={"change-rationale": ["passed"]},
+            status="passed",
+        )
+    ]
+    server = RubricServer()
+
+    result = run_experiment(
+        evidence,
+        Policy(),
+        fixture_config(),
+        rubric=rubric,
+        review_text="",
+        http_transport=httpx.MockTransport(server.handle),
+    )
+
+    assessment = result.artifact["assessment_rubric"]
+    review = next(
+        item for item in assessment["criteria"] if item["criterion_id"] == "review-coverage"
+    )
+    assert review["status"] == "uncertain"
+    assert review["source"] == "unavailable"
+    assert "Routing rule set" not in review["explanation"]
+    assert not assessment["approval_recommended"]
+
+
+def test_provider_choice_capability_allows_extra_labels_with_shared_routing_statuses():
+    """Allow rich categorical answers when the selected decision model supports them."""
+    _, evidence, rubric, review = inputs()
+    rubric.criteria[2].choices = [
+        ChoiceOption(label="complete", description="All rationale is present.", status="passed"),
+        ChoiceOption(label="partial", description="Some rationale is present.", status="failed"),
+        ChoiceOption(label="missing", description="No rationale is present.", status="failed"),
+        ChoiceOption(label="ambiguous", description="Evidence is ambiguous.", status="uncertain"),
+    ]
+    server = RubricServer()
+    config = fixture_config().model_copy(
+        update={"decision": fixture_config().decision.model_copy(update={"max_choice_options": 4})}
+    )
+
+    def response(request):
+        """Return an extra provider-visible label that maps to a failed status.
+
+        :param request: Actual outgoing request.
+        :returns: Synthetic HTTP response with the configured native labels.
+        """
+        result = server.handle(request)
+        if request.url.path != "/v1/systemone":
+            return result
+        body = result.json()
+        body["answers"]["change-rationale"].update(
+            {
+                "choice": "partial",
+                "probabilities": {
+                    "complete": 0.005,
+                    "partial": 0.99,
+                    "missing": 0.0025,
+                    "ambiguous": 0.0025,
+                },
+            }
+        )
+        return httpx.Response(200, json=body)
+
+    result = run_experiment(
+        evidence,
+        Policy(),
+        config,
+        rubric=rubric,
+        review_text=review,
+        http_transport=httpx.MockTransport(response),
+    )
+    assessment = result.artifact["assessment_rubric"]["criteria"][2]
+    assert assessment["status"] == "failed"
+    assert assessment["native_answer"]["choice"] == "partial"
+
+
+def test_provider_choice_capability_ignores_formal_criteria():
+    """Allow formal criteria when all semantic choices fit the provider limit."""
+    _, evidence, rubric, review = inputs()
+    for criterion in rubric.criteria:
+        if criterion.check == "semantic" and criterion.question_type == "choice":
+            criterion.choices = [
+                ChoiceOption(label="passed", description="The criterion is satisfied."),
+                ChoiceOption(label="failed", description="The criterion is not satisfied."),
+            ]
+    config = fixture_config()
+    config = config.model_copy(
+        update={
+            "decision": config.decision.model_copy(update={"max_choice_options": 2}),
+        }
+    )
+    server = RubricServer()
+
+    def response(request):
+        """Return a valid native response for the configured two-choice questions.
+
+        :param request: Actual outgoing request.
+        :returns: Synthetic HTTP response with only configured choice labels.
+        """
+        result = server.handle(request)
+        if request.url.path != "/v1/systemone":
+            return result
+        body = result.json()
+        for answer in body["answers"].values():
+            answer["probabilities"] = {"passed": 0.99, "failed": 0.01}
+        return httpx.Response(200, json=body)
+
+    result = run_experiment(
+        evidence,
+        Policy(),
+        config,
+        rubric=rubric,
+        review_text=review,
+        http_transport=httpx.MockTransport(response),
+    )
+
+    assert server.decision_calls == 1
+    assert result.artifact["assessment_rubric"]["criteria"][0]["source"] == "deterministic"
+
+
+def test_provider_choice_capability_rejects_unsupported_rubric_before_http():
+    """Reject a rubric exceeding the selected decision model's advertised limit."""
+    _, evidence, rubric, review = inputs()
+    rubric.criteria[2].choices = [
+        ChoiceOption(label="complete", description="All rationale is present.", status="passed"),
+        ChoiceOption(label="partial", description="Some rationale is present.", status="failed"),
+        ChoiceOption(label="missing", description="No rationale is present.", status="failed"),
+        ChoiceOption(label="ambiguous", description="Evidence is ambiguous.", status="uncertain"),
+    ]
+    server = RubricServer()
+    with pytest.raises(ValueError, match="supports at most 3 choice options"):
+        run_experiment(
+            evidence,
+            Policy(),
+            fixture_config(),
+            rubric=rubric,
+            review_text=review,
+            http_transport=httpx.MockTransport(server.handle),
+        )
+    assert server.requests == []
+
+
+@pytest.mark.parametrize("value", [1, 101])
+def test_decision_choice_capability_rejects_values_outside_supported_range(value):
+    """Keep the configured TypeSafe-compatible capability within 2 through 100."""
+    settings = fixture_config().decision.model_dump()
+    settings["max_choice_options"] = value
+    with pytest.raises(ValidationError):
+        DecisionSettings.model_validate(settings)
+
+
 @pytest.mark.parametrize("fault", ["type", "noul_range", "score_range", "legend", "labels"])
 @pytest.mark.parametrize("recover", [True, False])
 def test_numeric_wire_errors_retry_once_and_never_bypass_validation(fault, recover):
@@ -202,6 +548,7 @@ def test_mixed_native_types_preserve_independent_labels_and_invalidate_changed_t
     assert metrics["rubric"]["native_answers"]["change-rationale"]["type"] == "score"
     assert metrics["rubric"]["native_answers"]["review-coverage"]["type"] == "noul"
     tape = tmp_path / "tape.json"
+    assert result.tape is not None
     tape.write_text(result.tape.model_dump_json())
     rubric.criteria[2].pass_threshold = 2.9
     with pytest.raises(ReplayMismatch):
