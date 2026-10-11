@@ -105,8 +105,11 @@ class NonSemanticCheck(Contract):
             or not self.command
             or self.target is not None
             or self.pattern is not None
+            or not self.must_match
         ):
-            raise ValueError("script checks require command and forbid target and pattern")
+            raise ValueError(
+                "script checks require command, forbid target and pattern, and require must_match"
+            )
         return self
 
 

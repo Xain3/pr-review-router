@@ -90,8 +90,9 @@ semantic review. A regex check has a unique `check_id`, `description`, `kind =
 Python regular-expression `pattern`. It passes when the pattern matches unless
 `must_match = false` is configured. A script check has `kind = "script"` and a
 nonempty TOML `command` array; the validated evidence JSON is sent to the
-command's standard input, and exit status zero means pass. Commands are started
-without a shell and are bounded by `check_timeout_seconds`.
+command's standard input, and exit status zero means pass. Regexes run in a worker process bounded by `check_timeout_seconds`. Commands are
+started without a shell in an isolated process group and are bounded by the same
+timeout; timeout terminates the command and its descendants.
 
 Checks run after coverage and alongside the existing PR-text and rubric gates,
 before either provider is called. Every result is included under
@@ -195,7 +196,7 @@ standard review escalates to deep review, and unresolved deep review requires
 human review. Provider exceptions and malformed responses require human review;
 exception text is excluded from reports.
 
-Report schema version `"3"` includes:
+Report schema version `"4"` includes:
 
 - `advisory_only: true`, repository, PR number, base/head identifiers.
 - `outcome`: `skipped`, `reviewed`, `needs_human_review`, `accepted`, `rejected`, or `feedback`.
@@ -207,9 +208,10 @@ Report schema version `"3"` includes:
   failed hard blockers, failed soft criteria, and whether the rubric passes.
 - Deduplicated findings capped by policy and a unique `findings_omitted` count.
 
-Version 3 adds direct decisions and feedback outcomes/routes; its contract rejects
-older schema versions. Consumers of stored reports must retain an older parser
-or migrate those reports before validation.
+Version 3 added direct decisions and feedback outcomes/routes. Version 4 adds
+the required `nonsemantic_checks` field; its contract rejects older schema
+versions. Consumers of stored reports must retain an older parser or migrate
+those reports before validation.
 
 Stage finding lists are also capped individually. Escalation examines the complete
 provider results before capping. Findings from earlier stages cannot be silently
@@ -257,7 +259,7 @@ with `strict_schema=True`. Raw provider errors never enter advisory reports.
 Experiments require `shadow_skips = true` and reject policies enabling direct
 acceptance or rejection. A wrapper retains original validated decisions and
 turns skip recommendations into review requests with an explicit reason, outside
-the engine. Report schema remains version 3. Separate artifacts contain original
+the engine. Report schema remains version 4. Separate artifacts contain original
 and native decisions, uncapped reviews, model metadata, generation settings,
 prompt/schema revision, usage, timing, and schema/transport failure counts.
 
@@ -365,7 +367,7 @@ cancel a blocking failure, and task confidence is never invented.
 
 The rubric decision provider requests human review for blockers/uncertainty,
 normal review for suggestions, and skip for all-pass advice. Existing shadow
-mode records the original skip and continues reviewing. Report schema version 3
+mode records the original skip and continues reviewing. Report schema version 4
 is unchanged; rubric advice is saved under `assessment_rubric` in experiment
 artifacts and summaries. It cannot override coverage or unresolved review and
 never approves or changes a PR. Policy direct decisions remain disabled.

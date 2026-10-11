@@ -1,5 +1,6 @@
 import json
 import sys
+import time
 from typing import Literal
 
 import pytest
@@ -81,7 +82,7 @@ def test_editorial_example_skips_and_report_round_trips(evidence):
     report = run(evidence)
     assert report.outcome == "skipped"
     assert report.route == "no_review"
-    assert report.schema_version == "3"
+    assert report.schema_version == "4"
     assert report.coverage.complete
     assert not report.pr_text.enabled
     assert report.pr_text.valid
@@ -91,7 +92,10 @@ def test_editorial_example_skips_and_report_round_trips(evidence):
     assert ReviewReport.model_validate_json(report.model_dump_json()) == report
     assert json.loads(report.model_dump_json())["advisory_only"] is True
     legacy_report = report.model_dump()
-    legacy_report["schema_version"] = "1"
+    legacy_report["schema_version"] = "3"
+    with pytest.raises(ValidationError):
+        ReviewReport.model_validate(legacy_report)
+    legacy_report.pop("nonsemantic_checks")
     with pytest.raises(ValidationError):
         ReviewReport.model_validate(legacy_report)
 
@@ -235,6 +239,31 @@ def test_nonsemantic_regex_failure_hands_off_before_provider_calls(evidence):
     assert any("no-debug-marker" in reason for reason in report.reasons)
 
 
+def test_nonsemantic_regex_timeout_hands_off_before_provider_calls(evidence):
+    evidence.title = "a" * 30_000 + "!"
+    policy = Policy(
+        check_timeout_seconds=1,
+        nonsemantic_checks=[
+            {
+                "check_id": "bounded-regex",
+                "description": "Regex evaluation has a deadline.",
+                "kind": "regex",
+                "target": "title",
+                "pattern": r"^(a+)+$",
+            }
+        ],
+    )
+    decider = ScriptedDecision("skip_review")
+
+    report = run(evidence, policy=policy, decision=decider)
+
+    check = report.nonsemantic_checks.checks[0]
+    assert not check.passed
+    assert check.detail == "Regex check timed out."
+    assert report.outcome == "needs_human_review"
+    assert decider.calls == 0
+
+
 @pytest.mark.parametrize("exit_code", [0, 1])
 def test_nonsemantic_script_receives_evidence_and_uses_exit_status(evidence, exit_code):
     command = [
@@ -264,6 +293,56 @@ def test_nonsemantic_script_receives_evidence_and_uses_exit_status(evidence, exi
     assert report.outcome == ("skipped" if exit_code == 0 else "needs_human_review")
 
 
+def test_nonsemantic_script_timeout_terminates_descendants(evidence, tmp_path):
+    marker = tmp_path / "child-finished"
+    child = (
+        "import pathlib,time; time.sleep(1.5); "
+        f"pathlib.Path({str(marker)!r}).write_text('finished')"
+    )
+    parent = (
+        "import subprocess,sys,time; "
+        "subprocess.Popen([sys.executable, '-c', sys.argv[1]]); time.sleep(30)"
+    )
+    policy = Policy(
+        check_timeout_seconds=1,
+        nonsemantic_checks=[
+            {
+                "check_id": "bounded-script",
+                "description": "The script process tree is bounded.",
+                "kind": "script",
+                "command": [sys.executable, "-c", parent, child],
+            }
+        ],
+    )
+
+    report = run(evidence, policy=policy)
+
+    assert not report.nonsemantic_checks.checks[0].passed
+    assert report.nonsemantic_checks.checks[0].detail == "External check timed out."
+    time.sleep(0.7)
+    assert not marker.exists()
+
+
+def test_nonsemantic_script_with_embedded_nul_fails_closed(evidence):
+    policy = Policy(
+        nonsemantic_checks=[
+            {
+                "check_id": "invalid-command",
+                "description": "The command cannot be started.",
+                "kind": "script",
+                "command": ["invalid\x00command"],
+            }
+        ]
+    )
+    decider = ScriptedDecision("skip_review")
+
+    report = run(evidence, policy=policy, decision=decider)
+
+    assert report.outcome == "needs_human_review"
+    assert report.nonsemantic_checks.checks[0].detail == "External check could not be started."
+    assert decider.calls == 0
+
+
 @pytest.mark.parametrize(
     "check",
     [
@@ -284,6 +363,13 @@ def test_nonsemantic_script_receives_evidence_and_uses_exit_status(evidence, exi
             "check_id": "missing-command",
             "description": "Invalid script.",
             "kind": "script",
+        },
+        {
+            "check_id": "ignored-script-must-match",
+            "description": "Script checks cannot ignore the expected match.",
+            "kind": "script",
+            "command": ["true"],
+            "must_match": False,
         },
     ],
 )

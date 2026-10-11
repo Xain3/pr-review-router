@@ -182,7 +182,7 @@ class RubricEvaluation(Contract):
 class ReviewReport(Contract):
     """Advisory-only routing outcome with evidence checks and review results."""
 
-    schema_version: Literal["3"] = "3"
+    schema_version: Literal["4"] = "4"
     advisory_only: Literal[True] = True
     repository: Text
     number: Annotated[int, Field(gt=0)]

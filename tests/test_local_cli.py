@@ -27,7 +27,7 @@ def test_installed_cli_replays_adapters_and_writes_separate_provenance(tmp_path)
     report = json.loads((tmp_path / "report.json").read_text())
     artifact = json.loads((tmp_path / "experiment.json").read_text())
     assert report["outcome"] == "reviewed"
-    assert report["schema_version"] == "3"
+    assert report["schema_version"] == "4"
     assert report["decision"]["recommendation"] == "review"
     assert artifact["original_decisions"][0]["recommendation"] == "skip_review"
     assert artifact["mode"] == "replay"

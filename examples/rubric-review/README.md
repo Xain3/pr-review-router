@@ -55,7 +55,7 @@ to merge. Artifacts always have `advisory_only: true` and
 all-pass rubric's original skip recommendation is recorded while the actual
 router continues reviewing. Neither a rubric pass nor its approval flag can
 override incomplete coverage, provider failures, or unresolved code review.
-Advisory report schema version 3 and policy semantics remain unchanged.
+Advisory report schema version 4 and policy semantics remain unchanged.
 
 ## Run offline in CI
 

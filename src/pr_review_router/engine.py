@@ -1,7 +1,11 @@
 """Provider-independent advisory routing; incomplete evidence fails closed."""
 
+import json
+import os
 import re
+import signal
 import subprocess
+import sys
 from typing import Literal
 
 from .config import Policy, RubricCriterion
@@ -243,6 +247,36 @@ def _check_target(evidence: PullRequestEvidence, target: str) -> str:
     return "\n".join(file.path for file in evidence.files)
 
 
+def _terminate_process_tree(process: subprocess.Popen[str]) -> None:
+    """Terminate a timed-out check and its descendants.
+
+    :param process: The process started in its own group or session.
+    """
+    if os.name == "posix":
+        try:
+            os.killpg(process.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+    elif os.name == "nt":
+        try:
+            completed = subprocess.run(
+                ["taskkill", "/PID", str(process.pid), "/T", "/F"],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                timeout=5,
+                check=False,
+                shell=False,
+            )
+        except (OSError, subprocess.TimeoutExpired):
+            process.kill()
+        else:
+            if completed.returncode != 0 and process.poll() is None:
+                process.kill()
+    else:
+        process.kill()
+    process.communicate()
+
+
 def assess_nonsemantic_checks(evidence: PullRequestEvidence, policy: Policy) -> NonSemanticChecks:
     """Run configured regex and external-script policy checks.
 
@@ -258,18 +292,17 @@ def assess_nonsemantic_checks(evidence: PullRequestEvidence, policy: Policy) -> 
     for check in policy.nonsemantic_checks:
         if check.kind == "regex":
             assert check.target is not None and check.pattern is not None
-            matched = re.search(check.pattern, _check_target(evidence, check.target)) is not None
-            passed = matched == check.must_match
-            expectation = "match" if check.must_match else "not match"
-            detail = f"Regex {expectation} succeeded." if passed else f"Regex {expectation} failed."
-        else:
-            assert check.command is not None
             try:
                 completed = subprocess.run(
-                    check.command,
-                    input=serialized,
+                    [sys.executable, "-m", "pr_review_router.regex_worker"],
+                    input=json.dumps(
+                        {
+                            "pattern": check.pattern,
+                            "text": _check_target(evidence, check.target),
+                        }
+                    ),
                     text=True,
-                    stdout=subprocess.DEVNULL,
+                    stdout=subprocess.PIPE,
                     stderr=subprocess.DEVNULL,
                     timeout=policy.check_timeout_seconds,
                     check=False,
@@ -277,16 +310,58 @@ def assess_nonsemantic_checks(evidence: PullRequestEvidence, policy: Policy) -> 
                 )
             except subprocess.TimeoutExpired:
                 passed = False
+                detail = "Regex check timed out."
+            except (OSError, ValueError):
+                passed = False
+                detail = "Regex check could not be started."
+            else:
+                matched_output = completed.stdout.strip()
+                if completed.returncode != 0 or matched_output not in {"true", "false"}:
+                    passed = False
+                    detail = "Regex check could not be completed."
+                else:
+                    matched = matched_output == "true"
+                    passed = matched == check.must_match
+                    expectation = "match" if check.must_match else "not match"
+                    detail = (
+                        f"Regex {expectation} succeeded."
+                        if passed
+                        else f"Regex {expectation} failed."
+                    )
+        else:
+            assert check.command is not None
+            try:
+                process = subprocess.Popen(
+                    check.command,
+                    stdin=subprocess.PIPE,
+                    text=True,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    shell=False,
+                    **(
+                        {"start_new_session": True}
+                        if os.name == "posix"
+                        else {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP}
+                        if os.name == "nt"
+                        else {}
+                    ),
+                )
+                completed = process.communicate(
+                    input=serialized, timeout=policy.check_timeout_seconds
+                )
+            except subprocess.TimeoutExpired:
+                _terminate_process_tree(process)
+                passed = False
                 detail = "External check timed out."
-            except OSError:
+            except (OSError, ValueError):
                 passed = False
                 detail = "External check could not be started."
             else:
-                passed = completed.returncode == 0
+                passed = process.returncode == 0
                 detail = (
                     "External check passed."
                     if passed
-                    else f"External check exited with status {completed.returncode}."
+                    else f"External check exited with status {process.returncode}."
                 )
         results.append(
             NonSemanticCheckResult(

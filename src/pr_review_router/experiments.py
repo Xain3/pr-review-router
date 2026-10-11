@@ -52,6 +52,8 @@ def _experiment_report_schema(policy: Policy) -> dict[str, Any]:
     """
     schema = ReviewReport.model_json_schema()
     if not policy.nonsemantic_checks:
+        schema["properties"]["schema_version"]["const"] = "3"
+        schema["properties"]["schema_version"]["default"] = "3"
         schema["properties"].pop("nonsemantic_checks")
         schema["required"].remove("nonsemantic_checks")
         for name in ("NonSemanticCheckResult", "NonSemanticChecks"):
