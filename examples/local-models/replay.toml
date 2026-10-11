@@ -5,6 +5,7 @@ shadow_skips = true
 backend = "ollaya"
 endpoint = "http://localhost:11435"
 model = "fixture-decision:latest"
+max_choice_options = 3
 
 [review]
 backend = "ollama"
