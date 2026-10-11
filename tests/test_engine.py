@@ -96,6 +96,7 @@ def test_editorial_example_skips_and_report_round_trips(evidence):
     with pytest.raises(ValidationError):
         ReviewReport.model_validate(legacy_report)
     legacy_report.pop("nonsemantic_checks")
+    legacy_report["schema_version"] = "4"
     with pytest.raises(ValidationError):
         ReviewReport.model_validate(legacy_report)
 
