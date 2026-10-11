@@ -249,6 +249,8 @@ def normalize_answer(criterion: AssessmentCriterion, answer: NativeAnswer) -> tu
     if isinstance(answer, _ChoiceAnswer):
         return answer.choice, f"Model classified this criterion as {answer.choice}."
     value = answer.noul if isinstance(answer, _NoulAnswer) else answer.score
+    if criterion.fail_threshold is None or criterion.pass_threshold is None:
+        raise ValueError("numeric criteria require explicit fail and pass thresholds")
     status = (
         "failed"
         if value <= criterion.fail_threshold
@@ -356,6 +358,8 @@ class RubricDecisionProvider:
                     "Formal blocker failed." if blocked else "Supplied review text is missing.",
                 )
             else:
+                if criterion.instructions is None:
+                    raise ValueError("semantic criteria require instructions")
                 instructions = (
                     INSTRUCTIONS
                     + " Criterion to assess: "

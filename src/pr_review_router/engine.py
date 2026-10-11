@@ -338,31 +338,31 @@ def assess_nonsemantic_checks(evidence: PullRequestEvidence, policy: Policy) -> 
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL,
                     shell=False,
-                    **(
-                        {"start_new_session": True}
-                        if os.name == "posix"
-                        else {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP}
-                        if os.name == "nt"
-                        else {}
-                    ),
+                    start_new_session=os.name == "posix",
+                    creationflags=(subprocess.CREATE_NEW_PROCESS_GROUP if os.name == "nt" else 0),
                 )
-                completed = process.communicate(
-                    input=serialized, timeout=policy.check_timeout_seconds
-                )
-            except subprocess.TimeoutExpired:
-                _terminate_process_tree(process)
-                passed = False
-                detail = "External check timed out."
             except (OSError, ValueError):
                 passed = False
                 detail = "External check could not be started."
             else:
-                passed = process.returncode == 0
-                detail = (
-                    "External check passed."
-                    if passed
-                    else f"External check exited with status {process.returncode}."
-                )
+                try:
+                    completed = process.communicate(
+                        input=serialized, timeout=policy.check_timeout_seconds
+                    )
+                except subprocess.TimeoutExpired:
+                    _terminate_process_tree(process)
+                    passed = False
+                    detail = "External check timed out."
+                except (OSError, ValueError):
+                    passed = False
+                    detail = "External check could not be completed."
+                else:
+                    passed = process.returncode == 0
+                    detail = (
+                        "External check passed."
+                        if passed
+                        else f"External check exited with status {process.returncode}."
+                    )
         results.append(
             NonSemanticCheckResult(
                 check_id=check.check_id,

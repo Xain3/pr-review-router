@@ -175,6 +175,8 @@ class _LocalProvider:
             version = json.loads(self.session.request(self.settings, "GET", "/api/version"))
             self._version = version.get("version")
             self._inventory = json.loads(self.session.request(self.settings, "GET", "/api/tags"))
+        if self._inventory is None:
+            raise TransportFailure("installed model inventory is unavailable")
         if not isinstance(self._version, str) or not self._version:
             raise TransportFailure("local server version is unavailable")
         names = {model, model + ":latest"} if ":" not in model else {model}
