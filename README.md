@@ -179,6 +179,9 @@ reviews independently. Provider TOML is separate from routing policy. Local
 experiments shadow skip recommendations and require direct decisions to be
 disabled. They retain original decisions and model provenance in separate
 artifacts without changing report schema version 4.
+Backend and endpoint settings are distinct from each selected model; optional
+`instructions` are model-specific, while `backend_instructions` covers special
+backend cases. The decision model's `max_choice_options` defaults to 3.
 
 ```sh
 # Exercise the real adapters offline using explicitly synthetic HTTP tapes.

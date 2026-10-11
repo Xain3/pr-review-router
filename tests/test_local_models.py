@@ -22,7 +22,7 @@ from pr_review_router.experiments import (
     summarize_evaluation,
 )
 from pr_review_router.local_providers import OllamaReviewProvider
-from pr_review_router.provider_config import ProvidersConfig, ReviewSettings
+from pr_review_router.provider_config import DecisionSettings, ProvidersConfig, ReviewSettings
 from pr_review_router.providers import ProviderSchemaError, request_review
 from pr_review_router.transport import ReplayMismatch, Session, TransportFailure
 
@@ -132,6 +132,15 @@ def test_decision_choice_limit_fails_closed_before_model_inspection():
 
     assert result.report.outcome == "needs_human_review"
     assert server.requests == []
+
+
+def test_decision_choice_limit_rejects_values_above_backend_limit():
+    with pytest.raises(ValidationError):
+        DecisionSettings(
+            endpoint="http://localhost:11435",
+            model="fixture-decision:latest",
+            max_choice_options=256,
+        )
 
 
 @pytest.mark.parametrize("gate", ["missing_patch", "files_incomplete", "budget", "title", "rubric"])
