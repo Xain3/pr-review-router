@@ -118,30 +118,6 @@ def test_numeric_bands_preserve_native_values_and_have_explicit_boundaries(kind,
     assert not assessed["automation_authorized"]
 
 
-def test_predicate_question_type_uses_ollaya_noul_protocol():
-    """Translate the predicate alias to Ollaya's native noul question type."""
-    _, evidence, rubric, review = inputs()
-    rubric.criteria[2].question_type = "predicate"
-    rubric.criteria[2].fail_threshold = 0.2
-    rubric.criteria[2].pass_threshold = 0.8
-    server = RubricServer()
-
-    result = run_experiment(
-        evidence,
-        Policy(),
-        fixture_config(),
-        rubric=rubric,
-        review_text=review,
-        http_transport=httpx.MockTransport(server.handle),
-    )
-
-    request = next(req for req in server.requests if req.url.path == "/v1/systemone")
-    question = json.loads(request.content)["questions"]["change-rationale"]
-    assessment = result.artifact["assessment_rubric"]["criteria"][2]
-    assert question["type"] == "noul"
-    assert assessment["native_answer"]["type"] == "noul"
-
-
 @pytest.mark.parametrize(
     "changes",
     [
@@ -152,12 +128,6 @@ def test_predicate_question_type_uses_ollaya_noul_protocol():
         {"question_type": "noul", "fail_threshold": float("nan"), "pass_threshold": 0.8},
         {
             "question_type": "noul",
-            "fail_threshold": 0.2,
-            "pass_threshold": 0.8,
-            "levels": ["a", "b"],
-        },
-        {
-            "question_type": "predicate",
             "fail_threshold": 0.2,
             "pass_threshold": 0.8,
             "levels": ["a", "b"],

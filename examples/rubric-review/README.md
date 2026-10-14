@@ -253,8 +253,7 @@ uv run pr-review-router evaluate \
   --output-dir reports/rubric-noul-replay
 ```
 
-Each semantic criterion may set `question_type = "choice"`, `"noul"`,
-`"predicate"` (an alias for `noul` that Ollaya sends as `noul`), or `"score"`.
+Each semantic criterion may set `question_type = "choice"`, `"noul"`, or `"score"`.
 Choices retain the explicit pass/fail/uncertain labels. Numeric formats require
 explicit `fail_threshold` and `pass_threshold`; higher values must mean stronger
 satisfaction. The example noul bands are fail <= 0.2 and pass >= 0.8. Scores use
