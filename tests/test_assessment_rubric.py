@@ -15,6 +15,7 @@ from pr_review_router.experiments import (
     load_corpus_rubric,
     run_experiment,
 )
+from pr_review_router.provider_config import ProvidersConfig
 from pr_review_router.transport import ReplayMismatch
 
 pytestmark = pytest.mark.unit
@@ -28,7 +29,15 @@ def inputs(index=0):
     """
     corpus, evidence, _ = load_corpus(EXAMPLES / "corpus.json")
     rubric, reviews, _ = load_corpus_rubric(EXAMPLES / "corpus.json", corpus)
+    assert rubric is not None
     return corpus.cases[index], evidence[index], rubric, reviews[index]
+
+
+def test_configured_rubric_rejects_mock_decision_provider():
+    _, evidence, rubric, review = inputs()
+
+    with pytest.raises(ValueError, match="semantic rubric experiments require an Ollaya"):
+        run_experiment(evidence, Policy(), ProvidersConfig(), rubric=rubric, review_text=review)
 
 
 def experiment(index=0, statuses=None, *, record=False, policy=None):

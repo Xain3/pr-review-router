@@ -23,11 +23,101 @@ INSTRUCTIONS = (
     "or keywords. Assess only what the evidence supports. "
     "Document quality and review coverage do not establish substantive code correctness."
 )
-CHOICES = {
+DEFAULT_CHOICES = {
     "passed": "The supplied evidence supports satisfaction of this criterion.",
     "failed": "The supplied evidence clearly fails this criterion.",
     "uncertain": "Insufficient or ambiguous evidence prevents an assessment.",
 }
+
+
+class ChoiceOption(Contract):
+    """One configured categorical answer and its routing status."""
+
+    label: Text = Field(pattern=r"^[a-z][a-z0-9_-]{0,63}$")
+    description: Text
+    status: Status | None = None
+
+
+class _ChoiceConditions(Contract):
+    """Native-choice conditions shared by routing and enforcement rules."""
+
+    when: dict[Text, list[Text]] = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def nonempty_labels(self) -> "_ChoiceConditions":
+        """Require every condition to name one or more unique choice labels.
+
+        :returns: Validated conditions.
+        :raises ValueError: If a condition has no labels or repeats a label.
+        """
+        if any(not labels or len(set(labels)) != len(labels) for labels in self.when.values()):
+            raise ValueError("rule conditions require unique nonempty label lists")
+        return self
+
+
+class ChoiceRoutingRule(_ChoiceConditions):
+    """An ordered native-choice condition that assigns one criterion status."""
+
+    target_criterion_id: Text = Field(pattern=r"^[a-z][a-z0-9_-]{0,63}$")
+    status: Status
+
+
+class EnforcementGroup(Contract):
+    """Alternative criteria; one passing member satisfies the group."""
+
+    any_of: list[Text] = Field(min_length=2, max_length=16)
+
+    @model_validator(mode="after")
+    def unique_members(self) -> "EnforcementGroup":
+        """Require distinct alternative criterion identifiers.
+
+        :returns: Validated group.
+        :raises ValueError: If a criterion appears more than once.
+        """
+        if len(set(self.any_of)) != len(self.any_of):
+            raise ValueError("enforcement group members must be distinct")
+        return self
+
+
+EnforcementRequirement = Text | EnforcementGroup
+
+
+class EnforcementRule(_ChoiceConditions):
+    """An ordered scale-style condition selecting blocking and non-blocking criteria.
+
+    Requirements in ``enforce`` block the recommendation when they fail. Requirements
+    in ``soft_enforce`` produce suggestions without blocking.
+    """
+
+    enforce: list[EnforcementRequirement] = Field(default_factory=list, max_length=256)
+    soft_enforce: list[EnforcementRequirement] = Field(default_factory=list, max_length=256)
+
+    @model_validator(mode="after")
+    def unique_members(self) -> "EnforcementRule":
+        """Require at least one requirement and each criterion at most once per rule.
+
+        :returns: Validated rule.
+        :raises ValueError: If no requirement is listed or a criterion is listed twice.
+        """
+        if not self.enforce and not self.soft_enforce:
+            raise ValueError("enforcement rules require enforce or soft_enforce members")
+        members = [
+            member
+            for requirement in (*self.enforce, *self.soft_enforce)
+            for member in _requirement_members(requirement)
+        ]
+        if len(set(members)) != len(members):
+            raise ValueError("enforcement rules must list each criterion at most once")
+        return self
+
+
+def _requirement_members(requirement: EnforcementRequirement) -> list[str]:
+    """Return the criterion identifiers named by one enforcement requirement.
+
+    :param requirement: A criterion identifier or an any-of group.
+    :returns: Criterion identifiers in configured order.
+    """
+    return [requirement] if isinstance(requirement, str) else list(requirement.any_of)
 
 
 class AssessmentCriterion(Contract):
@@ -36,7 +126,7 @@ class AssessmentCriterion(Contract):
     criterion_id: Text = Field(pattern=r"^[a-z][a-z0-9_-]{0,63}$")
     description: Text
     check: Literal["conventional_title", "body_section", "semantic"]
-    action: Literal["block", "suggest"]
+    action: Literal["block", "suggest"] | None = None
     suggestion: Text
     section: Text | None = None
     instructions: Text | None = None
@@ -45,6 +135,7 @@ class AssessmentCriterion(Contract):
     fail_threshold: float | None = Field(default=None, ge=0, allow_inf_nan=False)
     pass_threshold: float | None = Field(default=None, ge=0, allow_inf_nan=False)
     levels: list[Text] | None = Field(default=None, min_length=2, max_length=10)
+    choices: list[ChoiceOption] | None = Field(default=None, min_length=2)
 
     @model_validator(mode="after")
     def check_arguments(self) -> "AssessmentCriterion":
@@ -67,9 +158,17 @@ class AssessmentCriterion(Contract):
                 for value in (self.fail_threshold, self.pass_threshold, self.levels)
             ):
                 raise ValueError("choice criteria do not accept thresholds or levels")
+            if self.choices is not None:
+                if self.check != "semantic":
+                    raise ValueError("only semantic choice criteria accept choices")
+                labels = [choice.label for choice in self.choices]
+                if len(set(labels)) != len(labels):
+                    raise ValueError("choice criteria require distinct labels")
         else:
             if self.check != "semantic":
                 raise ValueError("numeric question types require a semantic check")
+            if self.choices is not None:
+                raise ValueError("numeric criteria do not accept choices")
             if self.fail_threshold is None or self.pass_threshold is None:
                 raise ValueError("numeric criteria require explicit fail and pass thresholds")
             maximum = 1 if self.question_type == "noul" else len(self.levels or []) - 1
@@ -83,24 +182,85 @@ class AssessmentCriterion(Contract):
                 raise ValueError("score criteria require distinct ordered level descriptions")
         return self
 
+    @property
+    def choice_options(self) -> dict[str, str]:
+        """Return provider-visible choice labels and descriptions.
+
+        :returns: Configured choices or the backward-compatible defaults.
+        """
+        if self.choices is None:
+            return DEFAULT_CHOICES
+        return {choice.label: choice.description for choice in self.choices}
+
+    @property
+    def choice_statuses(self) -> dict[str, Status | None]:
+        """Return each provider-visible choice label's canonical routing status.
+
+        :returns: Labels mapped to a stable status, or None for rule-based routing.
+        """
+        if self.choices is None:
+            statuses: tuple[Status, ...] = ("passed", "failed", "uncertain")
+            return {status: status for status in statuses}
+        return {choice.label: choice.status for choice in self.choices}
+
 
 class AssessmentRubric(Contract):
     """Rubric configuration distinct from the engine's deterministic policy rubric."""
 
     rubric_version: Literal[1] = 1
     criteria: list[AssessmentCriterion] = Field(min_length=1, max_length=256)
+    routing_rules: list[ChoiceRoutingRule] = Field(default_factory=list, max_length=256)
+    enforcement_rules: list[EnforcementRule] = Field(default_factory=list, max_length=256)
 
     @model_validator(mode="after")
     def unique_criteria(self) -> "AssessmentRubric":
-        """Keep criterion IDs unambiguous in model questions, results, and labels.
+        """Keep criterion IDs unambiguous, every rule reference valid, and actions consistent.
 
-        :returns: Rubric with unique criterion identifiers.
-        :raises ValueError: If two criteria share an identifier.
+        Legacy rubrics without enforcement rules must set ``action`` on every criterion.
+        Rubrics with enforcement rules must not, because the rules alone decide enforcement.
+
+        :returns: Rubric with unique criterion identifiers and valid rule references.
+        :raises ValueError: If identifiers repeat, a rule references an unknown criterion, or
+            ``action`` is missing or set inconsistently with the enforcement rules.
         """
         ids = [criterion.criterion_id for criterion in self.criteria]
         if len(set(ids)) != len(ids):
             raise ValueError("assessment criterion IDs must be unique")
+        if self.enforcement_rules:
+            if any(criterion.action is not None for criterion in self.criteria):
+                raise ValueError("criterion action is not allowed when enforcement_rules are set")
+        elif any(criterion.action is None for criterion in self.criteria):
+            raise ValueError("criterion action is required when enforcement_rules are not set")
+        choices = {
+            criterion.criterion_id: set(criterion.choice_options)
+            for criterion in self.criteria
+            if criterion.check == "semantic" and criterion.question_type == "choice"
+        }
+        for rule in self.routing_rules:
+            if rule.target_criterion_id not in choices:
+                raise ValueError("routing rule target must be a semantic choice criterion")
+            _check_conditions(rule.when, choices)
+        for rule in self.enforcement_rules:
+            _check_conditions(rule.when, choices)
+            for requirement in (*rule.enforce, *rule.soft_enforce):
+                for member in _requirement_members(requirement):
+                    if member not in ids:
+                        raise ValueError("enforcement rule references an unknown criterion")
         return self
+
+
+def _check_conditions(when: dict[str, list[str]], choices: dict[str, set[str]]) -> None:
+    """Require conditions to reference semantic choice criteria and configured labels.
+
+    :param when: Condition mapping from criterion identifier to accepted labels.
+    :param choices: Configured labels for each semantic choice criterion.
+    :raises ValueError: If a condition references an unknown criterion or label.
+    """
+    for criterion_id, labels in when.items():
+        if criterion_id not in choices:
+            raise ValueError("rule condition must reference a semantic choice criterion")
+        if not set(labels) <= choices[criterion_id]:
+            raise ValueError("rule condition contains an unknown choice label")
 
 
 def load_assessment_rubric(path: Path) -> AssessmentRubric:
@@ -152,20 +312,9 @@ class _ChoiceAnswer(BaseModel):
 
     model_config = ConfigDict(strict=True, extra="ignore")
     type: Literal["choice"]
-    choice: Status
+    choice: Text
     confidence: Probability
     probabilities: dict[str, Probability]
-
-    @model_validator(mode="after")
-    def exact_choices(self) -> "_ChoiceAnswer":
-        """Require all three assessment choices in the native distribution.
-
-        :returns: Answer with the expected label set.
-        :raises ValueError: If the server returns unexpected probability labels.
-        """
-        if set(self.probabilities) != set(CHOICES):
-            raise ValueError("rubric probability labels do not match the choices")
-        return self
 
 
 class _NoulAnswer(BaseModel):
@@ -214,6 +363,10 @@ class _NativeResponse(BaseModel):
             criterion = criteria[identifier]
             if answer.type != criterion.question_type:
                 raise ValueError("rubric answer type does not match the requested type")
+            if isinstance(answer, _ChoiceAnswer):
+                choices = criterion.choice_options
+                if answer.choice not in choices or set(answer.probabilities) != set(choices):
+                    raise ValueError("rubric choice labels do not match the configured choices")
             if isinstance(answer, _ScoreAnswer):
                 legend = {str(index): level for index, level in enumerate(criterion.levels)}
                 if answer.legend != legend or set(answer.probabilities) != set(legend):
@@ -230,11 +383,17 @@ def rubric_versions() -> dict[str, object]:
 
     :returns: Prompt contents, version, choices, and native response schema.
     """
+    wire_schema = _NativeResponse.model_json_schema()
+    wire_schema["$defs"]["_ChoiceAnswer"]["properties"]["choice"] = {
+        "enum": list(DEFAULT_CHOICES),
+        "title": "Choice",
+        "type": "string",
+    }
     return {
         "prompt_version": PROMPT_VERSION,
         "instructions": INSTRUCTIONS,
-        "choices": CHOICES,
-        "wire_schema": _NativeResponse.model_json_schema(),
+        "choices": DEFAULT_CHOICES,
+        "wire_schema": wire_schema,
         "result_schema": RubricAssessment.model_json_schema(),
     }
 
@@ -247,8 +406,18 @@ def normalize_answer(criterion: AssessmentCriterion, answer: NativeAnswer) -> tu
     :returns: Status and deterministic explanation of its mapping.
     """
     if isinstance(answer, _ChoiceAnswer):
-        return answer.choice, f"Model classified this criterion as {answer.choice}."
+        status = criterion.choice_statuses[answer.choice]
+        if status is None:
+            return (
+                "uncertain",
+                f"Model selected {answer.choice}, which has no direct status mapping.",
+            )
+        if answer.choice == status:
+            return status, f"Model classified this criterion as {status}."
+        return status, f"Model selected {answer.choice}, which maps to {status}."
     value = answer.noul if isinstance(answer, _NoulAnswer) else answer.score
+    if criterion.fail_threshold is None or criterion.pass_threshold is None:
+        raise ValueError("numeric criteria require explicit fail and pass thresholds")
     status = (
         "failed"
         if value <= criterion.fail_threshold
@@ -264,13 +433,116 @@ def normalize_answer(criterion: AssessmentCriterion, answer: NativeAnswer) -> tu
     )
 
 
-def combine_assessments(
-    rubric: AssessmentRubric, assessments: list[CriterionAssessment]
-) -> RubricAssessment:
-    """Map complete criterion statuses to blocking, suggestion, or all-pass advice.
+def _choice_labels(answers: dict[str, NativeAnswer]) -> dict[str, str]:
+    """Return the native choice label selected for each choice criterion.
 
-    :param rubric: Configured criteria and failure actions.
+    :param answers: Validated native answers, keyed by identifier.
+    :returns: Selected labels for choice answers only.
+    """
+    return {
+        identifier: answer.choice
+        for identifier, answer in answers.items()
+        if isinstance(answer, _ChoiceAnswer)
+    }
+
+
+def _conditions_match(when: dict[str, list[str]], labels: dict[str, str]) -> bool:
+    """Evaluate conditions with AND across criteria and OR across a criterion's labels.
+
+    :param when: Condition mapping from criterion identifier to accepted labels.
+    :param labels: Selected native choice labels, keyed by criterion identifier.
+    :returns: Whether every referenced criterion selected an accepted label.
+    """
+    return all(labels.get(criterion_id) in accepted for criterion_id, accepted in when.items())
+
+
+def apply_choice_routing_rules(
+    rubric: AssessmentRubric,
+    results: dict[str, CriterionAssessment],
+    answers: dict[str, NativeAnswer],
+) -> None:
+    """Apply the first matching native-choice rule for each target criterion.
+
+    :param rubric: Configured criteria and ordered choice routing rules.
+    :param results: Mutable criterion assessments, keyed by identifier.
+    :param answers: Validated native answers, keyed by identifier.
+    """
+    labels = _choice_labels(answers)
+    routed = set()
+    for rule in rubric.routing_rules:
+        if (
+            rule.target_criterion_id not in labels
+            or rule.target_criterion_id in routed
+            or not _conditions_match(rule.when, labels)
+        ):
+            continue
+        result = results[rule.target_criterion_id]
+        results[rule.target_criterion_id] = result.model_copy(
+            update={
+                "status": rule.status,
+                "explanation": (
+                    f"{result.explanation} Routing rule set status to {rule.status} "
+                    f"for {rule.target_criterion_id}."
+                ),
+            }
+        )
+        routed.add(rule.target_criterion_id)
+
+
+def _action_placement(
+    criteria: list[AssessmentCriterion],
+) -> tuple[list[EnforcementRequirement], list[EnforcementRequirement]]:
+    """Place criteria by their configured failure action.
+
+    :param criteria: Criteria in rubric order.
+    :returns: Blocking requirements and non-blocking requirements, one per criterion.
+    """
+    blocking: list[EnforcementRequirement] = [
+        criterion.criterion_id for criterion in criteria if criterion.action == "block"
+    ]
+    soft: list[EnforcementRequirement] = [
+        criterion.criterion_id for criterion in criteria if criterion.action != "block"
+    ]
+    return blocking, soft
+
+
+def _enforcement_plan(
+    rubric: AssessmentRubric, labels: dict[str, str]
+) -> tuple[list[EnforcementRequirement], list[EnforcementRequirement], bool]:
+    """Select blocking and non-blocking requirements for the first matching rule.
+
+    Without enforcement rules, each criterion's legacy ``action`` decides its placement.
+    When rules exist but none matches, the decision fails closed: every criterion that is
+    not a rule condition is enforced, so any failure blocks, and the decision cannot be
+    resolved.
+
+    :param rubric: Configured criteria and ordered enforcement rules.
+    :param labels: Selected native choice labels, keyed by criterion identifier.
+    :returns: Blocking requirements, non-blocking requirements, and whether a rule matched.
+    """
+    if not rubric.enforcement_rules:
+        blocking, soft = _action_placement(rubric.criteria)
+        return blocking, soft, True
+    for rule in rubric.enforcement_rules:
+        if _conditions_match(rule.when, labels):
+            return list(rule.enforce), list(rule.soft_enforce), True
+    conditions = {criterion_id for rule in rubric.enforcement_rules for criterion_id in rule.when}
+    enforced: list[EnforcementRequirement] = [
+        item.criterion_id for item in rubric.criteria if item.criterion_id not in conditions
+    ]
+    return enforced, [], False
+
+
+def combine_assessments(
+    rubric: AssessmentRubric,
+    assessments: list[CriterionAssessment],
+    labels: dict[str, str] | None = None,
+) -> RubricAssessment:
+    """Map enforced criterion statuses to blocking, suggestion, or all-pass advice.
+
+    :param rubric: Configured criteria, enforcement rules, and failure actions.
     :param assessments: Exactly one assessment for every criterion, in rubric order.
+    :param labels: Selected native choice labels used to match enforcement rules.
     :returns: Conservative advisory recommendation without automation authority.
     :raises ValueError: If assessment identifiers do not match the configured order.
     """
@@ -278,29 +550,57 @@ def combine_assessments(
         item.criterion_id for item in rubric.criteria
     ]:
         raise ValueError("criterion assessments must match the rubric")
+    results = {item.criterion_id: item for item in assessments}
+    criteria = {item.criterion_id: item for item in rubric.criteria}
+    blocking_requirements, soft_requirements, resolved = _enforcement_plan(rubric, labels or {})
+    enforced = set()
     blockers = []
     suggestions = []
-    for criterion, result in zip(rubric.criteria, assessments, strict=True):
-        if result.status == "failed":
-            if criterion.action == "block":
-                blockers.append(criterion.criterion_id)
-            else:
-                suggestions.append(
-                    Suggestion(criterion_id=criterion.criterion_id, message=criterion.suggestion)
-                )
+    uncertain = False
+    for is_blocking, requirements in (
+        (True, blocking_requirements),
+        (False, soft_requirements),
+    ):
+        for requirement in requirements:
+            members = _requirement_members(requirement)
+            enforced.update(members)
+            statuses = [results[member].status for member in members]
+            if "passed" in statuses:
+                continue
+            if "uncertain" in statuses:
+                uncertain = True
+                continue
+            for member in members:
+                if is_blocking:
+                    blockers.append(member)
+                else:
+                    suggestions.append(
+                        Suggestion(criterion_id=member, message=criteria[member].suggestion)
+                    )
     if blockers:
         recommendation = "block"
-    elif any(item.status == "uncertain" for item in assessments):
+    elif uncertain or not resolved:
         recommendation = "needs_human_review"
     elif suggestions:
         recommendation = "suggest_changes"
     else:
         recommendation = "skip_and_approve"
+    criteria_results = [
+        item
+        if not rubric.enforcement_rules or item.criterion_id in enforced
+        else item.model_copy(
+            update={
+                "explanation": f"{item.explanation} Not enforced for this decision; "
+                "does not affect routing."
+            }
+        )
+        for item in assessments
+    ]
     return RubricAssessment(
         recommendation=recommendation,
         skip_recommended=recommendation == "skip_and_approve",
         approval_recommended=recommendation == "skip_and_approve",
-        criteria=assessments,
+        criteria=criteria_results,
         blockers=blockers,
         suggestions=suggestions,
     )
@@ -330,6 +630,19 @@ class RubricDecisionProvider:
         self.max_input_bytes = max_input_bytes
         self.assessment: RubricAssessment | None = None
         self.formal_results: dict[str, CriterionAssessment] = {}
+        unsupported = [
+            criterion.criterion_id
+            for criterion in rubric.criteria
+            if criterion.check == "semantic"
+            and criterion.question_type == "choice"
+            and len(criterion.choice_options) > provider.settings.max_choice_options
+        ]
+        if unsupported:
+            identifiers = ", ".join(unsupported)
+            raise ValueError(
+                f"decision model supports at most {provider.settings.max_choice_options} choice "
+                f"options; unsupported criteria: {identifiers}"
+            )
 
     def decide(self, evidence: PullRequestEvidence, *, strict_schema: bool = False) -> Decision:
         """Assess evidence quality and propose a route without establishing code correctness.
@@ -342,7 +655,8 @@ class RubricDecisionProvider:
         """
         self.formal_results = self._formal(evidence)
         results = dict(self.formal_results)
-        blocked = any(
+        # Enforcement rules need the scale answer before a formal failure can decide routing.
+        blocked = not self.rubric.enforcement_rules and any(
             results[item.criterion_id].status == "failed" and item.action == "block"
             for item in self.rubric.criteria
             if item.criterion_id in results
@@ -356,6 +670,8 @@ class RubricDecisionProvider:
                     "Formal blocker failed." if blocked else "Supplied review text is missing.",
                 )
             else:
+                if criterion.instructions is None:
+                    raise ValueError("semantic criteria require instructions")
                 instructions = supplement_instructions(
                     INSTRUCTIONS
                     + " Criterion to assess: "
@@ -366,13 +682,13 @@ class RubricDecisionProvider:
                     self.provider.settings.backend_instructions,
                 )
                 if criterion.question_type == "choice":
-                    if len(CHOICES) > self.provider.settings.max_choice_options:
-                        raise TransportFailure("rubric choices exceed the configured option limit")
                     instructions += (
                         " Choose passed only when supported, failed for clear omissions, "
                         "and uncertain for insufficient or ambiguous evidence."
+                        if criterion.choices is None
+                        else " Choose exactly one configured label based on its definition."
                     )
-                    options = CHOICES
+                    options = criterion.choice_options
                 elif criterion.question_type == "noul":
                     options = {
                         "true": "The evidence satisfies this criterion: " + criterion.description,
@@ -391,6 +707,7 @@ class RubricDecisionProvider:
                     "criteria": options,
                 }
         provider_identity = "rubric:formal"
+        labels: dict[str, str] = {}
         if questions:
             payload = {
                 "model": self.provider.settings.model,
@@ -434,8 +751,12 @@ class RubricDecisionProvider:
                     explanation=explanation + " Task calibration is unavailable.",
                     native_answer=answer.model_dump(mode="json"),
                 )
+            apply_choice_routing_rules(self.rubric, results, response.answers)
+            labels = _choice_labels(response.answers)
         self.assessment = combine_assessments(
-            self.rubric, [results[item.criterion_id] for item in self.rubric.criteria]
+            self.rubric,
+            [results[item.criterion_id] for item in self.rubric.criteria],
+            labels,
         )
         recommendation = self.assessment.recommendation
         route = (

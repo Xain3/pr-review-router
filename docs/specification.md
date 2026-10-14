@@ -321,11 +321,15 @@ The rubric document includes routing actions and thresholds in addition to the
 semantic questions sent to the decision provider.
 
 This experiment rubric is distinct from deterministic `Policy.rubric_criteria`.
-It configures unique criterion IDs, descriptions, failure actions (`block` or
-`suggest`), improvement messages, and checks (`conventional_title`,
-`body_section`, or `semantic`). Formal checks reuse existing title/section
-validators. A formal blocker prevents all HTTP calls and leaves semantic
-criteria explicitly unassessed. Semantic criteria carry instructions and a
+It configures unique criterion IDs, descriptions, improvement messages, and checks
+(`conventional_title`, `body_section`, or `semantic`). Without `enforcement_rules`,
+each criterion also sets a failure `action` (`block` or `suggest`). With
+`enforcement_rules`, criteria must not set `action`; the rules define enforcement.
+Formal checks reuse existing title/section
+validators. Without `enforcement_rules`, a formal blocker prevents all HTTP calls
+and leaves semantic criteria explicitly unassessed. With enforcement rules, formal
+results are evaluated like other criteria, because the enforced set may depend on
+semantic condition criteria. Semantic criteria carry instructions and a
 description/review target and use the configured Ollaya decision adapter. Every
 semantic question includes its configured description and criterion-specific
 instructions, regardless of question type. The entire PR evidence and separately
@@ -334,15 +338,60 @@ criterion instructions are separate. Document/review coverage is not proof of
 code correctness, and review-provider responsibilities remain unchanged.
 
 Semantic criteria are batched through `/v1/systemone`. Each criterion selects
-`question_type`: `choice` (default), `noul`, or `score`. Choices return `passed`,
-`failed`, or `uncertain`. Numeric criteria require explicit finite
+`question_type`: `choice` (default), `noul`, or `score`. By default, choices
+return `passed`, `failed`, or `uncertain`. A semantic choice criterion may instead
+configure a `choices` list, with two or more entries. Each entry has a unique
+lowercase `label`, provider-visible `description`, and optional canonical
+`status` of `passed`, `failed`, or `uncertain`. The selected decision provider's
+`max_choice_options` capability limits the number of entries (default `3`, from
+2 through 100). The provider returns the custom label and its distribution. A
+mapped label receives its configured status. An unmapped label remains available
+to `routing_rules`; without a matching rule it maps conservatively to
+`uncertain`.
+
+Each ordered `routing_rules` entry names a semantic choice
+`target_criterion_id`, a resulting stable `status`, and a nonempty `when`
+mapping. Every `when` key is a semantic choice criterion and its nonempty label
+list is matched against that criterion's native answer. Conditions are ANDed
+across criteria and ORed within a criterion's label list. For each target, the
+first matching rule applies; its resulting status then uses the target criterion's
+configured `block` or `suggest` action, or its enforcement membership when
+`enforcement_rules` exist. Rules can therefore combine
+multiple native labels without bypassing conservative routing. Numeric criteria require explicit finite
 `fail_threshold` and `pass_threshold`, with `0 <= fail < pass` within the native
 range. Values at or below fail map to failed, values at or above pass map to
 passed, and intermediate values require human assessment. Noul ranges from 0
 to 1; score requires 2–10 distinct ordered `levels` and ranges from 0 to the
 last level index. Higher values must mean greater criterion satisfaction.
 Formal checks cannot use numeric types. Choices cannot configure numeric
-thresholds or levels, and noul cannot configure score levels.
+thresholds or levels, numeric criteria cannot configure choices, and noul cannot
+configure score levels.
+
+Optional ordered `enforcement_rules` select which criteria can affect the
+recommendation. Each rule has a nonempty `when` mapping over semantic choice
+criteria, matched exactly as routing conditions are, and at least one of two lists:
+
+- `enforce` lists blocking requirements. A failed member produces a blocker and
+  the recommendation `block`.
+- `soft_enforce` lists non-blocking requirements. A failed member produces a
+  suggestion, which yields `suggest_changes` unless the result is `block` or
+  `needs_human_review`.
+
+A list member is a criterion ID or an `any_of` group of two through sixteen
+distinct criterion IDs, usable in either list. For each requirement, a passing
+member satisfies it. An uncertain member, with no passing member, makes the
+recommendation `needs_human_review` unless a blocker already produces `block`.
+Criterion IDs must be distinct across both lists of a rule, and a rule must set at
+least one non-empty list. The first matching rule applies. Criteria outside the
+matched rule keep their native status in artifacts, with an explanation that they
+do not affect routing. Rubrics with `enforcement_rules` must not set `action` on any
+criterion, because enforcement membership is defined only by the rules. Rubrics
+without `enforcement_rules` must set `action` on every criterion, where `block`
+enforces the criterion as blocking and `suggest` as non-blocking. If no rule matches,
+the decision fails closed: every criterion that is not a `when` condition is enforced
+as blocking, so any failure produces `block`, and the result cannot be
+`skip_and_approve`. Enforcement rules cannot reference deterministic or score criteria
+in `when`.
 
 Native response validation requires exactly the asked criterion IDs and types,
 and exact choice labels or configured score legends/probability labels. Score
@@ -366,13 +415,14 @@ The complete request, including supplied review and rubric instructions, must
 fit the policy input budget before any model/metadata request. Existing engine
 preflight still prevents every provider call for incomplete evidence.
 
-Known failed blocking criteria yield `block`; otherwise any uncertain criterion
-yields `needs_human_review`; otherwise failed suggestion criteria yield
-`suggest_changes`; only all passed criteria yield `skip_and_approve`. Results
-include criterion statuses/sources, blockers, configured suggestions, and
-`skip_recommended` / `approval_recommended`. Advice is always `advisory_only`
-with `automation_authorized: false`. There is no aggregate threshold that can
-cancel a blocking failure, and task confidence is never invented.
+Known failed enforced blocking requirements yield `block`; otherwise uncertainty
+in an enforced requirement yields `needs_human_review`; otherwise failed
+soft-enforced requirements yield `suggest_changes`; `skip_and_approve` requires
+all enforced requirements to pass. Results include criterion statuses/sources,
+blockers, configured suggestions, and `skip_recommended` / `approval_recommended`.
+Advice is always `advisory_only` with `automation_authorized: false`. There is no
+aggregate threshold that can cancel a blocking failure, and task confidence is
+never invented.
 
 The rubric decision provider requests human review for blockers/uncertainty,
 normal review for suggestions, and skip for all-pass advice. Existing shadow

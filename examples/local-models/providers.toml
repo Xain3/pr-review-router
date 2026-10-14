@@ -6,6 +6,7 @@ backend = "ollaya"
 endpoint = "http://localhost:11435"
 model = "winnow:e4b"
 timeout_seconds = 120.0
+# This installed decision model accepts three categorical answer options per question.
 max_choice_options = 3
 
 [review]

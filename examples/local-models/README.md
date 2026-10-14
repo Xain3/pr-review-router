@@ -65,11 +65,13 @@ and loopback `endpoint` origin, without `/v1` or credentials. Defaults are a
 120-second total HTTP deadline and 1 MiB response limit. Review defaults are
 context 32768, standard/deep output 1024/2048, temperature 0, seed 0, and
 `reasoning_effort = "none"`; select another supported effort for your model.
-The decision backend defaults to `max_choice_options = 3`, an upper bound for
-options in a choice question (including rubric questions). Optional `instructions`
-are model-specific; `backend_instructions` is available for backend-specific
-supplements. Both are appended after the adapter's baseline and cannot override
-its evidence-safety, output-contract, uncertainty, or advisory-only requirements.
+The Ollaya decision model's `max_choice_options` advertises how many labels it
+can accept in a choice question, including semantic assessment-rubric questions;
+it defaults to `3` and may be configured from `2` through `100` per model.
+Optional `instructions` are model-specific; `backend_instructions` is available
+for backend-specific supplements. Both are appended after the adapter's baseline
+and cannot override its evidence-safety, output-contract, uncertainty, or
+advisory-only requirements.
 Both depths use the same model with distinct prompts and budgets, which does
 not establish independent corroboration. Fixed settings do not guarantee
 identical live generations.

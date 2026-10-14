@@ -117,6 +117,93 @@ policy input budget. Native context truncation, invalid/missing/extra answers,
 and transport failures cannot produce approval. Schema failures get the existing
 single retry; there is no additional retry loop.
 
+## Custom choice labels
+
+Choice questions default to the provider-visible labels `passed`, `failed`, and
+`uncertain`. A semantic choice criterion can configure alternative labels while
+keeping the router's routing semantics fixed. Configure at least two choices.
+Each label may map directly to a canonical status, or omit `status` for a
+rule-based decision:
+
+```toml
+[[criteria]]
+criterion_id = "change-rationale"
+description = "The description explains why the changes are needed."
+check = "semantic"
+target = "description"
+instructions = "Assess whether every substantive change has a meaningful rationale."
+action = "block"
+suggestion = "Explain why each substantive change is needed."
+question_type = "choice"
+choices = [
+  { label = "complete", description = "Every substantive change has a meaningful rationale.", status = "passed" },
+  { label = "partial", description = "Only some substantive changes have a meaningful rationale." },
+  { label = "missing", description = "One or more substantive changes lack a meaningful rationale.", status = "failed" },
+  { label = "ambiguous", description = "The supplied evidence is insufficient or ambiguous.", status = "uncertain" },
+]
+
+[[routing_rules]]
+target_criterion_id = "change-rationale"
+when = { change-rationale = ["partial"], description-coverage = ["complete"] }
+status = "failed"
+```
+
+The provider must return one configured label and probabilities keyed by every
+configured label. The selected decision provider sets `max_choice_options` in
+its provider TOML (default `3`, from `2` through `100`); set it to a model's supported
+limit before using richer questions. Artifacts retain that native answer but report the mapped
+`passed`, `failed`, or `uncertain` status. A routing rule's conditions inspect
+native labels: criteria are ANDed, labels within one criterion are ORed, and the
+first matching rule for a target wins. An unmapped label without a matching rule
+fails closed to `uncertain`. Rules set the target criterion's status. Without `enforcement_rules`, its
+`block` or `suggest` action applies; with them, enforcement membership applies.
+
+## Scale-driven enforcement
+
+`enforcement_rules` choose which criteria affect the recommendation, for example
+from a triviality scale. `enforce` members are blocking: a failure yields `block`.
+`soft_enforce` members are non-blocking: a failure yields a suggestion
+(`suggest_changes`). An `any_of` group is satisfied when any member passes and
+can appear in either list. Rubrics that define `enforcement_rules` must not set
+`action` on any criterion, because the rules are the only source of enforcement. Legacy
+rubrics without rules still require `action` on every criterion. Requires
+`max_choice_options` of at least the number of scale labels.
+
+```toml
+[[criteria]]
+criterion_id = "triviality"
+description = "How trivial the change is."
+check = "semantic"
+target = "description"
+instructions = "Choose the label that best describes how trivial the change is."
+suggestion = "Classify how trivial the change is."
+question_type = "choice"
+choices = [
+  { label = "trivial", description = "A typo, formatting, or similar one-line edit." },
+  { label = "minor", description = "A small, low-risk change." },
+  { label = "moderate", description = "A change with a bounded behavioral effect." },
+  { label = "substantial", description = "A multi-file or behavior-changing change." },
+  { label = "major", description = "A broad or high-risk change." },
+]
+
+[[enforcement_rules]]
+when = { triviality = ["trivial"] }
+enforce = ["conventional-title"]
+soft_enforce = [{ any_of = ["non-empty-description", "consistent-with-diff"] }]
+
+[[enforcement_rules]]
+when = { triviality = ["minor", "moderate"] }
+enforce = ["conventional-title", "non-empty-description", "consistent-with-diff"]
+
+[[enforcement_rules]]
+when = { triviality = ["substantial", "major"] }
+enforce = ["conventional-title", "non-empty-description", "rationale", "consistent-with-diff"]
+```
+
+If no rule matches, the decision fails closed: every non-condition criterion is
+enforced as blocking, so any failed criterion yields `block`, and the result is at
+least `needs_human_review`.
+
 The corpus's optional `assessment_rubric` references `rubric.toml`; each case's
 optional `review` references UTF-8 review text. These relative paths stay beneath
 the corpus directory and are protected from output replacement. Criterion

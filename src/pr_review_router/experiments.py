@@ -44,6 +44,19 @@ def _experiment_policy_inputs(policy: Policy) -> dict[str, Any]:
     return values
 
 
+def _experiment_provider_inputs(config: ProvidersConfig) -> dict[str, Any]:
+    """Return provider inputs while preserving default-choice replay hashes.
+
+    :param config: Explicit provider configuration used by the experiment.
+    :returns: Provider settings that affect the experiment's provider interaction.
+    """
+    values = config.model_dump(mode="json")
+    decision = values["decision"]
+    if decision.get("backend") == "ollaya" and decision["max_choice_options"] == 3:
+        del decision["max_choice_options"]
+    return values
+
+
 def _experiment_report_schema(policy: Policy) -> dict[str, Any]:
     """Return the report schema relevant to an experiment fingerprint.
 
@@ -59,6 +72,24 @@ def _experiment_report_schema(policy: Policy) -> dict[str, Any]:
         for name in ("NonSemanticCheckResult", "NonSemanticChecks"):
             schema["$defs"].pop(name, None)
     return schema
+
+
+def _rubric_fingerprint_config(rubric: AssessmentRubric) -> dict[str, Any]:
+    """Serialize rubric settings without changing legacy default-choice recordings.
+
+    :param rubric: Validated assessment rubric to fingerprint.
+    :returns: Configuration that includes every configured custom choice.
+    """
+    config = rubric.model_dump(mode="json")
+    for criterion in config["criteria"]:
+        if criterion["choices"] is None:
+            del criterion["choices"]
+        if criterion["action"] is None:
+            del criterion["action"]
+    for key in ("routing_rules", "enforcement_rules"):
+        if not config[key]:
+            del config[key]
+    return config
 
 
 class _CapturingMockReviewProvider:
@@ -133,7 +164,7 @@ def run_experiment(
         raise ValueError("semantic rubric experiments require an Ollaya decision provider")
     fingerprint_inputs = {
         "experiment_version": 1,
-        "providers": config.model_dump(mode="json"),
+        "providers": _experiment_provider_inputs(config),
         "policy": _experiment_policy_inputs(policy),
         "evidence": evidence.model_dump(mode="json"),
         "adapters": adapter_versions(),
@@ -143,7 +174,7 @@ def run_experiment(
     }
     if rubric:
         fingerprint_inputs["assessment_rubric"] = {
-            "config": rubric.model_dump(mode="json"),
+            "config": _rubric_fingerprint_config(rubric),
             "review_text": review_text,
             "versions": rubric_versions(),
         }
@@ -164,7 +195,7 @@ def run_experiment(
         RubricDecisionProvider(
             decision, rubric, review_text, max_input_bytes=policy.max_input_bytes
         )
-        if rubric
+        if rubric is not None and isinstance(decision, OllayaDecisionProvider)
         else None
     )
     shadow = ShadowDecisionProvider(rubric_provider or decision)
@@ -214,9 +245,9 @@ def run_experiment(
                 for item in session.exchanges
                 if item.request.url.endswith("/v1/systemone")
             )
-            artifact["rubric_schema_failures"] = decision.schema_failures
+            artifact["rubric_schema_failures"] = rubric_provider.provider.schema_failures
             artifact["assessment_rubric"] = rubric_provider.artifact().model_dump(mode="json")
-            artifact["assessment_rubric_config"] = rubric.model_dump(mode="json")
+            artifact["assessment_rubric_config"] = rubric_provider.rubric.model_dump(mode="json")
             artifact["supplied_review"] = review_text
             artifact["rubric_prompt_version"] = rubric_versions()["prompt_version"]
             artifact["rubric_revision"] = fingerprint(rubric_versions())
@@ -475,6 +506,8 @@ def load_corpus_rubric(
     for case in corpus.cases:
         texts.append(source(case.review).read_text(encoding="utf-8") if case.review else "")
         if case.expectations.rubric:
+            if rubric is None:
+                raise ValueError("rubric labels require a configured assessment rubric")
             ids = {criterion.criterion_id for criterion in rubric.criteria}
             if set(case.expectations.rubric.criteria) != ids:
                 raise ValueError("reference rubric labels must cover every configured criterion")

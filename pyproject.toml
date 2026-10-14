@@ -14,7 +14,12 @@ dependencies = ["pydantic>=2.10,<3", "httpx>=0.28,<1"]
 pr-review-router = "pr_review_router.cli:main"
 
 [dependency-groups]
-dev = ["ruff", "pytest", "codespell"]
+dev = [
+    "ruff",
+    "pytest",
+    "codespell",
+    "pyright>=1.1.414",
+]
 
 [tool.ruff]
 target-version = "py312"
@@ -30,6 +35,10 @@ markers = [
     "integration: tests exercising interactions through the CLI",
     "smoke: minimal checks that the installed CLI starts and completes a basic review",
 ]
+
+[tool.pyright]
+include = ["src/pr_review_router"]
+pythonVersion = "3.12"
 
 [tool.codespell]
 skip = ["uv.lock", "build", "dist", ".venv", ".git", ".pytest_cache", ".ruff_cache"]

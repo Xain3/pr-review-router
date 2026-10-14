@@ -78,7 +78,7 @@ class DecisionSettings(LocalSettings):
     """Select a local TypeSafe-compatible decision model."""
 
     backend: Literal["ollaya"] = "ollaya"
-    max_choice_options: Annotated[int, Field(gt=0, le=255)] = 3
+    max_choice_options: Annotated[int, Field(ge=2, le=100)] = 3
 
 
 class ReviewSettings(LocalSettings):
