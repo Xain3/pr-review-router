@@ -338,8 +338,9 @@ criterion instructions are separate. Document/review coverage is not proof of
 code correctness, and review-provider responsibilities remain unchanged.
 
 Semantic criteria are batched through `/v1/systemone`. Each criterion selects
-`question_type`: `choice` (default), `noul`, or `score`. By default, choices
-return `passed`, `failed`, or `uncertain`. A semantic choice criterion may instead
+`question_type`: `choice` (default), `noul`, `predicate`, or `score`. `predicate`
+is an alias for `noul`; Ollaya requests use its native `noul` type. By default,
+choices return `passed`, `failed`, or `uncertain`. A semantic choice criterion may instead
 configure a `choices` list, with two or more entries. Each entry has a unique
 lowercase `label`, provider-visible `description`, and optional canonical
 `status` of `passed`, `failed`, or `uncertain`. The selected decision provider's
@@ -364,8 +365,8 @@ passed, and intermediate values require human assessment. Noul ranges from 0
 to 1; score requires 2–10 distinct ordered `levels` and ranges from 0 to the
 last level index. Higher values must mean greater criterion satisfaction.
 Formal checks cannot use numeric types. Choices cannot configure numeric
-thresholds or levels, numeric criteria cannot configure choices, and noul cannot
-configure score levels.
+thresholds or levels, numeric criteria cannot configure choices, and probability
+criteria cannot configure score levels.
 
 Optional ordered `enforcement_rules` select which criteria can affect the
 recommendation. Each rule has a nonempty `when` mapping over semantic choice
