@@ -123,7 +123,7 @@
       "score": 3,
       "level": "substantive",
       "is_trivial": false,
-      "explanation": "A new serialization helper introduces quoting, empty-input, and format behavior beyond an editorial or mechanical edit.",
+      "explanation": "The added src/export.py introduces csv_text using StringIO and csv.writer with an explicit newline terminator. Its new test covers a comma-containing field and empty input. This is a new serialization capability requiring format, quoting, and input-contract review, even though it reuses the standard library.",
       "sources": [
         "evidence.json#/files"
       ]
@@ -163,7 +163,7 @@
       "score": 3,
       "level": "substantive",
       "is_trivial": false,
-      "explanation": "A new serialization helper introduces quoting, empty-input, and format behavior beyond an editorial or mechanical edit.",
+      "explanation": "The added src/export.py introduces csv_text using StringIO and csv.writer with an explicit newline terminator. Its new test covers a comma-containing field and empty input. This is a new serialization capability requiring format, quoting, and input-contract review, even though it reuses the standard library.",
       "sources": [
         "evidence.json#/files"
       ]

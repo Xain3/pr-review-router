@@ -122,7 +122,7 @@
       "score": 1,
       "level": "mechanical",
       "is_trivial": true,
-      "explanation": "Only the displayed option spelling changes in a help string; the option parser and accepted option are unchanged.",
+      "explanation": "cli/help.js changes the exported help string from --ouput to --output. This changes displayed guidance, not option parsing; no parser or interface definition changes appear in the supplied patch.",
       "sources": [
         "evidence.json#/files"
       ]
@@ -162,7 +162,7 @@
       "score": 1,
       "level": "mechanical",
       "is_trivial": true,
-      "explanation": "Only the displayed option spelling changes in a help string; the option parser and accepted option are unchanged.",
+      "explanation": "cli/help.js changes the exported help string from --ouput to --output. This changes displayed guidance, not option parsing; no parser or interface definition changes appear in the supplied patch.",
       "sources": [
         "evidence.json#/files"
       ]

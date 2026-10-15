@@ -123,7 +123,7 @@
       "score": 3,
       "level": "substantive",
       "is_trivial": false,
-      "explanation": "The comparison primitive changes in security-sensitive authentication logic; a short diff does not make this trivial.",
+      "explanation": "src/auth.py replaces == with hmac.compare_digest in valid_token and adds matching/mismatching string tests. Security-sensitive comparison behavior and supported input types require review beyond those two tests. The small diff does not establish timing safety or authentication correctness.",
       "sources": [
         "evidence.json#/files"
       ]
@@ -163,7 +163,7 @@
       "score": 3,
       "level": "substantive",
       "is_trivial": false,
-      "explanation": "The comparison primitive changes in security-sensitive authentication logic; a short diff does not make this trivial.",
+      "explanation": "src/auth.py replaces == with hmac.compare_digest in valid_token and adds matching/mismatching string tests. Security-sensitive comparison behavior and supported input types require review beyond those two tests. The small diff does not establish timing safety or authentication correctness.",
       "sources": [
         "evidence.json#/files"
       ]

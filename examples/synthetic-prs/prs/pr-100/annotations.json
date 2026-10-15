@@ -125,7 +125,7 @@
       "score": 4,
       "level": "incompatible",
       "is_trivial": false,
-      "explanation": "A supported configuration entrypoint is deleted; deployment scripts referencing it must migrate.",
+      "explanation": "config/legacy.toml is deleted, removing its timeout_seconds and retries settings; docs/setup.md replaces the older-deployment instructions with config/default.toml for all deployments. The documented legacy entrypoint disappears, requiring migration for its users. The target configuration contents and actual deployment usage are not supplied.",
       "sources": [
         "evidence.json#/files"
       ]
@@ -165,7 +165,7 @@
       "score": 4,
       "level": "incompatible",
       "is_trivial": false,
-      "explanation": "A supported configuration entrypoint is deleted; deployment scripts referencing it must migrate.",
+      "explanation": "config/legacy.toml is deleted, removing its timeout_seconds and retries settings; docs/setup.md replaces the older-deployment instructions with config/default.toml for all deployments. The documented legacy entrypoint disappears, requiring migration for its users. The target configuration contents and actual deployment usage are not supplied.",
       "sources": [
         "evidence.json#/files"
       ]

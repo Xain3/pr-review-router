@@ -123,7 +123,7 @@
       "score": 0,
       "level": "editorial",
       "is_trivial": true,
-      "explanation": "Only a repeated word in prose is removed; no runtime behavior changes.",
+      "explanation": "docs/usage.md removes the repeated word 'the' from one sentence. The complete diff changes no executable code, configuration, or interface.",
       "sources": [
         "evidence.json#/files"
       ]
@@ -163,7 +163,7 @@
       "score": 0,
       "level": "editorial",
       "is_trivial": true,
-      "explanation": "Only a repeated word in prose is removed; no runtime behavior changes.",
+      "explanation": "docs/usage.md removes the repeated word 'the' from one sentence. The complete diff changes no executable code, configuration, or interface.",
       "sources": [
         "evidence.json#/files"
       ]

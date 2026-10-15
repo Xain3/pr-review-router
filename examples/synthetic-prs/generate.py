@@ -405,47 +405,71 @@ TRIVIALITY_LEVELS = [
 ]
 
 TRIVIALITY_ASSESSMENTS = {
-    "guide-typo": (0, "Only a repeated word in prose is removed; no runtime behavior changes."),
+    "guide-typo": (
+        0,
+        "docs/usage.md removes the repeated word 'the' from one sentence. "
+        "The complete diff changes no executable code, configuration, or interface.",
+    ),
     "cli-help": (
         1,
-        "Only the displayed option spelling changes in a help string; "
-        "the option parser and accepted option are unchanged.",
+        "cli/help.js changes the exported help string from --ouput to --output. "
+        "This changes displayed guidance, not option parsing; no parser or interface "
+        "definition changes appear in the supplied patch.",
     ),
-    "readme-link": (0, "Only a misspelled relative documentation link is corrected."),
+    "readme-link": (
+        0,
+        "README.md changes docs/geting-started.md to docs/getting-started.md. "
+        "This is a documentation navigation correction with no runtime or interface change; "
+        "the destination file's existence is not verified by this diff.",
+    ),
     "empty-average": (
         2,
-        "Empty input changes from a division error to a numeric result; "
-        "this needs edge-case review despite the small patch.",
+        "src/stats.py adds an empty-input guard returning 0 instead of reaching division "
+        "by zero. The added test covers empty and ordinary inputs. This is a bounded "
+        "behavior change requiring review of the new edge-case contract, not a mechanical edit.",
     ),
     "cache-key": (
         2,
-        "Lowercasing changes lookup semantics and can affect stores "
-        "with differently capitalized keys.",
+        "src/cache.py replaces store.get(key) with store.get(key.lower()); tests exercise "
+        "uppercase and lowercase lookups into a lowercase-keyed store. Lookup semantics "
+        "and accepted key types can change, including mixed-case stored keys and keys "
+        "without lower(). These are bounded behavior risks, not evidence of correctness.",
     ),
     "batch-limit": (
         2,
-        "The accepted batch-size boundary changes from 50 to 100, "
-        "affecting validation and potential memory use.",
+        "src/batch.py raises MAX_BATCH_SIZE from 50 to 100 while retaining the <= check; "
+        "the added tests exercise 100 and 101 items. Previously rejected lengths 51–100 "
+        "become accepted. This is a bounded validation-boundary change; downstream "
+        "resource effects are not shown in the diff.",
     ),
     "token-compare": (
         3,
-        "The comparison primitive changes in security-sensitive "
-        "authentication logic; a short diff does not make this trivial.",
+        "src/auth.py replaces == with hmac.compare_digest in valid_token and adds "
+        "matching/mismatching string tests. Security-sensitive comparison behavior "
+        "and supported input types require review beyond those two tests. The small "
+        "diff does not establish timing safety or authentication correctness.",
     ),
     "csv-export": (
         3,
-        "A new serialization helper introduces quoting, empty-input, "
-        "and format behavior beyond an editorial or mechanical edit.",
+        "The added src/export.py introduces csv_text using StringIO and csv.writer "
+        "with an explicit newline terminator. Its new test covers a comma-containing "
+        "field and empty input. This is a new serialization capability requiring "
+        "format, quoting, and input-contract review, even though it reuses the standard library.",
     ),
     "api-field": (
         4,
-        "The supported response key name is removed and replaced "
-        "with full_name; existing consumers must migrate.",
+        "src/users.py removes the name response key and emits full_name instead; "
+        "docs/api.md changes its public response example to match. Consumers expecting "
+        "name lose that field without a compatibility alias in the patch. This is an "
+        "incompatible documented response-shape change, regardless of the PR's claims.",
     ),
     "legacy-config": (
         4,
-        "A supported configuration entrypoint is deleted; "
-        "deployment scripts referencing it must migrate.",
+        "config/legacy.toml is deleted, removing its timeout_seconds and retries "
+        "settings; docs/setup.md replaces the older-deployment instructions with "
+        "config/default.toml for all deployments. The documented legacy entrypoint "
+        "disappears, requiring migration for its users. The target configuration "
+        "contents and actual deployment usage are not supplied.",
     ),
 }
 
@@ -1232,8 +1256,7 @@ def main(output_root: Path = ROOT) -> None:
                     "failed_criteria": sorted(
                         key
                         for key, value in annotation["criteria"].items()
-                        if value.get("status") == "failed"
-                        and key not in RUBRIC_LABEL_MIRRORS
+                        if value.get("status") == "failed" and key not in RUBRIC_LABEL_MIRRORS
                     ),
                     "evidence": directory + "/evidence.json",
                     "metadata": directory + "/metadata.json",

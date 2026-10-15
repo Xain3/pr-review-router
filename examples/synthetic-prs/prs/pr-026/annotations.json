@@ -123,7 +123,7 @@
       "score": 2,
       "level": "bounded_behavior",
       "is_trivial": false,
-      "explanation": "The accepted batch-size boundary changes from 50 to 100, affecting validation and potential memory use.",
+      "explanation": "src/batch.py raises MAX_BATCH_SIZE from 50 to 100 while retaining the <= check; the added tests exercise 100 and 101 items. Previously rejected lengths 51–100 become accepted. This is a bounded validation-boundary change; downstream resource effects are not shown in the diff.",
       "sources": [
         "evidence.json#/files"
       ]
@@ -163,7 +163,7 @@
       "score": 2,
       "level": "bounded_behavior",
       "is_trivial": false,
-      "explanation": "The accepted batch-size boundary changes from 50 to 100, affecting validation and potential memory use.",
+      "explanation": "src/batch.py raises MAX_BATCH_SIZE from 50 to 100 while retaining the <= check; the added tests exercise 100 and 101 items. Previously rejected lengths 51–100 become accepted. This is a bounded validation-boundary change; downstream resource effects are not shown in the diff.",
       "sources": [
         "evidence.json#/files"
       ]

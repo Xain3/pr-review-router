@@ -176,6 +176,35 @@ The full corpus contains 30 trivial and 70 non-trivial changes. Both indexes
 expose the score, level, and binary classification; the manifest defines the
 scale and its counts. Every annotation includes a diff-based explanation.
 
+### Patch-based reassessment
+
+On 2026-10-15, GitHub Copilot inspected all 100 complete file/patch sets and
+found ten distinct sets, each repeated across ten PR-text variants. Assessing
+the patches against the scale above corroborated the existing numerical scores;
+they were already populated, not placeholders. The generated oracle explanations
+now identify concrete changed files, behavior, and evidence limitations.
+
+| Representative PR | Identical-Patch Variants | Score | Assessment |
+| --- | --- | ---: | --- |
+| `pr-001` | Every tenth PR through `pr-091` | 0 | Repeated word removed from documentation. |
+| `pr-002` | Every tenth PR through `pr-092` | 1 | Displayed CLI help corrected; no parser change in the patch. |
+| `pr-003` | Every tenth PR through `pr-093` | 0 | Documentation link corrected; destination existence unverified. |
+| `pr-004` | Every tenth PR through `pr-094` | 2 | Empty-average behavior changes, with regression tests. |
+| `pr-005` | Every tenth PR through `pr-095` | 2 | Lookup-key normalization changes behavior and input assumptions. |
+| `pr-006` | Every tenth PR through `pr-096` | 2 | Accepted batch-size boundary increases from 50 to 100. |
+| `pr-007` | Every tenth PR through `pr-097` | 3 | Authentication comparison primitive changes. |
+| `pr-008` | Every tenth PR through `pr-098` | 3 | New CSV serialization capability and tests. |
+| `pr-009` | Every tenth PR through `pr-099` | 4 | Documented response key removed and replaced without an alias. |
+| `pr-010` | Every tenth PR through `pr-100` | 4 | Documented legacy configuration entrypoint deleted. |
+
+These are AI reassessments of the supplied patches, not independent human labels
+or test-execution results. Labels retain `provisional` status and
+`synthetic_author_intent` origin; the reassessment does not replace their original
+provenance. The scale measures change scope, not defect likelihood or authorization
+to skip review. Compatibility judgments rely on the supplied API/setup documentation,
+not verified downstream usage. Human review is still required before treating these
+references as validated benchmark ground truth or calibration data.
+
 After running your system on the inputs, write all 100 predictions in this form
 (this excerpt shows only two of the required records):
 

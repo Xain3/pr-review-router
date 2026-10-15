@@ -124,7 +124,7 @@
       "score": 4,
       "level": "incompatible",
       "is_trivial": false,
-      "explanation": "The supported response key name is removed and replaced with full_name; existing consumers must migrate.",
+      "explanation": "src/users.py removes the name response key and emits full_name instead; docs/api.md changes its public response example to match. Consumers expecting name lose that field without a compatibility alias in the patch. This is an incompatible documented response-shape change, regardless of the PR's claims.",
       "sources": [
         "evidence.json#/files"
       ]
@@ -164,7 +164,7 @@
       "score": 4,
       "level": "incompatible",
       "is_trivial": false,
-      "explanation": "The supported response key name is removed and replaced with full_name; existing consumers must migrate.",
+      "explanation": "src/users.py removes the name response key and emits full_name instead; docs/api.md changes its public response example to match. Consumers expecting name lose that field without a compatibility alias in the patch. This is an incompatible documented response-shape change, regardless of the PR's claims.",
       "sources": [
         "evidence.json#/files"
       ]

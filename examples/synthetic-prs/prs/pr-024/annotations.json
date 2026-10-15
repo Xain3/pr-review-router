@@ -123,7 +123,7 @@
       "score": 2,
       "level": "bounded_behavior",
       "is_trivial": false,
-      "explanation": "Empty input changes from a division error to a numeric result; this needs edge-case review despite the small patch.",
+      "explanation": "src/stats.py adds an empty-input guard returning 0 instead of reaching division by zero. The added test covers empty and ordinary inputs. This is a bounded behavior change requiring review of the new edge-case contract, not a mechanical edit.",
       "sources": [
         "evidence.json#/files"
       ]
@@ -163,7 +163,7 @@
       "score": 2,
       "level": "bounded_behavior",
       "is_trivial": false,
-      "explanation": "Empty input changes from a division error to a numeric result; this needs edge-case review despite the small patch.",
+      "explanation": "src/stats.py adds an empty-input guard returning 0 instead of reaching division by zero. The added test covers empty and ordinary inputs. This is a bounded behavior change requiring review of the new edge-case contract, not a mechanical edit.",
       "sources": [
         "evidence.json#/files"
       ]

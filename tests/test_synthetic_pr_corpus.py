@@ -142,9 +142,14 @@ def test_text_projections_are_independent_of_reference_diff_label():
     [
         (1, 0, "editorial"),
         (2, 1, "mechanical"),
+        (3, 0, "editorial"),
         (4, 2, "bounded_behavior"),
+        (5, 2, "bounded_behavior"),
+        (6, 2, "bounded_behavior"),
         (7, 3, "substantive"),
+        (8, 3, "substantive"),
         (9, 4, "incompatible"),
+        (10, 4, "incompatible"),
     ],
 )
 def test_triviality_is_based_on_actual_change_across_description_variants(number, score, level):

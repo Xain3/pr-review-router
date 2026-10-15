@@ -123,7 +123,7 @@
       "score": 0,
       "level": "editorial",
       "is_trivial": true,
-      "explanation": "Only a misspelled relative documentation link is corrected.",
+      "explanation": "README.md changes docs/geting-started.md to docs/getting-started.md. This is a documentation navigation correction with no runtime or interface change; the destination file's existence is not verified by this diff.",
       "sources": [
         "evidence.json#/files"
       ]
@@ -163,7 +163,7 @@
       "score": 0,
       "level": "editorial",
       "is_trivial": true,
-      "explanation": "Only a misspelled relative documentation link is corrected.",
+      "explanation": "README.md changes docs/geting-started.md to docs/getting-started.md. This is a documentation navigation correction with no runtime or interface change; the destination file's existence is not verified by this diff.",
       "sources": [
         "evidence.json#/files"
       ]

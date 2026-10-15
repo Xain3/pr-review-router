@@ -122,7 +122,7 @@
       "score": 2,
       "level": "bounded_behavior",
       "is_trivial": false,
-      "explanation": "Lowercasing changes lookup semantics and can affect stores with differently capitalized keys.",
+      "explanation": "src/cache.py replaces store.get(key) with store.get(key.lower()); tests exercise uppercase and lowercase lookups into a lowercase-keyed store. Lookup semantics and accepted key types can change, including mixed-case stored keys and keys without lower(). These are bounded behavior risks, not evidence of correctness.",
       "sources": [
         "evidence.json#/files"
       ]
@@ -162,7 +162,7 @@
       "score": 2,
       "level": "bounded_behavior",
       "is_trivial": false,
-      "explanation": "Lowercasing changes lookup semantics and can affect stores with differently capitalized keys.",
+      "explanation": "src/cache.py replaces store.get(key) with store.get(key.lower()); tests exercise uppercase and lowercase lookups into a lowercase-keyed store. Lookup semantics and accepted key types can change, including mixed-case stored keys and keys without lower(). These are bounded behavior risks, not evidence of correctness.",
       "sources": [
         "evidence.json#/files"
       ]
