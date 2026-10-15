@@ -4,7 +4,6 @@ rubric_version = 1
 criterion_id = "title-format"
 description = "The title follows Conventional Commits."
 check = "conventional_title"
-action = "block"
 suggestion = "Use a title such as fix(average): handle empty input and raise the batch limit."
 
 [[criteria]]
@@ -12,7 +11,6 @@ criterion_id = "summary-section"
 description = "The description includes a populated Summary section."
 check = "body_section"
 section = "Summary"
-action = "block"
 suggestion = "Add a populated level-two Summary section."
 
 [[criteria]]
@@ -21,7 +19,6 @@ description = "The description explains why the changes are needed."
 check = "semantic"
 target = "description"
 instructions = "Does the PR description give a meaningful rationale for each substantive change visible in the diff? Restating what changed, generic statements such as 'make things better', or a Rationale heading alone do not satisfy this criterion."
-action = "block"
 suggestion = "Explain the problem each substantive change solves and why this approach was chosen."
 
 [[criteria]]
@@ -30,7 +27,6 @@ description = "The description accurately covers all substantive changes in the 
 check = "semantic"
 target = "description"
 instructions = "Does the description accurately identify every substantive behavior or configuration change visible in all supplied file patches? A description mentioning only one of several substantive changes fails. Compare meaning with the diff, not just the presence of a Summary heading. Do not judge whether the code itself is correct."
-action = "block"
 suggestion = "Describe every substantive change visible in the supplied patches."
 
 [[criteria]]
@@ -39,7 +35,6 @@ description = "The supplied review addresses all substantive changes in the PR."
 check = "semantic"
 target = "review"
 instructions = "Does the separately supplied review text address each substantive change visible in every supplied patch, including its implications or relevant edge cases? A generic approval, a repetition of the PR title, or a review addressing only one change fails. Missing evidence or ambiguous references require uncertain. Assess coverage, not whether the review proves the code correct."
-action = "block"
 suggestion = "Extend the review to address each changed behavior and relevant edge cases."
 
 [[criteria]]
@@ -48,5 +43,53 @@ description = "The description records relevant validation for the changes."
 check = "semantic"
 target = "description"
 instructions = "Does the PR description explain relevant testing or a specific reason testing is not applicable for the substantive changes in the diff? A Testing heading, 'tests pass', or 'not discussed' alone is insufficient. Assess the explanation; do not invent or claim verification of test execution."
-action = "suggest"
 suggestion = "Describe validation for empty input, ordinary averages, and the changed batch-size boundary."
+
+[[criteria]]
+criterion_id = "change-triviality"
+description = "The supplied patches establish the actual change-triviality level."
+check = "semantic"
+target = "description"
+instructions = "Classify the actual supplied diff using the configured scale. Judge behavior and interface impact, not the title, description, commit messages, or line count. Choose uncertain when the supplied patches do not provide enough evidence for a classification."
+question_type = "choice"
+suggestion = "Provide enough change evidence to support a triviality classification."
+choices = [
+    { label = "editorial", description = "Prose or link correction with no runtime or interface change." },
+    { label = "mechanical", description = "Local mechanical or presentation change that preserves behavior and public interfaces." },
+    { label = "bounded_behavior", description = "A local behavior or configuration change requiring edge-case review." },
+    { label = "substantive", description = "A new capability or security-sensitive behavior requiring broader review." },
+    { label = "incompatible", description = "Removal of a supported interface or configuration that requires migration." },
+    { label = "uncertain", description = "The available patch evidence is insufficient to classify the change." },
+]
+
+[[enforcement_rules]]
+when = { change-triviality = ["editorial", "mechanical"] }
+enforce = [
+    "title-format",
+    { any_of = [
+        "summary-section",
+        "description-coverage",
+    ] },
+]
+soft_enforce = ["change-rationale", "review-coverage", "testing-explanation"]
+
+[[enforcement_rules]]
+when = { change-triviality = ["bounded_behavior"] }
+enforce = [
+    "title-format",
+    "summary-section",
+    "change-rationale",
+    "description-coverage",
+]
+soft_enforce = ["review-coverage", "testing-explanation"]
+
+[[enforcement_rules]]
+when = { change-triviality = ["substantive", "incompatible"] }
+enforce = [
+    "title-format",
+    "summary-section",
+    "change-rationale",
+    "description-coverage",
+    "review-coverage",
+]
+soft_enforce = ["testing-explanation"]
