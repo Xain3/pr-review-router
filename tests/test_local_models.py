@@ -22,7 +22,7 @@ from pr_review_router.experiments import (
     summarize_evaluation,
 )
 from pr_review_router.local_providers import OllamaReviewProvider
-from pr_review_router.provider_config import ProvidersConfig, ReviewSettings
+from pr_review_router.provider_config import DecisionSettings, ProvidersConfig, ReviewSettings
 from pr_review_router.providers import ProviderSchemaError, request_review
 from pr_review_router.transport import ReplayMismatch, Session, TransportFailure
 
@@ -53,11 +53,13 @@ def test_shadow_skip_preserves_original_and_native_confidence():
     result = run(server)
     assert result.report.outcome == "reviewed"
     assert result.report.route == "deep"
-    assert result.report.decision.recommendation == "review"
-    assert "Shadow skip" in result.report.decision.reason
+    decision = result.report.decision
+    assert decision is not None
+    assert decision.recommendation == "review"
+    assert "Shadow skip" in decision.reason
     assert result.artifact["original_decisions"][0]["recommendation"] == "skip_review"
-    assert result.report.decision.confidence.source == "unavailable"
-    assert result.report.decision.confidence.value == 0.0
+    assert decision.confidence.source == "unavailable"
+    assert decision.confidence.value == 0.0
     native = result.artifact["decision"]["responses"][0]["answers"]["route"]
     assert native["confidence"] == 0.985
     assert native["probabilities"]["skip_review"] == 0.99
@@ -96,6 +98,54 @@ def test_actual_http_payloads_isolate_evidence_and_constrain_output():
     assert review["stream"] is False
     assert review["seed"] == 0
     assert review["temperature"] == 0.0
+
+
+def test_model_and_backend_instructions_are_supplemental_to_adapter_prompts():
+    config = fixture_config()
+    assert isinstance(config.decision, DecisionSettings)
+    assert isinstance(config.review, ReviewSettings)
+    config.decision.instructions = "Prefer a clear route."
+    config.decision.backend_instructions = "Use the native choice interface."
+    config.review.instructions = "Prioritize changed control flow."
+    config.review.backend_instructions = "Keep the response concise."
+    server = SyntheticServer(route="review")
+
+    run(server, config=config)
+
+    requests = {
+        request.url.path: json.loads(request.content)
+        for request in server.requests
+        if request.content
+    }
+    decision_prompt = requests["/v1/systemone"]["questions"]["route"]["instructions"]
+    review_prompt = requests["/v1/chat/completions"]["messages"][0]["content"]
+    for prompt, additions in (
+        (decision_prompt, ("Prefer a clear route.", "Use the native choice interface.")),
+        (review_prompt, ("Prioritize changed control flow.", "Keep the response concise.")),
+    ):
+        assert all(addition in prompt for addition in additions)
+        assert "cannot override the required" in prompt
+
+
+def test_decision_choice_limit_fails_closed_before_model_inspection():
+    config = fixture_config()
+    assert isinstance(config.decision, DecisionSettings)
+    config.decision.max_choice_options = 2
+    server = SyntheticServer()
+
+    result = run(server, config=config)
+
+    assert result.report.outcome == "needs_human_review"
+    assert server.requests == []
+
+
+def test_decision_choice_limit_rejects_values_above_backend_limit():
+    with pytest.raises(ValidationError):
+        DecisionSettings(
+            endpoint="http://localhost:11435",
+            model="fixture-decision:latest",
+            max_choice_options=256,
+        )
 
 
 @pytest.mark.parametrize("gate", ["missing_patch", "files_incomplete", "budget", "title", "rubric"])
@@ -230,6 +280,7 @@ def test_decision_transport_and_context_failures_do_not_retry_or_leak(failure):
 def test_context_checks_before_review_generation(context):
     config = fixture_config()
     if context == 32768:
+        assert isinstance(config.review, ReviewSettings)
         config.review.context_tokens = 4096
         context = 4096
     server = SyntheticServer(context=context)
@@ -315,7 +366,9 @@ def test_malformed_model_inventory_raises_transport_failure(inventory):
         pytest.fail(f"Unexpected fixture endpoint: {request.url.path}")
 
     session = Session("test", http_transport=httpx.MockTransport(malformed_inventory))
-    provider = OllamaReviewProvider(fixture_config().review, session)
+    config = fixture_config()
+    assert isinstance(config.review, ReviewSettings)
+    provider = OllamaReviewProvider(config.review, session)
 
     with pytest.raises(TransportFailure, match="inventory is unavailable"):
         provider.inspect_model("fixture-review:latest")
@@ -366,6 +419,7 @@ def test_missing_plant_is_counted_even_when_model_clears_review():
 def test_replay_round_trip_including_schema_retry_has_no_network(tmp_path, monkeypatch):
     server = SyntheticServer(reviews=["{invalid", review_content()])
     live = run(server, record=True)
+    assert live.tape is not None
     path = tmp_path / "recording.json"
     path.write_text(live.tape.model_dump_json())
 
@@ -384,9 +438,11 @@ def test_replay_round_trip_including_schema_retry_has_no_network(tmp_path, monke
 )
 def test_stale_replay_fails_without_fallback(tmp_path, monkeypatch, change):
     live = run(SyntheticServer(), record=True)
+    assert live.tape is not None
     tape = live.tape.model_dump(mode="json")
     evidence = fixture_evidence()
     config = fixture_config()
+    assert isinstance(config.review, ReviewSettings)
     policy = Policy()
     if change == "input":
         evidence.title += " changed"
@@ -417,18 +473,23 @@ def test_stale_replay_fails_without_fallback(tmp_path, monkeypatch, change):
 
 
 def test_real_elapsed_deadline_stops_a_stalled_response():
-    async def stalled(request):
+    async def stalled(request: httpx.Request) -> httpx.Response:
         await asyncio.Event().wait()
+        return httpx.Response(200)
 
-    config = fixture_config().decision.model_copy(update={"timeout_seconds": 0.01})
+    config = fixture_config()
+    assert isinstance(config.decision, DecisionSettings)
+    settings = config.decision.model_copy(update={"timeout_seconds": 0.01})
     session = Session("test", http_transport=httpx.MockTransport(stalled))
     with pytest.raises(TransportFailure, match="timeout"):
-        session.request(config, "GET", "/api/version")
+        session.request(settings, "GET", "/api/version")
     assert session.exchanges[0].error == "timeout"
 
 
 def test_response_size_is_bounded_and_failure_can_be_replayed(tmp_path):
-    settings = fixture_config().decision.model_copy(update={"max_response_bytes": 20})
+    config = fixture_config()
+    assert isinstance(config.decision, DecisionSettings)
+    settings = config.decision.model_copy(update={"max_response_bytes": 20})
     session = Session(
         "test",
         http_transport=httpx.MockTransport(lambda request: httpx.Response(200, text="x" * 21)),
@@ -446,7 +507,9 @@ def test_response_size_is_bounded_and_failure_can_be_replayed(tmp_path):
 def test_no_additional_schema_retry_outside_the_existing_boundary():
     server = SyntheticServer(reviews=["{invalid"])
     session = Session("test", http_transport=httpx.MockTransport(server.handle))
-    provider = OllamaReviewProvider(fixture_config().review, session)
+    config = fixture_config()
+    assert isinstance(config.review, ReviewSettings)
+    provider = OllamaReviewProvider(config.review, session)
     with pytest.raises(ProviderSchemaError):
         request_review(provider, fixture_evidence(), depth="standard")
     assert server.review_calls == 2
@@ -482,7 +545,7 @@ def test_direct_decisions_and_record_replay_combination_are_disabled(tmp_path):
             fixture_evidence(), Policy(), fixture_config(), record=True, replay=tmp_path / "none"
         )
     with pytest.raises(ValidationError):
-        ProvidersConfig(shadow_skips=False)
+        ProvidersConfig.model_validate({"shadow_skips": False})
 
 
 def test_metrics_use_uncapped_findings_and_original_unsafe_skip():
