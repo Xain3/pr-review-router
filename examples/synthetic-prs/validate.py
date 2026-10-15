@@ -50,7 +50,7 @@ def validate(root: Path) -> dict:
     root = root.resolve()
     index = read_json(root, "index.json")
     require(
-        index["schema_version"] == 2 and index["synthetic"] is True,
+        index["schema_version"] == 3 and index["synthetic"] is True,
         "Unsupported or non-synthetic corpus",
     )
     require(index["label_status"] == "provisional", "Labels must retain synthetic provenance")
@@ -64,8 +64,12 @@ def validate(root: Path) -> dict:
         "Unindexed or missing PR directories",
     )
     require(
-        len(index["criteria"]) == 13 and "change_triviality" in index["criteria"],
-        "Expected twelve quality criteria and an ordinal change-triviality criterion",
+        len(index["criteria"]) == 20
+        and {"change_triviality", "summary-section", "review-coverage"}
+        <= set(index["criteria"])
+        and set(index["rubric_label_mirrors"]) <= set(index["criteria"])
+        and set(index["rubric_label_mirrors"].values()) <= set(index["criteria"]),
+        "Expected fourteen status-based criteria and an ordinal change-triviality criterion",
     )
     scale = index["triviality_scale"]
     require(
@@ -110,7 +114,7 @@ def validate(root: Path) -> dict:
         )
         require(evidence.number == int(case_id.removeprefix("pr-")), f"{case_id}: wrong PR number")
         require(
-            metadata["schema_version"] == 1 and labels["schema_version"] == 2,
+            metadata["schema_version"] == 1 and labels["schema_version"] == 3,
             f"{case_id}: unknown companion schema",
         )
         require(metadata["synthetic"] is True, f"{case_id}: missing synthetic marker")
@@ -132,6 +136,24 @@ def validate(root: Path) -> dict:
         require(
             set(labels["criteria"]) == set(index["criteria"]),
             f"{case_id}: incomplete rubric labels",
+        )
+        for mirror, canonical in index["rubric_label_mirrors"].items():
+            require(
+                labels["criteria"][mirror] == labels["criteria"][canonical],
+                f"{case_id}: rubric label mirror disagrees for {mirror}",
+            )
+        summary_check = assess_pr_text(
+            evidence, Policy(title_format="any", required_body_sections=["Summary"])
+        )
+        require(
+            labels["criteria"]["summary-section"]["status"]
+            == ("passed" if summary_check.valid else "failed"),
+            f"{case_id}: summary-section oracle disagrees with router",
+        )
+        review_coverage = labels["criteria"]["review-coverage"]
+        require(
+            review_coverage["status"] == "not_assessable" and not review_coverage["sources"],
+            f"{case_id}: review coverage must remain unassessed without supplied review text",
         )
         triviality = labels["criteria"]["change_triviality"]
         require(
@@ -273,14 +295,18 @@ def validate(root: Path) -> dict:
         text_relationship_counts[expected_relationship] += 1
         text_confounder_count += confounder is True
         for key, criterion in labels["criteria"].items():
-            if key != "change_triviality":
+            if criterion.get("type") != "ordinal":
                 require(
                     criterion["status"] in {"passed", "failed", "not_assessable", "not_applicable"},
                     f"{case_id}: invalid status for {key}",
                 )
             require(
-                bool(criterion["explanation"].strip()) and bool(criterion["sources"]),
-                f"{case_id}: missing explanation or evidence references for {key}",
+                bool(criterion["explanation"].strip())
+                and (
+                    bool(criterion["sources"])
+                    or (key == "review-coverage" and criterion["status"] == "not_assessable")
+                ),
+                f"{case_id}: missing explanation or required evidence references for {key}",
             )
             for reference in criterion["sources"]:
                 filename, pointer = reference.split("#", 1)
@@ -296,6 +322,7 @@ def validate(root: Path) -> dict:
             key
             for key, criterion in labels["criteria"].items()
             if criterion.get("status") == "failed"
+            and key not in index["rubric_label_mirrors"]
         )
         require(failed == case["failed_criteria"], f"{case_id}: stale failure index")
         require(
@@ -306,8 +333,9 @@ def validate(root: Path) -> dict:
             require(
                 all(
                     item["status"] in {"passed", "not_applicable"}
+                    or (key == "review-coverage" and item["status"] == "not_assessable")
                     for key, item in labels["criteria"].items()
-                    if key != "change_triviality"
+                    if item.get("type") != "ordinal"
                 ),
                 f"{case_id}: good case contains unassessed criteria",
             )

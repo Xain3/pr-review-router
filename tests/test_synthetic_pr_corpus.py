@@ -7,6 +7,8 @@ from pathlib import Path
 
 import pytest
 
+from pr_review_router.assessment_rubric import load_assessment_rubric
+
 pytestmark = pytest.mark.unit
 CORPUS = Path(__file__).resolve().parents[1] / "examples" / "synthetic-prs"
 
@@ -89,8 +91,23 @@ def test_text_diff_diagnostics_keep_mismatches_conflicts_and_unknowns(
     assert diagnostic["relationship"] == relationship
     assert diagnostic["potential_confounder"] is confounder
     assert diagnostic["diff_score"] == annotation["criteria"]["change_triviality"]["score"]
-    assert len(annotation["criteria"]) == 13
+    assert len(annotation["criteria"]) == 20
     assert "text_diff_triviality" not in annotation["criteria"]
+
+
+def test_all_active_rubric_criteria_have_oracle_labels():
+    """Keep active rubric identifiers mirrored in every synthetic oracle annotation."""
+    rubric = load_assessment_rubric(CORPUS / "rubric.toml")
+    rubric_ids = {criterion.criterion_id for criterion in rubric.criteria}
+    index = json.loads((CORPUS / "index.json").read_text())
+
+    assert rubric_ids <= set(index["criteria"])
+    for case in index["cases"]:
+        annotation = json.loads((CORPUS / case["annotations"]).read_text())
+        assert rubric_ids <= set(annotation["criteria"])
+        review = annotation["criteria"]["review-coverage"]
+        assert review["status"] == "not_assessable"
+        assert review["sources"] == []
 
 
 def test_triviality_scorer_does_not_use_diagnostic_text_scores(tmp_path, triviality_predictions):

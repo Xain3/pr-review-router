@@ -1,5 +1,5 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "case_id": "pr-034",
   "label_status": "provisional",
   "label_origin": "synthetic_author_intent",
@@ -20,6 +20,18 @@
       "sources": [
         "evidence.json#/title"
       ]
+    },
+    "summary-section": {
+      "status": "passed",
+      "explanation": "The body includes a populated level-two Summary section.",
+      "sources": [
+        "evidence.json#/body"
+      ]
+    },
+    "review-coverage": {
+      "status": "not_assessable",
+      "explanation": "The corpus contains no supplied review text to compare with the patches.",
+      "sources": []
     },
     "title_meaningful": {
       "status": "passed",
@@ -106,6 +118,46 @@
       ]
     },
     "change_triviality": {
+      "type": "ordinal",
+      "score": 2,
+      "level": "bounded_behavior",
+      "is_trivial": false,
+      "explanation": "Empty input changes from a division error to a numeric result; this needs edge-case review despite the small patch.",
+      "sources": [
+        "evidence.json#/files"
+      ]
+    },
+    "title-format": {
+      "status": "passed",
+      "explanation": "The title uses a lowercase type, optional scope/!, and ': '.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "change-rationale": {
+      "status": "failed",
+      "explanation": "The body describes what changed but never explains why it is needed.",
+      "sources": [
+        "evidence.json#/body"
+      ]
+    },
+    "description-coverage": {
+      "status": "passed",
+      "explanation": "The summary covers all substantive changes in the patches.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "testing-explanation": {
+      "status": "passed",
+      "explanation": "The description gives a relevant validation plan, without claiming execution.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "change-triviality": {
       "type": "ordinal",
       "score": 2,
       "level": "bounded_behavior",

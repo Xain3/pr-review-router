@@ -1,10 +1,17 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "synthetic": true,
   "label_status": "provisional",
   "case_count": 100,
   "criteria": {
     "change_triviality": "Ordinal 0–4 assessment of the actual diff: higher scores mean less trivial changes; scores 0–1 are trivial.",
+    "summary-section": "Description contains a populated level-two Summary section.",
+    "review-coverage": "Supplied review addresses substantive changes; unavailable when no review is supplied.",
+    "title-format": "Rubric-ID mirror of title_format.",
+    "change-rationale": "Rubric-ID mirror of rationale.",
+    "description-coverage": "Rubric-ID mirror of description_diff_consistency.",
+    "testing-explanation": "Rubric-ID mirror of testing.",
+    "change-triviality": "Rubric-ID mirror of change_triviality.",
     "title_format": "Title follows the router's Conventional Commits syntax.",
     "title_meaningful": "Title conveys an intelligible change rather than gibberish.",
     "title_diff_consistency": "Meaningful title agrees with the actual diff.",
@@ -17,6 +24,13 @@
     "limitations": "Body identifies relevant scope boundaries, risks, or limitations.",
     "breaking_changes": "Body accurately discloses and explains migration for an incompatible change.",
     "testing": "Body describes relevant validation or a specific reason testing does not apply."
+  },
+  "rubric_label_mirrors": {
+    "title-format": "title_format",
+    "change-rationale": "rationale",
+    "description-coverage": "description_diff_consistency",
+    "testing-explanation": "testing",
+    "change-triviality": "change_triviality"
   },
   "triviality_scale": {
     "minimum_score": 0,
@@ -1113,6 +1127,7 @@
       "failed_criteria": [
         "changes_described",
         "limitations",
+        "summary-section",
         "testing"
       ],
       "evidence": "prs/pr-041/evidence.json",
@@ -1140,6 +1155,7 @@
       "failed_criteria": [
         "changes_described",
         "limitations",
+        "summary-section",
         "testing"
       ],
       "evidence": "prs/pr-042/evidence.json",
@@ -1167,6 +1183,7 @@
       "failed_criteria": [
         "changes_described",
         "limitations",
+        "summary-section",
         "testing"
       ],
       "evidence": "prs/pr-043/evidence.json",
@@ -1194,6 +1211,7 @@
       "failed_criteria": [
         "changes_described",
         "limitations",
+        "summary-section",
         "testing"
       ],
       "evidence": "prs/pr-044/evidence.json",
@@ -1221,6 +1239,7 @@
       "failed_criteria": [
         "changes_described",
         "limitations",
+        "summary-section",
         "testing"
       ],
       "evidence": "prs/pr-045/evidence.json",
@@ -1248,6 +1267,7 @@
       "failed_criteria": [
         "changes_described",
         "limitations",
+        "summary-section",
         "testing"
       ],
       "evidence": "prs/pr-046/evidence.json",
@@ -1275,6 +1295,7 @@
       "failed_criteria": [
         "changes_described",
         "limitations",
+        "summary-section",
         "testing"
       ],
       "evidence": "prs/pr-047/evidence.json",
@@ -1302,6 +1323,7 @@
       "failed_criteria": [
         "changes_described",
         "limitations",
+        "summary-section",
         "testing"
       ],
       "evidence": "prs/pr-048/evidence.json",
@@ -1331,6 +1353,7 @@
         "breaking_changes",
         "changes_described",
         "limitations",
+        "summary-section",
         "testing"
       ],
       "evidence": "prs/pr-049/evidence.json",
@@ -1360,6 +1383,7 @@
         "breaking_changes",
         "changes_described",
         "limitations",
+        "summary-section",
         "testing"
       ],
       "evidence": "prs/pr-050/evidence.json",
@@ -2198,6 +2222,7 @@
         "description_present",
         "limitations",
         "rationale",
+        "summary-section",
         "testing"
       ],
       "evidence": "prs/pr-081/evidence.json",
@@ -2228,6 +2253,7 @@
         "description_present",
         "limitations",
         "rationale",
+        "summary-section",
         "testing"
       ],
       "evidence": "prs/pr-082/evidence.json",
@@ -2258,6 +2284,7 @@
         "description_present",
         "limitations",
         "rationale",
+        "summary-section",
         "testing"
       ],
       "evidence": "prs/pr-083/evidence.json",
@@ -2288,6 +2315,7 @@
         "description_present",
         "limitations",
         "rationale",
+        "summary-section",
         "testing"
       ],
       "evidence": "prs/pr-084/evidence.json",
@@ -2509,6 +2537,7 @@
         "description_present",
         "limitations",
         "rationale",
+        "summary-section",
         "testing",
         "title_format",
         "title_meaningful"
@@ -2600,6 +2629,7 @@
       "failed_criteria": [
         "changes_described",
         "limitations",
+        "summary-section",
         "testing",
         "title_format"
       ],

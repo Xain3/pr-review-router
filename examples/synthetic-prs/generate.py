@@ -8,6 +8,10 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
+from pr_review_router.config import Policy
+from pr_review_router.contracts import PullRequestEvidence
+from pr_review_router.engine import assess_pr_text
+
 ROOT = Path(__file__).resolve().parent
 
 
@@ -497,6 +501,13 @@ FALSE_TEXT_TRIVIALITY = {
 CRITERIA = {
     "change_triviality": "Ordinal 0–4 assessment of the actual diff: higher scores mean "
     "less trivial changes; scores 0–1 are trivial.",
+    "summary-section": "Description contains a populated level-two Summary section.",
+    "review-coverage": "Supplied review addresses substantive changes; unavailable when no review is supplied.",
+    "title-format": "Rubric-ID mirror of title_format.",
+    "change-rationale": "Rubric-ID mirror of rationale.",
+    "description-coverage": "Rubric-ID mirror of description_diff_consistency.",
+    "testing-explanation": "Rubric-ID mirror of testing.",
+    "change-triviality": "Rubric-ID mirror of change_triviality.",
     "title_format": "Title follows the router's Conventional Commits syntax.",
     "title_meaningful": "Title conveys an intelligible change rather than gibberish.",
     "title_diff_consistency": "Meaningful title agrees with the actual diff.",
@@ -509,6 +520,13 @@ CRITERIA = {
     "limitations": "Body identifies relevant scope boundaries, risks, or limitations.",
     "breaking_changes": "Body accurately discloses and explains migration for an incompatible change.",
     "testing": "Body describes relevant validation or a specific reason testing does not apply.",
+}
+RUBRIC_LABEL_MIRRORS = {
+    "title-format": "title_format",
+    "change-rationale": "rationale",
+    "description-coverage": "description_diff_consistency",
+    "testing-explanation": "testing",
+    "change-triviality": "change_triviality",
 }
 
 
@@ -625,6 +643,8 @@ def make_case(number: int, family: Family, profile: str, family_index: int) -> t
         key: {"status": "passed", "explanation": explanation}
         for key, explanation in {
             "title_format": "The title uses a lowercase type, optional scope/!, and ': '.",
+            "summary-section": "The body includes a populated level-two Summary section.",
+            "review-coverage": "No supplied review text is available in this corpus.",
             "title_meaningful": "The title names a concrete, intelligible change.",
             "title_diff_consistency": "The title agrees with the reference change and patch.",
             "description_present": "The description contains substantive change information.",
@@ -1052,6 +1072,22 @@ def make_case(number: int, family: Family, profile: str, family_index: int) -> t
         "files_complete": True,
         "files": files,
     }
+    summary_check = assess_pr_text(
+        PullRequestEvidence.model_validate(evidence),
+        Policy(title_format="any", required_body_sections=["Summary"]),
+    )
+    criteria["summary-section"] = {
+        "status": "passed" if summary_check.valid else "failed",
+        "explanation": (
+            "The body includes a populated level-two Summary section."
+            if summary_check.valid
+            else summary_check.issues[0]
+        ),
+    }
+    criteria["review-coverage"] = {
+        "status": "not_assessable",
+        "explanation": "The corpus contains no supplied review text to compare with the patches.",
+    }
     metadata = {
         "schema_version": 1,
         "synthetic": True,
@@ -1079,8 +1115,17 @@ def make_case(number: int, family: Family, profile: str, family_index: int) -> t
         "is_trivial": score <= 1,
         "explanation": explanation,
     }
+    for mirror, canonical in RUBRIC_LABEL_MIRRORS.items():
+        criteria[mirror] = criteria[canonical].copy()
     source_map = {
         "change_triviality": ["evidence.json#/files"],
+        "summary-section": ["evidence.json#/body"],
+        "review-coverage": [],
+        "title-format": ["evidence.json#/title"],
+        "change-rationale": ["evidence.json#/body"],
+        "description-coverage": ["evidence.json#/body", "evidence.json#/files"],
+        "testing-explanation": ["evidence.json#/body", "evidence.json#/files"],
+        "change-triviality": ["evidence.json#/files"],
         "title_format": ["evidence.json#/title"],
         "title_meaningful": ["evidence.json#/title"],
         "title_diff_consistency": ["evidence.json#/title", "evidence.json#/files"],
@@ -1097,7 +1142,7 @@ def make_case(number: int, family: Family, profile: str, family_index: int) -> t
     for key, result in criteria.items():
         result["sources"] = source_map[key]
     annotation = {
-        "schema_version": 2,
+        "schema_version": 3,
         "case_id": case_id,
         "label_status": "provisional",
         "label_origin": "synthetic_author_intent",
@@ -1188,6 +1233,7 @@ def main(output_root: Path = ROOT) -> None:
                         key
                         for key, value in annotation["criteria"].items()
                         if value.get("status") == "failed"
+                        and key not in RUBRIC_LABEL_MIRRORS
                     ),
                     "evidence": directory + "/evidence.json",
                     "metadata": directory + "/metadata.json",
@@ -1197,11 +1243,12 @@ def main(output_root: Path = ROOT) -> None:
     write_json(
         output_root / "index.json",
         {
-            "schema_version": 2,
+            "schema_version": 3,
             "synthetic": True,
             "label_status": "provisional",
             "case_count": len(cases),
             "criteria": CRITERIA,
+            "rubric_label_mirrors": RUBRIC_LABEL_MIRRORS,
             "triviality_scale": {
                 "minimum_score": 0,
                 "maximum_score": 4,

@@ -1,5 +1,5 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "case_id": "pr-092",
   "label_status": "provisional",
   "label_origin": "synthetic_author_intent",
@@ -23,6 +23,18 @@
       "sources": [
         "evidence.json#/title"
       ]
+    },
+    "summary-section": {
+      "status": "failed",
+      "explanation": "PR body must include a non-empty '## Summary' section.",
+      "sources": [
+        "evidence.json#/body"
+      ]
+    },
+    "review-coverage": {
+      "status": "not_assessable",
+      "explanation": "The corpus contains no supplied review text to compare with the patches.",
+      "sources": []
     },
     "title_meaningful": {
       "status": "failed",
@@ -109,6 +121,46 @@
       ]
     },
     "change_triviality": {
+      "type": "ordinal",
+      "score": 1,
+      "level": "mechanical",
+      "is_trivial": true,
+      "explanation": "Only the displayed option spelling changes in a help string; the option parser and accepted option are unchanged.",
+      "sources": [
+        "evidence.json#/files"
+      ]
+    },
+    "title-format": {
+      "status": "failed",
+      "explanation": "The title has neither a conventional prefix nor a meaningful subject.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "change-rationale": {
+      "status": "failed",
+      "explanation": "The description is empty or contains only a placeholder/headings.",
+      "sources": [
+        "evidence.json#/body"
+      ]
+    },
+    "description-coverage": {
+      "status": "not_assessable",
+      "explanation": "No substantive description claims exist to compare.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "testing-explanation": {
+      "status": "failed",
+      "explanation": "The description is empty or contains only a placeholder/headings.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "change-triviality": {
       "type": "ordinal",
       "score": 1,
       "level": "mechanical",

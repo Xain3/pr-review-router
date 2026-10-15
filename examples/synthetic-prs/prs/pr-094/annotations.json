@@ -1,5 +1,5 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "case_id": "pr-094",
   "label_status": "provisional",
   "label_origin": "synthetic_author_intent",
@@ -21,6 +21,18 @@
       "sources": [
         "evidence.json#/title"
       ]
+    },
+    "summary-section": {
+      "status": "passed",
+      "explanation": "The body includes a populated level-two Summary section.",
+      "sources": [
+        "evidence.json#/body"
+      ]
+    },
+    "review-coverage": {
+      "status": "not_assessable",
+      "explanation": "The corpus contains no supplied review text to compare with the patches.",
+      "sources": []
     },
     "title_meaningful": {
       "status": "passed",
@@ -107,6 +119,46 @@
       ]
     },
     "change_triviality": {
+      "type": "ordinal",
+      "score": 2,
+      "level": "bounded_behavior",
+      "is_trivial": false,
+      "explanation": "Empty input changes from a division error to a numeric result; this needs edge-case review despite the small patch.",
+      "sources": [
+        "evidence.json#/files"
+      ]
+    },
+    "title-format": {
+      "status": "passed",
+      "explanation": "The title uses a lowercase type, optional scope/!, and ': '.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "change-rationale": {
+      "status": "failed",
+      "explanation": "The generic consumer-workflow claim does not explain the actual changes.",
+      "sources": [
+        "evidence.json#/body"
+      ]
+    },
+    "description-coverage": {
+      "status": "failed",
+      "explanation": "The body claims: Return 1 for an empty values list, and add tests expecting 1 for []. The actual change is: Return 0 for an empty values list before division in src/stats.py, and add regression tests for empty and ordinary inputs.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "testing-explanation": {
+      "status": "failed",
+      "explanation": "No relevant checks or validation plan are described.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "change-triviality": {
       "type": "ordinal",
       "score": 2,
       "level": "bounded_behavior",

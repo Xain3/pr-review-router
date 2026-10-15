@@ -1,5 +1,5 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "case_id": "pr-077",
   "label_status": "provisional",
   "label_origin": "synthetic_author_intent",
@@ -20,6 +20,18 @@
       "sources": [
         "evidence.json#/title"
       ]
+    },
+    "summary-section": {
+      "status": "passed",
+      "explanation": "The body includes a populated level-two Summary section.",
+      "sources": [
+        "evidence.json#/body"
+      ]
+    },
+    "review-coverage": {
+      "status": "not_assessable",
+      "explanation": "The corpus contains no supplied review text to compare with the patches.",
+      "sources": []
     },
     "title_meaningful": {
       "status": "passed",
@@ -106,6 +118,46 @@
       ]
     },
     "change_triviality": {
+      "type": "ordinal",
+      "score": 3,
+      "level": "substantive",
+      "is_trivial": false,
+      "explanation": "The comparison primitive changes in security-sensitive authentication logic; a short diff does not make this trivial.",
+      "sources": [
+        "evidence.json#/files"
+      ]
+    },
+    "title-format": {
+      "status": "passed",
+      "explanation": "The title uses a lowercase type, optional scope/!, and ': '.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "change-rationale": {
+      "status": "failed",
+      "explanation": "The generic consumer-workflow claim does not explain the actual changes.",
+      "sources": [
+        "evidence.json#/body"
+      ]
+    },
+    "description-coverage": {
+      "status": "failed",
+      "explanation": "The body claims: Lowercase both tokens before equality comparison and test case-insensitive matches. The actual change is: Use hmac.compare_digest instead of == in src/auth.py, and add tests for matching and mismatching ASCII tokens.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "testing-explanation": {
+      "status": "failed",
+      "explanation": "No relevant checks or validation plan are described.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "change-triviality": {
       "type": "ordinal",
       "score": 3,
       "level": "substantive",
