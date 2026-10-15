@@ -7,12 +7,25 @@ from collections import Counter
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from typing import TypedDict
 
 from pr_review_router.config import Policy
 from pr_review_router.contracts import PullRequestEvidence
 from pr_review_router.engine import assess_pr_text
 
 ROOT = Path(__file__).resolve().parent
+
+
+class CriterionResult(TypedDict, total=False):
+    """Optional fields used by categorical and ordinal oracle results."""
+
+    status: str
+    explanation: str
+    type: str
+    score: int
+    level: str
+    is_trivial: bool
+    sources: list[str]
 
 
 @dataclass(frozen=True)
@@ -663,7 +676,7 @@ def make_case(number: int, family: Family, profile: str, family_index: int) -> t
         "Breaking changes": family.breaking,
     }
     messages = [edit.message for edit in family.edits]
-    criteria = {
+    criteria: dict[str, CriterionResult] = {
         key: {"status": "passed", "explanation": explanation}
         for key, explanation in {
             "title_format": "The title uses a lowercase type, optional scope/!, and ': '.",
