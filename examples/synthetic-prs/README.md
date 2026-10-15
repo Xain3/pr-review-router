@@ -16,12 +16,15 @@ Each `prs/pr-NNN/` directory contains:
 | --- | --- |
 | `evidence.json` | Repository, PR number, title, Markdown body, base/head identifiers, and changed files with status, line counts, and unified patches. Accepted directly by `PullRequestEvidence` and the `review` CLI. |
 | `metadata.json` | Fictional author, reserved-domain URL, timestamps, branch names, aggregate diff statistics, and ordered `commits`. Each commit has a SHA-shaped identifier, parent, message, author, timestamp, changed paths, and line counts. |
-| `annotations.json` | Family, scenario, tags, expected quality, twelve quality labels, a graded change-triviality criterion, separate text/diff framing diagnostics, explanations and evidence references, and a truthful reference summary. |
+| `annotations.json` | Family, scenario, tags, expected quality, fourteen canonical status-based labels, rubric-ID mirror labels, a graded change-triviality criterion, separate text/diff framing diagnostics, explanations and evidence references, and a truthful reference summary. Review coverage is `not_assessable` because no review text is supplied. |
 
-The manifest and annotations use `schema_version: 2`, adding the ordinal
-triviality criterion alongside the twelve status-based quality criteria.
-Metadata retains schema version 1, and CLI evidence is unchanged. Consumers of
-version 1 should handle the new ordinal shape before reading version 2.
+The manifest and annotations use `schema_version: 3`, adding the rubric's
+Summary-section check and an explicitly unassessable review-coverage label to
+the existing oracle criteria. `index.json` identifies rubric-ID mirrors of
+existing oracle criteria, and case failure summaries count each canonical
+criterion once. Metadata retains schema version 1, and CLI evidence is
+unchanged. Consumers of version 2 should handle these additional criteria
+before reading version 3.
 The manifest uses relative paths to these three files. Identifiers are
 deterministic fake values rather than real Git object hashes; no repositories
 need to be fetched.
@@ -194,8 +197,8 @@ The scorer requires exactly one integer 0–4 prediction for every case; duplica
 unknown, missing, and out-of-range predictions are rejected. It reports exact
 score accuracy, mean absolute error, binary trivial/non-trivial accuracy, a
 reference-by-prediction confusion matrix, and accuracy by PR communication
-quality. Compare scores for this criterion and statuses for the twelve quality
-criteria. This command scores supplied predictions offline; it performs no
+quality. Compare scores for this criterion and statuses for the fourteen
+status-based criteria. This command scores supplied predictions offline; it performs no
 inference and retains the provisional label status in its output. Withhold
 reference triviality labels from model inputs and split by family as described
 above. Perfect scores from copied reference labels only test the scorer.
@@ -246,6 +249,20 @@ establishing causation, and remain withheld from model inputs.
 Testing sections describe fictional validation **plans**, never tests that this
 project claims to have executed. They demonstrate relevant PR communication;
 the corpus validator does not execute the code inside patches.
+
+## Assessment rubric variants
+
+`rubric_legacy.toml` preserves the original six-criterion rubric, where each
+criterion's `action` determines whether failure blocks or suggests a change.
+`rubric.toml` adds a choice-based `change-triviality` criterion and uses ordered
+`enforcement_rules` to select blocking and soft criteria for editorial or
+mechanical, bounded-behavior, and substantive or incompatible changes. The
+scale follows the corpus's 0–4 triviality definitions; `uncertain` intentionally
+matches no rule, so enforcement fails closed and cannot recommend approval.
+
+Because the scale has six choices, the configured decision provider must support
+at least six `max_choice_options`. Enforcement rules replace per-criterion
+`action` fields; the legacy rubric retains those fields for comparison.
 
 ## Run and maintain
 
