@@ -201,7 +201,9 @@ evaluates title format, Summary structure, meaningful rationale, description
 coverage of the diff, supplied-review coverage, and relevant testing. It shows
 blocking failures, suggestions, uncertainty, and all-pass advisory skip/approval
 recommendations while preserving shadow mode. Semantic criteria support `choice`,
-`noul`, and ordinal `score` questions with explicit experimental numeric bands.
+`noul` (also named `predicate` in rubric configuration), and ordinal `score`
+questions with explicit experimental numeric bands. Ollaya sends both numeric
+probability names as native `noul` questions.
 Choice criteria can configure provider-visible labels that map back to the
 default `passed`, `failed`, and `uncertain` routing statuses. The selected
 decision provider configures its `max_choice_options` capability (default `3`).

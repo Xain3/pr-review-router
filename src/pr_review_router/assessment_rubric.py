@@ -15,6 +15,8 @@ from .transport import TransportFailure, canonical_json
 
 Status = Literal["passed", "failed", "uncertain"]
 Recommendation = Literal["skip_and_approve", "suggest_changes", "block", "needs_human_review"]
+QuestionType = Literal["choice", "noul", "predicate", "score"]
+OllayaQuestionType = Literal["choice", "noul", "score"]
 PROMPT_VERSION = "evidence-rubric-v3"
 INSTRUCTIONS = (
     "Assess the specified criterion against the complete supplied PR evidence and review text. "
@@ -131,7 +133,7 @@ class AssessmentCriterion(Contract):
     section: Text | None = None
     instructions: Text | None = None
     target: Literal["description", "review"] = "description"
-    question_type: Literal["choice", "noul", "score"] = "choice"
+    question_type: QuestionType = "choice"
     fail_threshold: float | None = Field(default=None, ge=0, allow_inf_nan=False)
     pass_threshold: float | None = Field(default=None, ge=0, allow_inf_nan=False)
     levels: list[Text] | None = Field(default=None, min_length=2, max_length=10)
@@ -171,11 +173,12 @@ class AssessmentCriterion(Contract):
                 raise ValueError("numeric criteria do not accept choices")
             if self.fail_threshold is None or self.pass_threshold is None:
                 raise ValueError("numeric criteria require explicit fail and pass thresholds")
-            maximum = 1 if self.question_type == "noul" else len(self.levels or []) - 1
+            is_probability = self.question_type in ("noul", "predicate")
+            maximum = 1 if is_probability else len(self.levels or []) - 1
             if not 0 <= self.fail_threshold < self.pass_threshold <= maximum:
                 raise ValueError("thresholds must define a nonempty handoff band within the scale")
-            if self.question_type == "noul" and self.levels is not None:
-                raise ValueError("noul criteria do not accept levels")
+            if is_probability and self.levels is not None:
+                raise ValueError("probability criteria do not accept levels")
             if self.question_type == "score" and (
                 not self.levels or len(set(self.levels)) != len(self.levels)
             ):
@@ -339,6 +342,15 @@ class _ScoreAnswer(BaseModel):
 NativeAnswer = Annotated[_ChoiceAnswer | _NoulAnswer | _ScoreAnswer, Field(discriminator="type")]
 
 
+def _ollaya_question_type(question_type: QuestionType) -> OllayaQuestionType:
+    """Translate rubric question names to Ollaya's native question types.
+
+    :param question_type: Configured question type.
+    :returns: Equivalent question type accepted by Ollaya.
+    """
+    return "noul" if question_type == "predicate" else question_type
+
+
 class _NativeResponse(BaseModel):
     """Native question responses validated against the exact requested criterion IDs."""
 
@@ -361,7 +373,7 @@ class _NativeResponse(BaseModel):
             raise ValueError("rubric answers do not match the requested criteria")
         for identifier, answer in self.answers.items():
             criterion = criteria[identifier]
-            if answer.type != criterion.question_type:
+            if answer.type != _ollaya_question_type(criterion.question_type):
                 raise ValueError("rubric answer type does not match the requested type")
             if isinstance(answer, _ChoiceAnswer):
                 choices = criterion.choice_options
@@ -689,7 +701,7 @@ class RubricDecisionProvider:
                         else " Choose exactly one configured label based on its definition."
                     )
                     options = criterion.choice_options
-                elif criterion.question_type == "noul":
+                elif criterion.question_type in ("noul", "predicate"):
                     options = {
                         "true": "The evidence satisfies this criterion: " + criterion.description,
                         "false": "The evidence does not satisfy this criterion: "
@@ -702,7 +714,7 @@ class RubricDecisionProvider:
                         " Return exactly the requested answer type and options for every question."
                     )
                 questions[criterion.criterion_id] = {
-                    "type": criterion.question_type,
+                    "type": _ollaya_question_type(criterion.question_type),
                     "instructions": instructions,
                     "criteria": options,
                 }
