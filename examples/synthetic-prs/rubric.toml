@@ -53,13 +53,14 @@ target = "description"
 instructions = "Classify the actual supplied diff using the configured scale. Judge behavior and interface impact, not the title, description, commit messages, or line count. Choose uncertain when the supplied patches do not provide enough evidence for a classification."
 question_type = "choice"
 suggestion = "Provide enough change evidence to support a triviality classification."
+# A status records whether the change was classified; enforcement rules match the native label.
 choices = [
-    { label = "editorial", description = "Prose or link correction with no runtime or interface change." },
-    { label = "mechanical", description = "Local mechanical or presentation change that preserves behavior and public interfaces." },
-    { label = "bounded_behavior", description = "A local behavior or configuration change requiring edge-case review." },
-    { label = "substantive", description = "A new capability or security-sensitive behavior requiring broader review." },
-    { label = "incompatible", description = "Removal of a supported interface or configuration that requires migration." },
-    { label = "uncertain", description = "The available patch evidence is insufficient to classify the change." },
+    { label = "editorial", description = "Prose or link correction with no runtime or interface change.", status = "passed" },
+    { label = "mechanical", description = "Local mechanical or presentation change that preserves behavior and public interfaces.", status = "passed" },
+    { label = "bounded_behavior", description = "A local behavior or configuration change requiring edge-case review.", status = "passed" },
+    { label = "substantive", description = "A new capability or security-sensitive behavior requiring broader review.", status = "passed" },
+    { label = "incompatible", description = "Removal of a supported interface or configuration that requires migration.", status = "passed" },
+    { label = "uncertain", description = "The available patch evidence is insufficient to classify the change.", status = "uncertain" },
 ]
 
 [[enforcement_rules]]

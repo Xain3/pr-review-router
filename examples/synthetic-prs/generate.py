@@ -9,6 +9,12 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import TypedDict
 
+from pr_review_router.assessment_rubric import (
+    AssessmentRubric,
+    CriterionAssessment,
+    combine_assessments,
+    load_assessment_rubric,
+)
 from pr_review_router.config import Policy
 from pr_review_router.contracts import PullRequestEvidence
 from pr_review_router.engine import assess_pr_text
@@ -1217,6 +1223,56 @@ def make_case(number: int, family: Family, profile: str, family_index: int) -> t
     return evidence, metadata, annotation
 
 
+ORACLE_STATUSES = {"passed": "passed", "failed": "failed", "not_assessable": "uncertain"}
+RUBRIC_ROUTES = {"skip_and_approve": "skip_review", "suggest_changes": "review"}
+
+
+def rubric_case(rubric: AssessmentRubric, annotation: dict) -> dict:
+    """Derive router evaluation labels by applying the rubric's policy to oracle statuses.
+
+    :param rubric: Assessment rubric whose criterion IDs are mirrored in the oracle.
+    :param annotation: Oracle annotation for one case.
+    :returns: Router evaluation case referencing the case's evidence.
+    :raises KeyError: If an oracle status has no rubric equivalent.
+    """
+    oracle = annotation["criteria"]
+    statuses = {}
+    labels = {}
+    for criterion in rubric.criteria:
+        label = oracle[criterion.criterion_id]
+        if label.get("type") == "ordinal":
+            native = label["level"]
+            statuses[criterion.criterion_id] = criterion.choice_statuses[native] or "uncertain"
+        else:
+            native = statuses[criterion.criterion_id] = ORACLE_STATUSES[label["status"]]
+        if criterion.check == "semantic" and criterion.question_type == "choice":
+            labels[criterion.criterion_id] = native
+    advice = combine_assessments(
+        rubric,
+        [
+            CriterionAssessment(
+                criterion_id=criterion.criterion_id,
+                status=statuses[criterion.criterion_id],
+                source="deterministic",
+                explanation="Oracle label.",
+            )
+            for criterion in rubric.criteria
+        ],
+        labels,
+    )
+    case_id = annotation["case_id"]
+    return {
+        "case_id": case_id,
+        "category": "rubric",
+        "evidence": f"prs/{case_id}/evidence.json",
+        "expectations": {
+            "decision_routes": [RUBRIC_ROUTES.get(advice.recommendation, "needs_human_review")],
+            "concerns": [],
+            "rubric": {"recommendation": advice.recommendation, "criteria": statuses},
+        },
+    }
+
+
 def write_json(path: Path, value: dict) -> None:
     """Write a stable, readable UTF-8 fixture.
 
@@ -1233,6 +1289,8 @@ def main(output_root: Path = ROOT) -> None:
     :param output_root: Directory in which to write the generated artifacts.
     """
     cases = []
+    rubric = load_assessment_rubric(ROOT / "rubric.toml")
+    router_cases = []
     for profile_index, profile in enumerate(PROFILES):
         for family_index, family in enumerate(FAMILIES):
             number = profile_index * len(FAMILIES) + family_index + 1
@@ -1244,6 +1302,7 @@ def main(output_root: Path = ROOT) -> None:
                 ("annotations", annotation),
             ):
                 write_json(output_root / directory / f"{name}.json", value)
+            router_cases.append(rubric_case(rubric, annotation))
             cases.append(
                 {
                     "case_id": annotation["case_id"],
@@ -1276,6 +1335,15 @@ def main(output_root: Path = ROOT) -> None:
                     "annotations": directory + "/annotations.json",
                 }
             )
+    write_json(
+        output_root / "corpus.json",
+        {
+            "corpus_version": 1,
+            "label_status": "provisional",
+            "assessment_rubric": "rubric.toml",
+            "cases": router_cases,
+        },
+    )
     write_json(
         output_root / "index.json",
         {

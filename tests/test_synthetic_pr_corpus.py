@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from pr_review_router.assessment_rubric import load_assessment_rubric
+from pr_review_router.experiments import load_corpus, load_corpus_rubric
 
 pytestmark = pytest.mark.unit
 CORPUS = Path(__file__).resolve().parents[1] / "examples" / "synthetic-prs"
@@ -43,7 +44,7 @@ def test_synthetic_pr_corpus_regenerates_deterministically(tmp_path):
     expected_paths = {path.relative_to(CORPUS) for path in CORPUS.rglob("*.json")}
     expected_paths.add(Path("INDEX.md"))
 
-    assert len(generated_files) == 302
+    assert len(generated_files) == 303
     assert set(generated_files) == expected_paths
     assert all(
         content == (CORPUS / relative_path).read_bytes()
@@ -108,6 +109,56 @@ def test_all_active_rubric_criteria_have_oracle_labels():
         review = annotation["criteria"]["review-coverage"]
         assert review["status"] == "not_assessable"
         assert review["sources"] == []
+
+
+def test_router_corpus_derives_labels_from_oracle_and_rubric_policy():
+    """Load the generated corpus through the router's own evaluation contracts."""
+    corpus, evidence, _ = load_corpus(CORPUS / "corpus.json")
+    rubric, reviews, _ = load_corpus_rubric(CORPUS / "corpus.json", corpus)
+    assert rubric is not None
+    assert len(evidence) == 100
+    # Without supplied review text, enforced review coverage stays uncertain.
+    assert reviews == [""] * 100
+    good = corpus.cases[0].expectations.rubric
+    assert good is not None
+    assert good.criteria["review-coverage"] == "uncertain"
+    assert good.recommendation == "needs_human_review"
+    assert {
+        case.expectations.rubric.recommendation for case in corpus.cases if case.expectations.rubric
+    } == {
+        "block",
+        "needs_human_review",
+    }
+
+
+def test_benchmark_scores_oracle_identical_answers_as_full_agreement():
+    """Score a summary whose router outputs equal the oracle-derived labels."""
+    score = runpy.run_path(str(CORPUS / "benchmark.py"))["score"]
+    corpus = json.loads((CORPUS / "corpus.json").read_text())
+    index = {
+        case["case_id"]: case for case in json.loads((CORPUS / "index.json").read_text())["cases"]
+    }
+    summary = {
+        "reference_labels": corpus,
+        "totals": {"unsafe_rubric_approvals": 0},
+        "cases": [
+            {
+                "case_id": case["case_id"],
+                "rubric": {
+                    "recommendation": case["expectations"]["rubric"]["recommendation"],
+                    "criteria": case["expectations"]["rubric"]["criteria"],
+                    "native_answers": {
+                        "change-triviality": {"choice": index[case["case_id"]]["triviality_level"]}
+                    },
+                },
+            }
+            for case in corpus["cases"]
+        ],
+    }
+    result = score(summary)
+    assert result["recommendation"]["agreement"] == 1
+    assert all(item["agreement"] == 1 for item in result["criteria"].values())
+    assert result["triviality"]["exact_accuracy"] == result["triviality"]["binary_accuracy"] == 1
 
 
 def test_triviality_scorer_does_not_use_diagnostic_text_scores(tmp_path, triviality_predictions):

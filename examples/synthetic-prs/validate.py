@@ -65,8 +65,7 @@ def validate(root: Path) -> dict:
     )
     require(
         len(index["criteria"]) == 20
-        and {"change_triviality", "summary-section", "review-coverage"}
-        <= set(index["criteria"])
+        and {"change_triviality", "summary-section", "review-coverage"} <= set(index["criteria"])
         and set(index["rubric_label_mirrors"]) <= set(index["criteria"])
         and set(index["rubric_label_mirrors"].values()) <= set(index["criteria"]),
         "Expected fourteen status-based criteria and an ordinal change-triviality criterion",
@@ -321,8 +320,7 @@ def validate(root: Path) -> dict:
         failed = sorted(
             key
             for key, criterion in labels["criteria"].items()
-            if criterion.get("status") == "failed"
-            and key not in index["rubric_label_mirrors"]
+            if criterion.get("status") == "failed" and key not in index["rubric_label_mirrors"]
         )
         require(failed == case["failed_criteria"], f"{case_id}: stale failure index")
         require(

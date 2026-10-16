@@ -292,6 +292,56 @@ matches no rule, so enforcement fails closed and cannot recommend approval.
 Because the scale has six choices, the configured decision provider must support
 at least six `max_choice_options`. Enforcement rules replace per-criterion
 `action` fields; the legacy rubric retains those fields for comparison.
+Classified scale labels map to `passed` and `uncertain` to `uncertain`; these
+statuses only report whether a classification was made, because enforcement
+rules match the native label.
+
+## Router rubric benchmark
+
+`generate.py` also writes `corpus.json`, a router `evaluate` corpus for
+`rubric.toml`. Its expected criterion statuses come from the oracle
+(`not_assessable` becomes `uncertain`), and each expected recommendation is
+computed by applying the rubric's own enforcement rules to those statuses and the
+oracle triviality level. The benchmark is pinned by an explicit
+[`policy.toml`](policy.toml) and [`providers.toml`](providers.toml): the local
+`winnow:e4b` Ollaya decision model with six choice options, and the deterministic
+mock reviewer, since the benchmark measures the rubric decision rather than code
+review.
+
+```sh
+# Live local inference, recording exact HTTP exchanges for replay.
+uv run python examples/synthetic-prs/benchmark.py --record \
+  --output-dir reports/synthetic-prs-benchmark
+
+# Offline replay of that recording; no inference.
+uv run python examples/synthetic-prs/benchmark.py \
+  --replay-dir reports/synthetic-prs-benchmark \
+  --output-dir reports/synthetic-prs-benchmark-replay
+```
+
+The runner removes `PR_REVIEW_ROUTER_*` environment overrides so the pinned
+policy alone applies, then runs `pr-review-router evaluate` and writes
+`benchmark.json` beside the router's per-case outputs. It records SHA-256
+hashes of the corpus, rubric, index, policy, and provider files; per-criterion
+expected-to-actual counts; recommendation agreement and unsafe approvals; and
+triviality accuracy from the native scale answers. Outputs stay under ignored
+`reports/`.
+
+On 2026-10-15, a live run had no schema or transport failures and no unsafe
+approvals. Recommendation agreement was 0.86, with 13 oracle `block` cases
+returned as `needs_human_review`. The deterministic title and Summary checks
+agreed fully. `change-rationale` passed 18 oracle failures; `description-coverage`
+passed 14 oracle `not_assessable` cases. Triviality was exact for 73 cases,
+classified in 99, and binary trivial/non-trivial agreement was 0.95; errors were
+mostly adjacent (editorial as mechanical, bounded as substantive), plus four
+incompatible changes classified as mechanical. A second live run and a replay
+both reproduced the benchmark exactly.
+
+Because the corpus supplies no review text, `review-coverage` is always
+unassessable. Every enforcement rule enforces it, so the oracle-derived
+recommendation is only ever `block` or `needs_human_review`; the benchmark
+cannot exercise `skip_and_approve` or `suggest_changes`. These labels remain
+provisional and are not human-reviewed.
 
 ## Run and maintain
 
