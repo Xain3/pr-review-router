@@ -1,8 +1,9 @@
 # Synthetic PR quality corpus
 
-100 fictional, sanitized pull requests for benchmarking PR title and description
-quality and actual change triviality. Each has metadata, a one- or two-commit
-list, complete unified file patches, and independent criterion annotations.
+125 fictional, sanitized pull requests for benchmarking PR title and description
+quality, supplied-review coverage, and actual change triviality. Each has metadata, a one- or two-commit
+list, complete unified file patches, independent criterion annotations, and (for
+most) a supplied review.
 Everything is checked in; loading, regeneration, and validation need no network
 or credentials.
 
@@ -16,11 +17,11 @@ Each `prs/pr-NNN/` directory contains:
 | --- | --- |
 | `evidence.json` | Repository, PR number, title, Markdown body, base/head identifiers, and changed files with status, line counts, and unified patches. Accepted directly by `PullRequestEvidence` and the `review` CLI. |
 | `metadata.json` | Fictional author, reserved-domain URL, timestamps, branch names, aggregate diff statistics, and ordered `commits`. Each commit has a SHA-shaped identifier, parent, message, author, timestamp, changed paths, and line counts. |
-| `annotations.json` | Family, scenario, tags, expected quality, fourteen canonical status-based labels, rubric-ID mirror labels, a graded change-triviality criterion, separate text/diff framing diagnostics, explanations and evidence references, and a truthful reference summary. Review coverage is `not_assessable` because no review text is supplied. |
+| `annotations.json` | Family, scenario, tags, expected quality, review variant, fourteen canonical status-based labels, rubric-ID mirror labels, a graded change-triviality criterion, separate text/diff framing diagnostics, explanations and evidence references, and a truthful reference summary. |
+| `review.md` | Optional supplied review text, passed to the router as separate review input and never part of `evidence.json`. Absent for the `none` review variant. |
 
 The manifest and annotations use `schema_version: 3`, adding the rubric's
-Summary-section check and an explicitly unassessable review-coverage label to
-the existing oracle criteria. `index.json` identifies rubric-ID mirrors of
+Summary-section check and a review-coverage label to the existing oracle criteria. `index.json` identifies rubric-ID mirrors of
 existing oracle criteria, and case failure summaries count each canonical
 criterion once. Metadata retains schema version 1, and CLI evidence is
 unchanged. Consumers of version 2 should handle these additional criteria
@@ -60,7 +61,8 @@ not the routing CLI's separate `evaluate --corpus` schema.
 
 ## Coverage
 
-Ten factual change families appear in each of ten primary scenario groups:
+Ten factual change families appear in each of ten primary scenario groups
+(PRs 001–100), followed by matched extensions (PRs 101–125):
 
 | PRs | Primary scenario | Count |
 | --- | --- | ---: |
@@ -74,8 +76,14 @@ Ten factual change families appear in each of ten primary scenario groups:
 | 071–080 | Title and commit messages align with a false description that contradicts the diff | 10 |
 | 081–090 | Empty, whitespace-only, placeholder, and heading-only bodies; vague rationale; omitted limits/testing; partial coverage; undocumented breaking changes | 10 |
 | 091–100 | Combinations of title, rationale, summary, commit, diff, and compatibility failures | 10 |
+| 101–110 | Rationale present but only restating the edits (what, not why) | 10 |
+| 111–117 | Summary concretely describes only the first of two changed files | 7 |
+| 118–125 | Neutral `chore` text around adjacent triviality boundaries (four matched pairs) | 8 |
 
-There are 10 good cases and 90 cases needing revision, with 170 commits total.
+There are 17 good cases and 108 cases needing revision, with 215 commits total.
+The invariants for the first 100 cases (ten good, ninety needing revision, and the
+20/10/30/20/20 triviality distribution) are unchanged; the extension adds eight
+new families and reuses ten existing ones.
 Scenario groups identify the primary defect; individual criteria record all
 known failures, including secondary omissions in a deliberately false body.
 Families cover guide/help/link corrections, empty averages, cache normalization,
@@ -91,6 +99,70 @@ good description or a specific documentation defect. Split train/test data by
 `family_id` to avoid putting the same diff in both partitions. The set is a small
 controlled benchmark, with repeated language and an artificial class balance;
 it can later be supplemented with sanitized real PRs using the same layout.
+
+### Supplied reviews
+
+Every case after the `none` variant has a `review.md` describing its **actual**
+patches, whatever the PR text claims. The variant rotates by family and scenario
+so each family sees every variant. `review-coverage` labels the review, not the
+PR text, so it never changes `expected_quality` or `failed_criteria`.
+
+| Variant | Review content | `review-coverage` | Cases |
+| --- | --- | --- | ---: |
+| `none` | No review supplied | `not_assessable` | 22 |
+| `complete` | Addresses every changed file and its implications | `passed` | 22 |
+| `open_concern` | Complete, plus an open question that must be answered before merging | `passed` | 21 |
+| `partial` | Addresses only the first of two changed files | `failed` | 15 |
+| `off_target` | Single-file families only: the review is of a different change | `failed` | 5 |
+| `generic` | Repeats the title and approves without a specific comment | `failed` | 20 |
+| `ambiguous` | Refers only to unseen discussion and unspecified items ("the second change", "as discussed") | `not_assessable` | 20 |
+
+An unresolved concern does not reduce coverage; coverage asks whether each
+change was addressed, not whether the review is satisfied. The `ambiguous` and
+`none` variants both map to `uncertain` for the router, since there is nothing to
+tie to the patches. Because every enforcement rule enforces or soft-enforces
+`review-coverage`, the oracle-derived recommendations now include
+`skip_and_approve` (15 cases) and `suggest_changes` (17) as well as `block` and
+`needs_human_review`.
+
+### Contrastive PR-text cases
+
+Two groups give the same patches as an existing good case a different, specific text defect:
+
+- `what_not_why` (PRs 101–110): the Rationale section is present and concrete but
+  only repeats the Summary. Compare with `missing_rationale` (no section) and
+  the vague `additional_cases` variant ("makes things better"). A rationale says
+  why; a paraphrase of the edits does not.
+- `omitted_change` (PRs 111–117): the Summary concretely describes only the first
+  of two files and never mentions the second. Compare with
+  `missing_change_description`, where nothing concrete is claimed. A description
+  that makes concrete claims but omits a change **fails** `description-coverage`;
+  one that makes no claim about the edits is `uncertain`.
+
+`rubric.toml` now states these rules in the criterion instructions: restating
+edits fails `change-rationale`, an empty or non-specific description is
+`uncertain` (not `passed`) for `description-coverage`, and a generic, partial,
+or off-target review fails `review-coverage` while a missing or unresolvable one
+is `uncertain`.
+
+### Triviality boundary pairs
+
+PRs 118–125 use eight new families, each with a neutral `chore(...)` title and
+text that states facts without calling the change safe, breaking, mechanical, or
+public. Adjacent levels share a file shape, so the diff alone decides:
+
+| Pair | Lower level | Higher level | Distinguishing evidence in the patch |
+| --- | --- | --- | --- |
+| 0 / 1 | `comment-typo` (0): a comment word removed | `rename-local` (1): a local variable renamed everywhere in `total()` | Only the comment changes vs. executable lines change with the same behavior |
+| 1 / 2 | `extract-constant` (1): literal `100` becomes `_PAGE_SIZE = 100` | `change-default` (2): `_PAGE_SIZE` goes from 100 to 50 | Added test expects 100 rows vs. 50 rows |
+| 2 / 3 | `strip-input` (2): `clean()` strips whitespace | `escape-output` (3): `cell()` applies `html.escape` | Local normalization vs. a security-sensitive output boundary |
+| 3 / 4 | `optional-param` (3): `timeout=30` added to `fetch` | `required-param` (4): `timeout` added with no default | Tests show `fetch('u')` still works vs. a call site must be updated to pass `30` |
+
+`required-param` deliberately does not disclose the incompatibility, so
+`breaking_changes` fails and its title and body understate level 4 (`text_understates`);
+only the diff supports the reference level. `rubric.toml` also adds boundary rules
+to the `change-triviality` instructions, and the `incompatible` level now covers an incompatible change
+to a supported interface (such as a new required parameter), not only removal.
 
 ## Annotation rubric
 
@@ -121,6 +193,7 @@ JSON Pointers.
 | `limitations` | Relevant scope boundaries, risks, or unsupported cases are explained. |
 | `breaking_changes` | An incompatible public-interface removal is disclosed with migration guidance. |
 | `testing` | Relevant validation is described, or a specific reason it does not apply is given. |
+| `review-coverage` | The supplied `review.md` addresses every substantive change. `not_assessable` when no review is supplied or its references cannot be tied to the patches. Not part of `expected_quality`. |
 
 ### Regex-checkable vs semantic criteria
 
@@ -164,21 +237,21 @@ of review scope and impact, not a calibrated safety or defect probability.
 
 | Score | Level | Definition | Corpus examples | Cases |
 | ---: | --- | --- | --- | ---: |
-| 0 | `editorial` | Prose or link correction; no runtime/interface change | Guide typo, README link | 20 |
-| 1 | `mechanical` | Local mechanical or presentation change in code preserving functional behavior and public interfaces | CLI help string correction | 10 |
-| 2 | `bounded_behavior` | Local behavior/configuration change requiring edge-case review | Empty average, key normalization, batch boundary | 30 |
-| 3 | `substantive` | New capability or security-sensitive behavior requiring broader review | CSV helper, authentication comparison | 20 |
-| 4 | `incompatible` | Supported interface/configuration removal requiring migration | Response-field rename, deleted legacy config | 20 |
+| 0 | `editorial` | Prose or link correction; no runtime/interface change | Guide typo, README link, comment typo | 23 |
+| 1 | `mechanical` | Local mechanical or presentation change in code preserving functional behavior and public interfaces | CLI help string correction, local rename, named constant | 13 |
+| 2 | `bounded_behavior` | Local behavior/configuration change requiring edge-case review | Empty average, key normalization, batch boundary, page-size value, whitespace stripping | 38 |
+| 3 | `substantive` | New capability or security-sensitive behavior requiring broader review | CSV helper, authentication comparison, HTML escaping, optional parameter | 26 |
+| 4 | `incompatible` | Removal of, or incompatible change to, a supported interface/configuration requiring migration | Response-field rename, deleted legacy config, new required parameter | 25 |
 
 Scores 0–1 are `is_trivial: true`, retaining the existing `complexity: "trivial"`
 classification. Scores 2–4 are `is_trivial: false` and `complexity: "non_trivial"`.
-The full corpus contains 30 trivial and 70 non-trivial changes. Both indexes
+The full corpus contains 36 trivial and 89 non-trivial changes. Both indexes
 expose the score, level, and binary classification; the manifest defines the
 scale and its counts. Every annotation includes a diff-based explanation.
 
 ### Patch-based reassessment
 
-On 2026-10-15, GitHub Copilot inspected all 100 complete file/patch sets and
+On 2026-10-15, GitHub Copilot inspected the original 100 complete file/patch sets and
 found ten distinct sets, each repeated across ten PR-text variants. Assessing
 the patches against the scale above corroborated the existing numerical scores;
 they were already populated, not placeholders. The generated oracle explanations
@@ -205,7 +278,7 @@ to skip review. Compatibility judgments rely on the supplied API/setup documenta
 not verified downstream usage. Human review is still required before treating these
 references as validated benchmark ground truth or calibration data.
 
-After running your system on the inputs, write all 100 predictions in this form
+After running your system on the inputs, write all 125 predictions in this form
 (this excerpt shows only two of the required records):
 
 ```json
@@ -267,9 +340,9 @@ combined level is forced. `pr-092` has gibberish plus an empty body; its project
 levels stay null instead of being labeled trivial.
 
 The index exposes the combined text score, relationship, potential-confounder
-flag, and relationship counts. The 100 cases contain 88 aligned levels, three
+flag, and relationship counts. The 125 cases contain 112 aligned levels, four
 directional mismatches, eight conflicting text signals, and one unassessable
-case. Eleven cases have at least one text level differing from the diff.
+case. Twelve cases have at least one text level differing from the diff.
 Level agreement does not imply factual agreement: claiming a return value of
 1 instead of 0 can remain level 2. Use the existing consistency criteria for
 that distinction. Diagnostic flags identify candidate confounders without
@@ -327,7 +400,8 @@ expected-to-actual counts; recommendation agreement and unsafe approvals; and
 triviality accuracy from the native scale answers. Outputs stay under ignored
 `reports/`.
 
-On 2026-10-15, a live run had no schema or transport failures and no unsafe
+On 2026-10-15, a live run on the original 100 cases (no review text and the earlier
+criterion instructions) had no schema or transport failures and no unsafe
 approvals. Recommendation agreement was 0.86, with 13 oracle `block` cases
 returned as `needs_human_review`. The deterministic title and Summary checks
 agreed fully. `change-rationale` passed 18 oracle failures; `description-coverage`
@@ -335,12 +409,14 @@ passed 14 oracle `not_assessable` cases. Triviality was exact for 73 cases,
 classified in 99, and binary trivial/non-trivial agreement was 0.95; errors were
 mostly adjacent (editorial as mechanical, bounded as substantive), plus four
 incompatible changes classified as mechanical. A second live run and a replay
-both reproduced the benchmark exactly.
+both reproduced the benchmark exactly. That recording does not apply to the current
+corpus or rubric instructions; rerun with `--record` before comparing results.
 
-Because the corpus supplies no review text, `review-coverage` is always
-unassessable. Every enforcement rule enforces it, so the oracle-derived
-recommendation is only ever `block` or `needs_human_review`; the benchmark
-cannot exercise `skip_and_approve` or `suggest_changes`. These labels remain
+Review text is supplied for most cases, so the benchmark now exercises
+`skip_and_approve` and `suggest_changes`. About a third of cases still carry no
+review or an unresolvable one, which keeps `review-coverage` uncertain and the
+recommendation at `needs_human_review` unless another criterion blocks. The
+benchmark hash record includes a digest of all review texts. These labels remain
 provisional and are not human-reviewed.
 
 ## Run and maintain
