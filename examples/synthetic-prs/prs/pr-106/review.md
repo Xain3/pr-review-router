@@ -1,0 +1,2 @@
+- src/batch.py: MAX_BATCH_SIZE rises from 50 to 100 and the <= comparison is unchanged, so lengths 51 to 100 that were rejected are now accepted. Peak memory per batch can grow accordingly.
+- tests/test_batch.py: the boundary tests accept 100 items and reject 101, exercising the new limit exactly at its edge.

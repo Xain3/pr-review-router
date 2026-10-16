@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "synthetic": true,
+  "case_id": "pr-121",
+  "url": "https://example.invalid/synthetic/pr-quality-demo/pull/121",
+  "state": "open",
+  "draft": false,
+  "author": {
+    "login": "synthetic-author-04",
+    "name": "Synthetic Author 04",
+    "email": "author-04@example.invalid"
+  },
+  "created_at": "2026-05-01T12:00:00+00:00",
+  "updated_at": "2026-05-01T13:00:00+00:00",
+  "base_ref": "main",
+  "head_ref": "synthetic/pr-121",
+  "base_sha": "1b1b4e5aef70fea4c5833c3838d0c5e7db1284a7",
+  "head_sha": "2966296cffb43c302ebfc4ba2cc3f2d7acdee366",
+  "changed_files": 2,
+  "additions": 6,
+  "deletions": 1,
+  "commits": [
+    {
+      "sha": "c8d64a7109b33f5956fcb1d03b363e31fca37e8a",
+      "parents": [
+        "1b1b4e5aef70fea4c5833c3838d0c5e7db1284a7"
+      ],
+      "message": "chore(pager): set the page size to 50",
+      "author": {
+        "login": "synthetic-author-04",
+        "name": "Synthetic Author 04",
+        "email": "author-04@example.invalid"
+      },
+      "authored_at": "2026-05-01T11:50:00+00:00",
+      "files": [
+        "src/pager.py"
+      ],
+      "additions": 1,
+      "deletions": 1
+    },
+    {
+      "sha": "2966296cffb43c302ebfc4ba2cc3f2d7acdee366",
+      "parents": [
+        "c8d64a7109b33f5956fcb1d03b363e31fca37e8a"
+      ],
+      "message": "test(pager): assert the page length",
+      "author": {
+        "login": "synthetic-author-04",
+        "name": "Synthetic Author 04",
+        "email": "author-04@example.invalid"
+      },
+      "authored_at": "2026-05-01T11:51:00+00:00",
+      "files": [
+        "tests/test_pager.py"
+      ],
+      "additions": 5,
+      "deletions": 0
+    }
+  ]
+}

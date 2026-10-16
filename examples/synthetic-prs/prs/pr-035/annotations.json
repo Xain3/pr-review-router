@@ -6,6 +6,7 @@
   "family_id": "cache-key",
   "scenario": "missing_rationale",
   "variant": "missing_rationale",
+  "review_variant": "complete",
   "complexity": "non_trivial",
   "has_breaking_change": false,
   "expected_quality": "needs_revision",
@@ -29,9 +30,12 @@
       ]
     },
     "review-coverage": {
-      "status": "not_assessable",
-      "explanation": "The corpus contains no supplied review text to compare with the patches.",
-      "sources": []
+      "status": "passed",
+      "explanation": "The review individually addresses every changed file and its implications.",
+      "sources": [
+        "review.md",
+        "evidence.json#/files"
+      ]
     },
     "title_meaningful": {
       "status": "passed",

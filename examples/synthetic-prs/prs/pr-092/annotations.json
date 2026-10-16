@@ -6,6 +6,7 @@
   "family_id": "cli-help",
   "scenario": "combined_failures",
   "variant": "combined_failures",
+  "review_variant": "ambiguous",
   "complexity": "trivial",
   "has_breaking_change": false,
   "expected_quality": "needs_revision",
@@ -33,8 +34,11 @@
     },
     "review-coverage": {
       "status": "not_assessable",
-      "explanation": "The corpus contains no supplied review text to compare with the patches.",
-      "sources": []
+      "explanation": "The review refers only to unseen discussion and unspecified items, so it cannot be tied to specific changes in the patches.",
+      "sources": [
+        "review.md",
+        "evidence.json#/files"
+      ]
     },
     "title_meaningful": {
       "status": "failed",

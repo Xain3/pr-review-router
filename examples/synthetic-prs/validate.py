@@ -10,6 +10,36 @@ from pr_review_router.config import Policy
 from pr_review_router.contracts import PullRequestEvidence
 from pr_review_router.engine import assess_coverage, assess_pr_text
 
+BASE_CASES = 100
+CASE_COUNT = 125
+REVIEW_STATUSES = {
+    "none": "not_assessable",
+    "ambiguous": "not_assessable",
+    "complete": "passed",
+    "open_concern": "passed",
+    "partial": "failed",
+    "off_target": "failed",
+    "generic": "failed",
+}
+EXTENSION_SCENARIOS = {"what_not_why": 10, "omitted_change": 7, "boundary": 8}
+# Reference levels of the matched boundary pairs, adjacent levels differing by one.
+BOUNDARY_SCORES = {
+    "comment-typo": 0,
+    "rename-local": 1,
+    "extract-constant": 1,
+    "change-default": 2,
+    "strip-input": 2,
+    "escape-output": 3,
+    "optional-param": 3,
+    "required-param": 4,
+}
+# Boundary text must state facts without characterizing impact or naming a level.
+BOUNDARY_LEAKS = re.compile(
+    r"break|compatib|no behavio|trivial|refactor|mechanical|substantive|editorial|"
+    r"security|migrat|public",
+    re.IGNORECASE,
+)
+
 
 def require(condition: bool, message: str) -> None:
     """Reject an invalid fixture without depending on Python assertion settings.
@@ -41,24 +71,29 @@ def read_json(root: Path, relative: str) -> dict:
 
 
 def validate(root: Path) -> dict:
-    """Check all 100 fixtures using router contracts and independent cross-file invariants.
+    """Check all fixtures using router contracts and independent cross-file invariants.
 
     :param root: Directory containing index.json and prs/.
     :returns: Coverage counts suitable for a developer check or regression test.
-    :raises ValueError: If metadata, patches, annotations, or indexes disagree.
+    :raises ValueError: If metadata, patches, annotations, reviews, or indexes disagree.
     """
     root = root.resolve()
     index = read_json(root, "index.json")
+    router_corpus = {case["case_id"]: case for case in read_json(root, "corpus.json")["cases"]}
     require(
         index["schema_version"] == 3 and index["synthetic"] is True,
         "Unsupported or non-synthetic corpus",
     )
     require(index["label_status"] == "provisional", "Labels must retain synthetic provenance")
-    require(index["case_count"] == len(index["cases"]) == 100, "Expected exactly 100 PRs")
+    require(
+        index["case_count"] == len(index["cases"]) == CASE_COUNT,
+        f"Expected exactly {CASE_COUNT} PRs",
+    )
     ids = [case["case_id"] for case in index["cases"]]
-    require(len(set(ids)) == 100, "Duplicate case IDs")
-    expected_ids = {f"pr-{number:03d}" for number in range(1, 101)}
+    require(len(set(ids)) == CASE_COUNT, "Duplicate case IDs")
+    expected_ids = {f"pr-{number:03d}" for number in range(1, CASE_COUNT + 1)}
     require(set(ids) == expected_ids, "Missing or unexpected PR IDs")
+    require(set(router_corpus) == expected_ids, "Router corpus and index list different PRs")
     require(
         {path.name for path in (root / "prs").iterdir()} == expected_ids,
         "Unindexed or missing PR directories",
@@ -86,6 +121,12 @@ def validate(root: Path) -> dict:
     )
     scenarios = Counter()
     qualities = Counter()
+    base_scenarios = Counter()
+    base_qualities = Counter()
+    base_triviality = Counter()
+    base_complexity = Counter()
+    review_variants = Counter()
+    review_coverages = Counter()
     families = Counter()
     family_scenarios = set()
     tags = Counter()
@@ -102,6 +143,7 @@ def validate(root: Path) -> dict:
     table = (root / "INDEX.md").read_text(encoding="utf-8")
     for case in index["cases"]:
         case_id = case["case_id"]
+        base = int(case_id.removeprefix("pr-")) <= BASE_CASES
         data = {
             kind: read_json(root, case[kind]) for kind in ("evidence", "metadata", "annotations")
         }
@@ -150,10 +192,46 @@ def validate(root: Path) -> dict:
             f"{case_id}: summary-section oracle disagrees with router",
         )
         review_coverage = labels["criteria"]["review-coverage"]
+        review_variant = labels["review_variant"]
+        review_file = root / case["annotations"]
+        review_file = review_file.with_name("review.md")
+        has_review = review_variant != "none"
         require(
-            review_coverage["status"] == "not_assessable" and not review_coverage["sources"],
-            f"{case_id}: review coverage must remain unassessed without supplied review text",
+            review_variant in REVIEW_STATUSES
+            and case["review_variant"] == review_variant
+            and review_coverage["status"] == REVIEW_STATUSES[review_variant]
+            and case["review_coverage"] == review_coverage["status"],
+            f"{case_id}: review variant, label, and index disagree",
         )
+        require(
+            review_file.is_file() == has_review
+            and case["review"] == (f"prs/{case_id}/review.md" if has_review else None),
+            f"{case_id}: review file does not match its variant",
+        )
+        require(
+            review_coverage["sources"]
+            == (["review.md", "evidence.json#/files"] if has_review else []),
+            f"{case_id}: review coverage sources disagree with the supplied review",
+        )
+        router_case = router_corpus[case_id]
+        require(
+            router_case.get("review") == case["review"]
+            or (not has_review and "review" not in router_case),
+            f"{case_id}: router corpus review path disagrees",
+        )
+        require(
+            router_case["expectations"]["rubric"]["criteria"]["review-coverage"]
+            == {"passed": "passed", "failed": "failed", "not_assessable": "uncertain"}[
+                review_coverage["status"]
+            ],
+            f"{case_id}: router review-coverage label disagrees",
+        )
+        if has_review:
+            require(
+                bool(review_file.read_text(encoding="utf-8").strip()), f"{case_id}: empty review"
+            )
+        review_variants[review_variant] += 1
+        review_coverages[review_coverage["status"]] += 1
         triviality = labels["criteria"]["change_triviality"]
         require(
             set(triviality) == {"type", "score", "level", "is_trivial", "explanation", "sources"}
@@ -308,6 +386,9 @@ def validate(root: Path) -> dict:
                 f"{case_id}: missing explanation or required evidence references for {key}",
             )
             for reference in criterion["sources"]:
+                if reference == "review.md":
+                    require(has_review, f"{case_id}: review source without a review")
+                    continue
                 filename, pointer = reference.split("#", 1)
                 require(
                     filename in {"evidence.json", "metadata.json"} and pointer.startswith("/"),
@@ -317,10 +398,12 @@ def validate(root: Path) -> dict:
                 for token in pointer[1:].split("/"):
                     token = token.replace("~1", "/").replace("~0", "~")
                     value = value[int(token)] if isinstance(value, list) else value[token]
+        # Review coverage describes the supplied review, not the PR text.
+        non_text = set(index["rubric_label_mirrors"]) | {"review-coverage"}
         failed = sorted(
             key
             for key, criterion in labels["criteria"].items()
-            if criterion.get("status") == "failed" and key not in index["rubric_label_mirrors"]
+            if criterion.get("status") == "failed" and key not in non_text
         )
         require(failed == case["failed_criteria"], f"{case_id}: stale failure index")
         require(
@@ -331,9 +414,8 @@ def validate(root: Path) -> dict:
             require(
                 all(
                     item["status"] in {"passed", "not_applicable"}
-                    or (key == "review-coverage" and item["status"] == "not_assessable")
                     for key, item in labels["criteria"].items()
-                    if item.get("type") != "ordinal"
+                    if item.get("type") != "ordinal" and key != "review-coverage"
                 ),
                 f"{case_id}: good case contains unassessed criteria",
             )
@@ -402,12 +484,32 @@ def validate(root: Path) -> dict:
             <= datetime.fromisoformat(metadata["updated_at"]),
             f"{case_id}: invalid PR timestamps",
         )
+        if labels["scenario"] == "boundary":
+            require(
+                BOUNDARY_SCORES.get(labels["family_id"]) == score,
+                f"{case_id}: boundary case is not at its matched reference level",
+            )
+            require(
+                evidence.title.startswith("chore(")
+                and not BOUNDARY_LEAKS.search(evidence.title + "\n" + evidence.body),
+                f"{case_id}: boundary text characterizes impact or names a level",
+            )
+        if labels["scenario"] == "omitted_change":
+            require(
+                len(evidence.files) == 2 and evidence.files[1].path not in evidence.body,
+                f"{case_id}: omitted change is still mentioned in the description",
+            )
         scenarios[labels["scenario"]] += 1
         qualities[labels["expected_quality"]] += 1
-        families[labels["family_id"]] += 1
         triviality_counts[str(score)] += 1
         complexity_counts[labels["complexity"]] += 1
-        family_scenarios.add((labels["family_id"], labels["scenario"]))
+        if base:
+            base_scenarios[labels["scenario"]] += 1
+            base_qualities[labels["expected_quality"]] += 1
+            base_triviality[str(score)] += 1
+            base_complexity[labels["complexity"]] += 1
+            families[labels["family_id"]] += 1
+            family_scenarios.add((labels["family_id"], labels["scenario"]))
         tags.update(labels["tags"])
         failures.update(failed)
         commit_count += len(metadata["commits"])
@@ -416,24 +518,36 @@ def validate(root: Path) -> dict:
         if "gibberish_title" in labels["tags"] and title_valid:
             valid_syntax_gibberish += 1
     require(
-        dict(scenarios) == index["scenario_counts"] and set(scenarios.values()) == {10},
-        "Expected ten cases in each of ten scenarios",
+        dict(scenarios) == index["scenario_counts"]
+        and set(base_scenarios.values()) == {10}
+        and len(base_scenarios) == 10
+        and {key: value for key, value in scenarios.items() if key not in base_scenarios}
+        == EXTENSION_SCENARIOS,
+        "Expected ten cases in each of ten base scenarios plus the extension scenarios",
     )
     require(
-        dict(qualities) == index["quality_counts"] == {"good": 10, "needs_revision": 90},
-        "Expected ten good PRs and ninety PRs needing revision",
+        dict(qualities) == index["quality_counts"]
+        and dict(base_qualities) == {"good": 10, "needs_revision": 90},
+        "Expected ten good PRs and ninety PRs needing revision among the base cases",
     )
     require(len(families) == 10 and set(families.values()) == {10}, "Unbalanced change families")
-    require(len(family_scenarios) == 100, "Duplicate family/scenario pairs")
+    require(len(family_scenarios) == BASE_CASES, "Duplicate family/scenario pairs")
     require(
-        dict(triviality_counts)
-        == index["triviality_counts"]
-        == {"0": 20, "1": 10, "2": 30, "3": 20, "4": 20},
+        dict(triviality_counts) == index["triviality_counts"]
+        and dict(base_triviality) == {"0": 20, "1": 10, "2": 30, "3": 20, "4": 20},
         "Incomplete triviality coverage or stale score counts",
     )
     require(
-        dict(complexity_counts) == index["complexity_counts"] == {"trivial": 30, "non_trivial": 70},
+        dict(complexity_counts) == index["complexity_counts"]
+        and dict(base_complexity) == {"trivial": 30, "non_trivial": 70},
         "Stale complexity counts",
+    )
+    require(
+        dict(review_variants) == index["review_variant_counts"]
+        and dict(review_coverages) == index["review_coverage_counts"]
+        and set(review_variants) == set(REVIEW_STATUSES)
+        and set(review_coverages) == {"passed", "failed", "not_assessable"},
+        "Stale or incomplete review counts",
     )
     require(
         dict(text_relationship_counts) == index["text_diff_triviality_counts"],
@@ -454,6 +568,8 @@ def validate(root: Path) -> dict:
         "quality_counts": dict(qualities),
         "triviality_counts": dict(triviality_counts),
         "complexity_counts": dict(complexity_counts),
+        "review_variant_counts": dict(review_variants),
+        "review_coverage_counts": dict(review_coverages),
         "text_diff_triviality_counts": dict(text_relationship_counts),
         "potential_triviality_confounders": text_confounder_count,
         "failed_criterion_counts": dict(failures),

@@ -6,6 +6,7 @@
   "family_id": "api-field",
   "scenario": "gibberish_title",
   "variant": "gibberish_title",
+  "review_variant": "none",
   "complexity": "non_trivial",
   "has_breaking_change": true,
   "expected_quality": "needs_revision",
@@ -32,7 +33,7 @@
     },
     "review-coverage": {
       "status": "not_assessable",
-      "explanation": "The corpus contains no supplied review text to compare with the patches.",
+      "explanation": "No review text is supplied for this case.",
       "sources": []
     },
     "title_meaningful": {

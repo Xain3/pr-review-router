@@ -1,4 +1,4 @@
-"""Score offline change-triviality predictions against all 100 provisional reference labels."""
+"""Score offline change-triviality predictions against all provisional reference labels."""
 
 import argparse
 import json
@@ -77,7 +77,7 @@ def main() -> None:
     :raises SystemExit: If the file or prediction schema is invalid.
     """
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("predictions", type=Path, help="JSON predictions covering all 100 PRs.")
+    parser.add_argument("predictions", type=Path, help="JSON predictions covering every PR.")
     args = parser.parse_args()
     try:
         predictions = json.loads(args.predictions.read_text(encoding="utf-8"))

@@ -6,6 +6,7 @@
   "family_id": "readme-link",
   "scenario": "good",
   "variant": "good",
+  "review_variant": "off_target",
   "complexity": "trivial",
   "has_breaking_change": false,
   "expected_quality": "good",
@@ -29,9 +30,12 @@
       ]
     },
     "review-coverage": {
-      "status": "not_assessable",
-      "explanation": "The corpus contains no supplied review text to compare with the patches.",
-      "sources": []
+      "status": "failed",
+      "explanation": "The review discusses files and behavior that are not in this patch.",
+      "sources": [
+        "review.md",
+        "evidence.json#/files"
+      ]
     },
     "title_meaningful": {
       "status": "passed",

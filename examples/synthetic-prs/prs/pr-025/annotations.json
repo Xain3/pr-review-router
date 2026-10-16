@@ -6,6 +6,7 @@
   "family_id": "cache-key",
   "scenario": "gibberish_title",
   "variant": "gibberish_title",
+  "review_variant": "partial",
   "complexity": "non_trivial",
   "has_breaking_change": false,
   "expected_quality": "needs_revision",
@@ -30,9 +31,12 @@
       ]
     },
     "review-coverage": {
-      "status": "not_assessable",
-      "explanation": "The corpus contains no supplied review text to compare with the patches.",
-      "sources": []
+      "status": "failed",
+      "explanation": "The review addresses only the first changed file and omits the second.",
+      "sources": [
+        "review.md",
+        "evidence.json#/files"
+      ]
     },
     "title_meaningful": {
       "status": "failed",

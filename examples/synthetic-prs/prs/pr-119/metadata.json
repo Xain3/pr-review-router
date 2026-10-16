@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "synthetic": true,
+  "case_id": "pr-119",
+  "url": "https://example.invalid/synthetic/pr-quality-demo/pull/119",
+  "state": "open",
+  "draft": false,
+  "author": {
+    "login": "synthetic-author-02",
+    "name": "Synthetic Author 02",
+    "email": "author-02@example.invalid"
+  },
+  "created_at": "2026-04-29T12:00:00+00:00",
+  "updated_at": "2026-04-29T13:00:00+00:00",
+  "base_ref": "main",
+  "head_ref": "synthetic/pr-119",
+  "base_sha": "8c7e4d3c6e83161e5189d3464b239eee42b438fa",
+  "head_sha": "e54de7ecb7dcc2fa46a5dd475d71af4afe187b36",
+  "changed_files": 1,
+  "additions": 3,
+  "deletions": 3,
+  "commits": [
+    {
+      "sha": "e54de7ecb7dcc2fa46a5dd475d71af4afe187b36",
+      "parents": [
+        "8c7e4d3c6e83161e5189d3464b239eee42b438fa"
+      ],
+      "message": "chore(totals): rename a local variable in total",
+      "author": {
+        "login": "synthetic-author-02",
+        "name": "Synthetic Author 02",
+        "email": "author-02@example.invalid"
+      },
+      "authored_at": "2026-04-29T11:50:00+00:00",
+      "files": [
+        "src/totals.py"
+      ],
+      "additions": 3,
+      "deletions": 3
+    }
+  ]
+}

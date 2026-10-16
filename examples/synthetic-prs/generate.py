@@ -382,6 +382,255 @@ FAMILIES = (
     ),
 )
 
+# Neutral `chore` titles and facts-only text avoid revealing the reference level. Adjacent
+# pairs share a file shape: comment-typo/rename-local (0/1), extract-constant/change-default
+# (1/2), strip-input/escape-output (2/3), optional-param/required-param (3/4).
+BOUNDARY_FAMILIES = (
+    Family(
+        "comment-typo",
+        "trivial",
+        "chore(totals): fix a repeated word in a comment",
+        "Remove the repeated word 'the' from the comment in total() in src/totals.py.",
+        "The duplicated word is a typo that makes the comment read incorrectly.",
+        "Validation plan: inspect the edited comment in src/totals.py; no test is added "
+        "for a comment.",
+        "Only this comment is edited; other comments in src/totals.py have not been reviewed.",
+        "",
+        False,
+        "",
+        "",
+        "",
+        (
+            Edit(
+                "src/totals.py",
+                "def total(prices):\n    # Add up the the prices.\n    t = 0\n"
+                "    for price in prices:\n        t += price\n    return t\n",
+                "def total(prices):\n    # Add up the prices.\n    t = 0\n"
+                "    for price in prices:\n        t += price\n    return t\n",
+                "chore(totals): fix a repeated word in a comment",
+            ),
+        ),
+    ),
+    Family(
+        "rename-local",
+        "trivial",
+        "chore(totals): rename a local variable in total",
+        "Rename the local variable t to running_total in total() in src/totals.py.",
+        "The one-letter name is hard to read; a descriptive name makes the accumulation "
+        "easier to follow.",
+        "Validation plan: compare total() results for sample inputs before and after the "
+        "rename; no new test is added.",
+        "Only the variable in total() is renamed; other names in the module are unchanged.",
+        "",
+        False,
+        "",
+        "",
+        "",
+        (
+            Edit(
+                "src/totals.py",
+                "def total(prices):\n    # Add up the prices.\n    t = 0\n"
+                "    for price in prices:\n        t += price\n    return t\n",
+                "def total(prices):\n    # Add up the prices.\n    running_total = 0\n"
+                "    for price in prices:\n        running_total += price\n"
+                "    return running_total\n",
+                "chore(totals): rename a local variable in total",
+            ),
+        ),
+    ),
+    Family(
+        "extract-constant",
+        "trivial",
+        "chore(pager): define a page size constant",
+        "Define _PAGE_SIZE = 100 in src/pager.py, use it in page(), and add "
+        "tests/test_pager.py asserting that a 200-item input returns 100 rows.",
+        "A named constant documents what the number 100 means and gives one place to read it.",
+        "Validation plan: run tests/test_pager.py, which expects 100 rows from a 200-item input.",
+        "Only src/pager.py is edited; other uses of the page size in the repository are "
+        "not searched.",
+        "",
+        False,
+        "",
+        "",
+        "",
+        (
+            Edit(
+                "src/pager.py",
+                "def page(rows):\n    return rows[:100]\n",
+                "_PAGE_SIZE = 100\n\n\ndef page(rows):\n    return rows[:_PAGE_SIZE]\n",
+                "chore(pager): define a page size constant",
+            ),
+            Edit(
+                "tests/test_pager.py",
+                "",
+                "from src.pager import page\n\n\n"
+                "def test_page_length():\n    assert len(page(list(range(200)))) == 100\n",
+                "test(pager): assert the page length",
+            ),
+        ),
+    ),
+    Family(
+        "change-default",
+        "non_trivial",
+        "chore(pager): set the page size to 50",
+        "Change _PAGE_SIZE from 100 to 50 in src/pager.py and add tests/test_pager.py "
+        "asserting that a 200-item input returns 50 rows.",
+        "Pages of 100 rows are too large for the narrow display that renders them; "
+        "50 rows fit on one screen.",
+        "Validation plan: run tests/test_pager.py, which expects 50 rows from a 200-item input.",
+        "Only src/pager.py is edited; other uses of the page size in the repository are "
+        "not searched.",
+        "",
+        False,
+        "",
+        "",
+        "",
+        (
+            Edit(
+                "src/pager.py",
+                "_PAGE_SIZE = 100\n\n\ndef page(rows):\n    return rows[:_PAGE_SIZE]\n",
+                "_PAGE_SIZE = 50\n\n\ndef page(rows):\n    return rows[:_PAGE_SIZE]\n",
+                "chore(pager): set the page size to 50",
+            ),
+            Edit(
+                "tests/test_pager.py",
+                "",
+                "from src.pager import page\n\n\n"
+                "def test_page_length():\n    assert len(page(list(range(200)))) == 50\n",
+                "test(pager): assert the page length",
+            ),
+        ),
+    ),
+    Family(
+        "strip-input",
+        "non_trivial",
+        "chore(names): strip whitespace in clean",
+        "Return name.strip() from clean() in src/names.py and add tests/test_names.py "
+        "asserting that '  Ada ' becomes 'Ada'.",
+        "Names copied from forms often carry stray surrounding whitespace that prevents exact matches.",
+        "Validation plan: run tests/test_names.py for the padded-name case.",
+        "Only leading and trailing whitespace is handled; internal whitespace and "
+        "non-string input are not addressed.",
+        "",
+        False,
+        "",
+        "",
+        "",
+        (
+            Edit(
+                "src/names.py",
+                "def clean(name):\n    return name\n",
+                "def clean(name):\n    return name.strip()\n",
+                "chore(names): strip whitespace in clean",
+            ),
+            Edit(
+                "tests/test_names.py",
+                "",
+                "from src.names import clean\n\n\n"
+                "def test_clean():\n    assert clean('  Ada ') == 'Ada'\n",
+                "test(names): cover padded names",
+            ),
+        ),
+    ),
+    Family(
+        "escape-output",
+        "non_trivial",
+        "chore(render): escape cell text",
+        "Return html.escape(text) from cell() in src/render.py and add tests/test_render.py "
+        "asserting that '<b>' becomes '&lt;b&gt;'.",
+        "Cell text is inserted into HTML tables, where unescaped angle brackets alter the markup.",
+        "Validation plan: run tests/test_render.py for the angle-bracket case.",
+        "Only cell() is changed; other renderers and already-escaped input are not addressed.",
+        "",
+        False,
+        "",
+        "",
+        "",
+        (
+            Edit(
+                "src/render.py",
+                "def cell(text):\n    return text\n",
+                "import html\n\n\ndef cell(text):\n    return html.escape(text)\n",
+                "chore(render): escape cell text",
+            ),
+            Edit(
+                "tests/test_render.py",
+                "",
+                "from src.render import cell\n\n\n"
+                "def test_cell():\n    assert cell('<b>') == '&lt;b&gt;'\n",
+                "test(render): cover angle brackets",
+            ),
+        ),
+    ),
+    Family(
+        "optional-param",
+        "non_trivial",
+        "chore(client): add a timeout argument to fetch",
+        "Add a timeout parameter to fetch() in src/client.py, defaulting to 30, and pass it "
+        "to _get(); add tests/test_client.py covering fetch('u') and fetch('u', 5).",
+        "Callers need to choose a timeout for slow endpoints instead of always waiting 30 seconds.",
+        "Validation plan: run tests/test_client.py, which expects ('u', 30) from fetch('u') "
+        "and ('u', 5) from fetch('u', 5).",
+        "Only fetch() is changed; the timeout value is not validated.",
+        "",
+        False,
+        "",
+        "",
+        "",
+        (
+            Edit(
+                "src/client.py",
+                "def _get(url, timeout):\n    return (url, timeout)\n\n\n"
+                "def fetch(url):\n    return _get(url, 30)\n",
+                "def _get(url, timeout):\n    return (url, timeout)\n\n\n"
+                "def fetch(url, timeout=30):\n    return _get(url, timeout)\n",
+                "chore(client): add a timeout argument to fetch",
+            ),
+            Edit(
+                "tests/test_client.py",
+                "",
+                "from src.client import fetch\n\n\n"
+                "def test_fetch():\n    assert fetch('u') == ('u', 30)\n"
+                "    assert fetch('u', 5) == ('u', 5)\n",
+                "test(client): cover both fetch call forms",
+            ),
+        ),
+    ),
+    Family(
+        "required-param",
+        "non_trivial",
+        "chore(client): add a timeout argument to fetch",
+        "Add a timeout parameter to fetch() in src/client.py, pass it to _get(), and pass 30 "
+        "from the call in src/jobs.py.",
+        "Callers need to choose a timeout for slow endpoints instead of always waiting 30 seconds.",
+        "Validation plan: call run('u') in src/jobs.py and check that it returns ('u', 30).",
+        "Only fetch() and its call in src/jobs.py are changed; the timeout value is not validated.",
+        "",
+        True,
+        "",
+        "",
+        "",
+        (
+            Edit(
+                "src/client.py",
+                "def _get(url, timeout):\n    return (url, timeout)\n\n\n"
+                "def fetch(url):\n    return _get(url, 30)\n",
+                "def _get(url, timeout):\n    return (url, timeout)\n\n\n"
+                "def fetch(url, timeout):\n    return _get(url, timeout)\n",
+                "chore(client): add a timeout argument to fetch",
+            ),
+            Edit(
+                "src/jobs.py",
+                "from src.client import fetch\n\n\ndef run(url):\n    return fetch(url)\n",
+                "from src.client import fetch\n\n\ndef run(url):\n    return fetch(url, 30)\n",
+                "chore(jobs): pass an explicit timeout to fetch",
+            ),
+        ),
+    ),
+)
+
+# Matched contrasts on the existing families (what-vs-why, concrete-but-partial coverage) and
+# the boundary families are appended after the 100 base cases.
 PROFILES = (
     "good",
     "nonconventional_title",
@@ -419,7 +668,8 @@ TRIVIALITY_LEVELS = [
     {
         "score": 4,
         "label": "incompatible",
-        "description": "Supported public interface or configuration removal requiring migration.",
+        "description": "Removal of, or incompatible change to, a supported public interface or "
+        "configuration requiring migration.",
     },
 ]
 
@@ -490,6 +740,59 @@ TRIVIALITY_ASSESSMENTS = {
         "disappears, requiring migration for its users. The target configuration "
         "contents and actual deployment usage are not supplied.",
     ),
+    "comment-typo": (
+        0,
+        "src/totals.py removes the repeated word 'the' from a comment. The diff shows no "
+        "change to any executable line, so there is no runtime or interface effect.",
+    ),
+    "rename-local": (
+        1,
+        "src/totals.py renames the local variable t to running_total at its initialization, "
+        "accumulation, and return. Every use in the function is updated and the signature is "
+        "unchanged, so behavior and interfaces are preserved; this is a mechanical edit to "
+        "code rather than prose.",
+    ),
+    "extract-constant": (
+        1,
+        "src/pager.py replaces the literal 100 with _PAGE_SIZE = 100 and slices with it; the "
+        "added test asserts that a 200-item input still yields 100 rows. The value is "
+        "unchanged and the new name is module-private, so functional behavior and the public "
+        "interface are preserved.",
+    ),
+    "change-default": (
+        2,
+        "src/pager.py changes _PAGE_SIZE from 100 to 50, so page() returns at most 50 rows; "
+        "the added test pins 50 rows for a 200-item input. Returned lengths change for inputs "
+        "over 50 items, a bounded behavior change requiring edge-case review.",
+    ),
+    "strip-input": (
+        2,
+        "src/names.py changes clean from returning its input to returning name.strip(); the "
+        "added test shows padded input becoming 'Ada'. Output changes for inputs with "
+        "surrounding whitespace, and non-string inputs now raise AttributeError. This is a "
+        "bounded local behavior change, not a new capability or security boundary.",
+    ),
+    "escape-output": (
+        3,
+        "src/render.py changes cell from returning text unchanged to html.escape(text); the "
+        "added test shows '<b>' becoming '&lt;b&gt;'. HTML output encoding is "
+        "security-sensitive and changes the rendered markup for every caller, including "
+        "already-escaped input, so it needs broader review than a local normalization.",
+    ),
+    "optional-param": (
+        3,
+        "src/client.py adds a timeout parameter to fetch with default 30, and the added tests "
+        "show fetch('u') still using 30 and fetch('u', 5) using 5. This adds a new public "
+        "capability while remaining backward compatible; no existing call must change. "
+        "Callers outside the patch are not shown.",
+    ),
+    "required-param": (
+        4,
+        "src/client.py makes timeout a required fetch parameter with no default, so existing "
+        "fetch(url) calls fail with TypeError; src/jobs.py's one in-repo call is updated to "
+        "pass 30. The supported call signature is removed, so callers outside the patch "
+        "require migration even though the PR text does not say so. Other callers are not shown.",
+    ),
 }
 
 # Both sets of text projections are authored independently from the stated claims.
@@ -513,6 +816,24 @@ TRUE_TEXT_TRIVIALITY = {
     ),
     "api-field": (4, "The stated work renames a public response field."),
     "legacy-config": (4, "The stated work deletes an existing configuration entrypoint."),
+    "comment-typo": (0, "The stated work corrects a repeated word in a comment."),
+    "rename-local": (1, "The stated work renames a local variable."),
+    "extract-constant": (
+        1,
+        "The stated work names a literal with an equal constant and asserts the same page length.",
+    ),
+    "change-default": (2, "The stated work changes a page-size value and the expected length."),
+    "strip-input": (2, "The stated work adds whitespace stripping to one function."),
+    "escape-output": (3, "The stated work adds HTML escaping to rendered cell text."),
+    "optional-param": (
+        3,
+        "The stated work adds a timeout parameter with a default that preserves current calls.",
+    ),
+    "required-param": (
+        3,
+        "The stated work adds a parameter and one call-site value without stating that the "
+        "parameter is required or that existing callers must change.",
+    ),
 }
 
 FALSE_TEXT_TRIVIALITY = {
@@ -541,11 +862,226 @@ FALSE_TEXT_TRIVIALITY = {
     ),
 }
 
+# (summary, testing) that concretely describe only the first edit of a multi-file family.
+PARTIAL_COVERAGE = {
+    "empty-average": (
+        "Return 0 for an empty values list before division in src/stats.py.",
+        "Validation plan: manually call average([]) and check that it returns 0.",
+    ),
+    "cache-key": (
+        "Lowercase keys before cache lookup in src/cache.py.",
+        "Validation plan: manually look up 'USER' in a lowercase-key store and confirm it resolves.",
+    ),
+    "batch-limit": (
+        "Increase MAX_BATCH_SIZE from 50 to 100 in src/batch.py.",
+        "Validation plan: manually check that a 100-item batch is accepted.",
+    ),
+    "token-compare": (
+        "Use hmac.compare_digest instead of == in src/auth.py.",
+        "Validation plan: manually compare equal and unequal ASCII tokens.",
+    ),
+    "csv-export": (
+        "Add csv_text(rows) using csv.writer with LF line endings.",
+        "Validation plan: manually inspect the generated CSV.",
+    ),
+    "api-field": (
+        "Replace the JSON response key name with full_name in src/users.py.",
+        "Validation plan: call user_response('Ada') and check the returned key.",
+    ),
+    "legacy-config": (
+        "Delete config/legacy.toml.",
+        "Validation plan: check that config/default.toml remains present.",
+    ),
+}
+
+# Per-edit review comments (in edit order) that address each change and its implications, plus
+# one open concern. The review describes the actual patches, whatever the PR text claims.
+REVIEW_COMMENTS = {
+    "guide-typo": (
+        (
+            "docs/usage.md: the repeated word is removed, so the sentence reads 'Read the "
+            "guide before starting.' The edit is limited to prose; there is no runtime or "
+            "interface effect to review.",
+        ),
+        "I did not check whether other pages in the guide repeat words in the same way.",
+    ),
+    "cli-help": (
+        (
+            "cli/help.js: the help string now says --output, matching the option the parser "
+            "accepts. Only displayed text changes and parsing is not touched in this patch, "
+            "so a user copying the example no longer gets an unknown-option error.",
+        ),
+        "Please confirm the parser registers the option as --output; this patch does not show it.",
+    ),
+    "readme-link": (
+        (
+            "README.md: the link target changes from docs/geting-started.md to "
+            "docs/getting-started.md and the label is unchanged. No code or interface is "
+            "touched.",
+        ),
+        "Please verify that docs/getting-started.md exists; the diff does not show it.",
+    ),
+    "empty-average": (
+        (
+            "src/stats.py: the new guard returns 0 for an empty list before the division, so "
+            "[] no longer raises ZeroDivisionError. Callers that relied on that exception now "
+            "receive 0, which is a behavior change worth noting.",
+            "tests/test_stats.py: the new tests cover [] returning 0 and [2, 4] returning 3, "
+            "pinning both the new edge case and the ordinary path.",
+        ),
+        "A returned 0 can be confused with a real average of zero; please confirm downstream "
+        "reports accept that.",
+    ),
+    "cache-key": (
+        (
+            "src/cache.py: lookup now calls key.lower() before store.get, so mixed-case keys "
+            "hit a lowercase store. Non-string keys will raise AttributeError, and a store "
+            "holding distinct uppercase keys can no longer be reached through them.",
+            "tests/test_cache.py: the test checks that 'USER' and 'user' both resolve to 7 in "
+            "a lowercase-key store; it does not cover a store with uppercase keys.",
+        ),
+        "Please confirm writers always store lowercase keys, since only lookup is normalized.",
+    ),
+    "batch-limit": (
+        (
+            "src/batch.py: MAX_BATCH_SIZE rises from 50 to 100 and the <= comparison is "
+            "unchanged, so lengths 51 to 100 that were rejected are now accepted. Peak memory "
+            "per batch can grow accordingly.",
+            "tests/test_batch.py: the boundary tests accept 100 items and reject 101, "
+            "exercising the new limit exactly at its edge.",
+        ),
+        "No memory or throughput measurement accompanies the larger limit.",
+    ),
+    "token-compare": (
+        (
+            "src/auth.py: == is replaced by hmac.compare_digest, which avoids an early-exit "
+            "comparison. It needs matching argument types and, for str, ASCII-only text; "
+            "otherwise it raises TypeError, so callers passing non-ASCII strings or mixed "
+            "bytes and str will now fail.",
+            "tests/test_auth.py: matching and mismatching ASCII tokens are covered, but the "
+            "tests cannot show timing behavior or non-ASCII inputs.",
+        ),
+        "Please confirm that no caller passes non-ASCII or bytes tokens.",
+    ),
+    "csv-export": (
+        (
+            "src/export.py: csv_text writes rows through csv.writer with LF line endings and "
+            "returns the string, so fields containing commas are quoted. No header is added "
+            "and formula escaping is not handled.",
+            "tests/test_export.py: the tests cover a comma-containing field, expected to be "
+            "quoted, and an empty list, expected to give an empty string.",
+        ),
+        "Spreadsheet formula injection (cells starting with =, +, - or @) is not mitigated; "
+        "please decide whether that is in scope.",
+    ),
+    "api-field": (
+        (
+            "src/users.py: user_response returns full_name instead of name, so clients "
+            "reading name lose the field. No alias or migration period is provided, which "
+            "makes this a breaking API change.",
+            "docs/api.md: the response example now shows full_name, matching the code.",
+        ),
+        "Please confirm that all known API consumers have been told before this merges.",
+    ),
+    "legacy-config": (
+        (
+            "config/legacy.toml: the file and its timeout_seconds and retries settings are "
+            "deleted, so any deploy script that references it fails until migrated to "
+            "config/default.toml.",
+            "docs/setup.md: the legacy instructions are removed and config/default.toml is "
+            "documented for all deployments.",
+        ),
+        "The patch does not show config/default.toml, so I cannot confirm it provides "
+        "equivalent timeout and retry values.",
+    ),
+    "comment-typo": (
+        (
+            "src/totals.py: only the comment changes; the repeated word 'the' is removed. No "
+            "executable line is edited, so total() behaves identically.",
+        ),
+        "Other comments in the module may have similar typos; I did not check.",
+    ),
+    "rename-local": (
+        (
+            "src/totals.py: the local variable t is renamed to running_total at its "
+            "initialization, the accumulation, and the return. All three uses are updated and "
+            "the signature of total() is unchanged, so every input gives the same result.",
+        ),
+        "The rename is local to total(); please confirm the longer name satisfies the "
+        "project's line-length lint.",
+    ),
+    "extract-constant": (
+        (
+            "src/pager.py: the literal 100 becomes a module-private _PAGE_SIZE = 100 that "
+            "page() slices with, so the page length is unchanged and the name is not part of "
+            "the public interface.",
+            "tests/test_pager.py: the new test asserts that a 200-item input yields 100 rows, "
+            "confirming the length is the same as before.",
+        ),
+        "Please confirm that no other module duplicates the literal 100.",
+    ),
+    "change-default": (
+        (
+            "src/pager.py: _PAGE_SIZE changes from 100 to 50, so page() now returns at most "
+            "50 rows instead of 100. Callers that expected 100-row pages receive fewer rows.",
+            "tests/test_pager.py: the new test asserts that a 200-item input yields 50 rows, "
+            "pinning the new page length.",
+        ),
+        "Please confirm downstream consumers cope with twice as many pages.",
+    ),
+    "strip-input": (
+        (
+            "src/names.py: clean now returns name.strip(), so leading and trailing whitespace "
+            "is removed. Non-string inputs raise AttributeError, and names that differed only "
+            "by surrounding whitespace now compare equal.",
+            "tests/test_names.py: the test checks that '  Ada ' becomes 'Ada' but does not "
+            "cover an already-clean name or an empty string.",
+        ),
+        "Please confirm that no caller passes None to clean.",
+    ),
+    "escape-output": (
+        (
+            "src/render.py: cell now returns html.escape(text), so <, >, & and quotes become "
+            "entities before output. Rendered output changes for any text containing those "
+            "characters, and the function becomes a security-relevant boundary against markup "
+            "injection.",
+            "tests/test_render.py: the test checks that '<b>' becomes '&lt;b&gt;' but does not "
+            "cover already-escaped text, which would be escaped twice.",
+        ),
+        "Double escaping is possible if callers already escape their input.",
+    ),
+    "optional-param": (
+        (
+            "src/client.py: fetch gains a timeout parameter defaulting to 30 and passes it to "
+            "_get, so existing fetch(url) calls keep the same 30-second timeout while callers "
+            "can now choose another value.",
+            "tests/test_client.py: the tests cover fetch('u') still using 30 and fetch('u', 5) "
+            "using 5, but not a zero or negative timeout.",
+        ),
+        "Please decide whether invalid timeout values should be rejected.",
+    ),
+    "required-param": (
+        (
+            "src/client.py: fetch now requires a timeout argument with no default, so any "
+            "existing fetch(url) call raises TypeError until it is updated. External callers "
+            "will break.",
+            "src/jobs.py: the one in-repo call is updated to pass 30, which preserves its "
+            "previous timeout but does not help callers outside this patch.",
+        ),
+        "Please confirm whether a default or deprecation period is wanted before callers migrate.",
+    ),
+}
+
+REVIEW_VARIANTS = ("none", "complete", "partial", "generic", "ambiguous", "open_concern")
+REVIEW_OFF_TARGET_SOURCE = "empty-average"
+
 CRITERIA = {
     "change_triviality": "Ordinal 0–4 assessment of the actual diff: higher scores mean "
     "less trivial changes; scores 0–1 are trivial.",
     "summary-section": "Description contains a populated level-two Summary section.",
-    "review-coverage": "Supplied review addresses substantive changes; unavailable when no review is supplied.",
+    "review-coverage": "Supplied review addresses every substantive change; not_assessable when "
+    "no review is supplied or its references cannot be tied to the patches. It describes the "
+    "review, not the PR text, so it never contributes to expected_quality.",
     "title-format": "Rubric-ID mirror of title_format.",
     "change-rationale": "Rubric-ID mirror of rationale.",
     "description-coverage": "Rubric-ID mirror of description_diff_consistency.",
@@ -609,6 +1145,81 @@ def changed_file(edit: Edit) -> dict:
     }
 
 
+def review_for(
+    family: Family, title: str, family_index: int, profile_index: int
+) -> tuple[str, str, CriterionResult]:
+    """Choose a deterministic review variant and its coverage label.
+
+    The variant rotates with the family and profile positions so every family sees each variant.
+    The review describes the real patches, whatever the PR text claims.
+
+    :param family: Family whose patches the review discusses.
+    :param title: Final PR title, repeated by the generic variant.
+    :param family_index: Position of the family within its profile's families.
+    :param profile_index: Position of the profile among all profiles.
+    :returns: Variant name, review text (empty for ``none``), and review-coverage label.
+    """
+    variant = REVIEW_VARIANTS[(family_index - profile_index) % len(REVIEW_VARIANTS)]
+    if variant == "partial" and len(family.edits) == 1:
+        variant = "off_target"
+    comments, concern = REVIEW_COMMENTS[family.identifier]
+    covered = "The review individually addresses every changed file and its implications."
+    if variant == "none":
+        return (
+            variant,
+            "",
+            {
+                "status": "not_assessable",
+                "explanation": "No review text is supplied for this case.",
+                "sources": [],
+            },
+        )
+    if variant == "complete":
+        text = "\n".join(f"- {comment}" for comment in comments)
+        status, explanation = "passed", covered
+    elif variant == "open_concern":
+        text = "\n".join(f"- {comment}" for comment in comments)
+        text += f"\n\nOpen concern: {concern}\nThis needs an answer before merging."
+        status = "passed"
+        explanation = covered + " Its open concern does not reduce coverage."
+    elif variant == "partial":
+        text = f"- {comments[0]}\n\nOverall this looks fine."
+        status = "failed"
+        explanation = "The review addresses only the first changed file and omits the second."
+    elif variant == "off_target":
+        other = REVIEW_COMMENTS[REVIEW_OFF_TARGET_SOURCE][0]
+        text = "\n".join(f"- {comment}" for comment in other)
+        status = "failed"
+        explanation = "The review discusses files and behavior that are not in this patch."
+    elif variant == "generic":
+        text = f"Reviewed: {title}\nLGTM, no further comments."
+        status = "failed"
+        explanation = (
+            "The review is a generic approval that repeats the title and addresses no "
+            "specific change."
+        )
+    else:
+        text = (
+            "Following up on the thread: the concern raised earlier about the second change "
+            "is resolved by the latest push, and the boundary discussed offline behaves as "
+            "agreed. Nothing further from me."
+        )
+        status = "not_assessable"
+        explanation = (
+            "The review refers only to unseen discussion and unspecified items, so it "
+            "cannot be tied to specific changes in the patches."
+        )
+    return (
+        variant,
+        text + "\n",
+        {
+            "status": status,
+            "explanation": explanation,
+            "sources": ["review.md", "evidence.json#/files"],
+        },
+    )
+
+
 def text_triviality_diagnostic(
     diff_score: int,
     title_score: int | None,
@@ -663,13 +1274,16 @@ def text_triviality_diagnostic(
     }
 
 
-def make_case(number: int, family: Family, profile: str, family_index: int) -> tuple[dict, ...]:
+def make_case(
+    number: int, family: Family, profile: str, family_index: int, profile_index: int = 0
+) -> tuple[dict, ...]:
     """Construct one case and explicit criterion labels for its planted issues.
 
     :param number: Unique synthetic PR number.
     :param family: Factual change and truthful documentation.
     :param profile: Controlled quality scenario.
     :param family_index: Position used to choose additional and combined scenarios.
+    :param profile_index: Position of the profile, used to rotate review variants.
     :returns: Evidence, commit metadata, and independent benchmark annotations.
     """
     case_id = f"pr-{number:03d}"
@@ -1074,6 +1688,39 @@ def make_case(number: int, family: Family, profile: str, family_index: int) -> t
         else:
             wrong_commits()
             undocumented_break()
+    elif profile == "what_not_why":
+        # Unlike vague or missing rationale, the section is present and concrete but only restates.
+        sections["Rationale"] = "This PR does the following: " + family.summary
+        mark(
+            "rationale",
+            "failed",
+            "The rationale restates the edits instead of explaining why they are needed.",
+        )
+        tags.append("what_not_why")
+    elif profile == "omitted_change":
+        sections["Summary"], sections["Testing"] = PARTIAL_COVERAGE[family.identifier]
+        mark(
+            "description_diff_consistency",
+            "failed",
+            "The summary concretely describes the first changed file and omits the second.",
+        )
+        mark(
+            "description_commit_consistency",
+            "failed",
+            "The description does not cover the commit for the second changed file.",
+        )
+        tags.append("omitted_change")
+    elif profile == "boundary":
+        # Compatibility is deliberately not characterized, so the level must come from the diff.
+        sections.pop("Breaking changes")
+        if family.incompatible:
+            mark(
+                "breaking_changes",
+                "failed",
+                "The description names the new parameter but not that existing callers must migrate.",
+            )
+            tags.append("undocumented_breaking_change")
+        tags.append("boundary")
 
     body = (
         body_override
@@ -1127,10 +1774,8 @@ def make_case(number: int, family: Family, profile: str, family_index: int) -> t
             else summary_check.issues[0]
         ),
     }
-    criteria["review-coverage"] = {
-        "status": "not_assessable",
-        "explanation": "The corpus contains no supplied review text to compare with the patches.",
-    }
+    review_variant, _, review_label = review_for(family, title, family_index, profile_index)
+    criteria["review-coverage"] = review_label
     metadata = {
         "schema_version": 1,
         "synthetic": True,
@@ -1183,7 +1828,8 @@ def make_case(number: int, family: Family, profile: str, family_index: int) -> t
         "testing": ["evidence.json#/body", "evidence.json#/files"],
     }
     for key, result in criteria.items():
-        result["sources"] = source_map[key]
+        if key != "review-coverage":
+            result["sources"] = source_map[key]
     annotation = {
         "schema_version": 3,
         "case_id": case_id,
@@ -1192,10 +1838,15 @@ def make_case(number: int, family: Family, profile: str, family_index: int) -> t
         "family_id": family.identifier,
         "scenario": profile,
         "variant": variant,
+        "review_variant": review_variant,
         "complexity": family.complexity,
         "has_breaking_change": family.incompatible,
         "expected_quality": "needs_revision"
-        if any(item.get("status") == "failed" for item in criteria.values())
+        if any(
+            item.get("status") == "failed"
+            for key, item in criteria.items()
+            if key != "review-coverage"
+        )
         else "good",
         "tags": sorted(set(tags)),
         "criteria": criteria,
@@ -1261,7 +1912,7 @@ def rubric_case(rubric: AssessmentRubric, annotation: dict) -> dict:
         labels,
     )
     case_id = annotation["case_id"]
-    return {
+    case = {
         "case_id": case_id,
         "category": "rubric",
         "evidence": f"prs/{case_id}/evidence.json",
@@ -1271,6 +1922,9 @@ def rubric_case(rubric: AssessmentRubric, annotation: dict) -> dict:
             "rubric": {"recommendation": advice.recommendation, "criteria": statuses},
         },
     }
+    if annotation["review_variant"] != "none":
+        case["review"] = f"prs/{case_id}/review.md"
+    return case
 
 
 def write_json(path: Path, value: dict) -> None:
@@ -1283,58 +1937,90 @@ def write_json(path: Path, value: dict) -> None:
     path.write_text(json.dumps(value, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
 
+def case_plan() -> list[tuple[str, int, int, Family]]:
+    """List every case as profile, profile position, family position, and family.
+
+    :returns: The 100 base cases followed by the contrastive and boundary extensions.
+    """
+    plan = [
+        (profile, profile_index, family_index, family)
+        for profile_index, profile in enumerate(PROFILES)
+        for family_index, family in enumerate(FAMILIES)
+    ]
+    multi_file = [family for family in FAMILIES if len(family.edits) > 1]
+    extensions = (
+        ("what_not_why", FAMILIES),
+        ("omitted_change", multi_file),
+        ("boundary", BOUNDARY_FAMILIES),
+    )
+    for offset, (profile, families) in enumerate(extensions):
+        plan += [
+            (profile, len(PROFILES) + offset, family_index, family)
+            for family_index, family in enumerate(families)
+        ]
+    return plan
+
+
 def main(output_root: Path = ROOT) -> None:
-    """Regenerate the 100-case corpus and both indexes without network access.
+    """Regenerate the corpus, supplied reviews, and both indexes without network access.
 
     :param output_root: Directory in which to write the generated artifacts.
     """
     cases = []
     rubric = load_assessment_rubric(ROOT / "rubric.toml")
     router_cases = []
-    for profile_index, profile in enumerate(PROFILES):
-        for family_index, family in enumerate(FAMILIES):
-            number = profile_index * len(FAMILIES) + family_index + 1
-            evidence, metadata, annotation = make_case(number, family, profile, family_index)
-            directory = f"prs/pr-{number:03d}"
-            for name, value in (
-                ("evidence", evidence),
-                ("metadata", metadata),
-                ("annotations", annotation),
-            ):
-                write_json(output_root / directory / f"{name}.json", value)
-            router_cases.append(rubric_case(rubric, annotation))
-            cases.append(
-                {
-                    "case_id": annotation["case_id"],
-                    "family_id": family.identifier,
-                    "scenario": profile,
-                    "variant": annotation["variant"],
-                    "complexity": family.complexity,
-                    "triviality_score": annotation["criteria"]["change_triviality"]["score"],
-                    "triviality_level": annotation["criteria"]["change_triviality"]["level"],
-                    "is_trivial": annotation["criteria"]["change_triviality"]["is_trivial"],
-                    "text_triviality_score": annotation["diagnostics"]["text_diff_triviality"][
-                        "text_score"
-                    ],
-                    "text_diff_triviality_relationship": annotation["diagnostics"][
-                        "text_diff_triviality"
-                    ]["relationship"],
-                    "potential_triviality_confounder": annotation["diagnostics"][
-                        "text_diff_triviality"
-                    ]["potential_confounder"],
-                    "title": evidence["title"],
-                    "expected_quality": annotation["expected_quality"],
-                    "tags": annotation["tags"],
-                    "failed_criteria": sorted(
-                        key
-                        for key, value in annotation["criteria"].items()
-                        if value.get("status") == "failed" and key not in RUBRIC_LABEL_MIRRORS
-                    ),
-                    "evidence": directory + "/evidence.json",
-                    "metadata": directory + "/metadata.json",
-                    "annotations": directory + "/annotations.json",
-                }
-            )
+    for number, (profile, profile_index, family_index, family) in enumerate(case_plan(), 1):
+        evidence, metadata, annotation = make_case(
+            number, family, profile, family_index, profile_index
+        )
+        directory = f"prs/pr-{number:03d}"
+        for name, value in (
+            ("evidence", evidence),
+            ("metadata", metadata),
+            ("annotations", annotation),
+        ):
+            write_json(output_root / directory / f"{name}.json", value)
+        _, review, _ = review_for(family, evidence["title"], family_index, profile_index)
+        if review:
+            (output_root / directory / "review.md").write_text(review, encoding="utf-8")
+        router_cases.append(rubric_case(rubric, annotation))
+        cases.append(
+            {
+                "case_id": annotation["case_id"],
+                "family_id": family.identifier,
+                "scenario": profile,
+                "variant": annotation["variant"],
+                "complexity": family.complexity,
+                "triviality_score": annotation["criteria"]["change_triviality"]["score"],
+                "triviality_level": annotation["criteria"]["change_triviality"]["level"],
+                "is_trivial": annotation["criteria"]["change_triviality"]["is_trivial"],
+                "text_triviality_score": annotation["diagnostics"]["text_diff_triviality"][
+                    "text_score"
+                ],
+                "text_diff_triviality_relationship": annotation["diagnostics"][
+                    "text_diff_triviality"
+                ]["relationship"],
+                "potential_triviality_confounder": annotation["diagnostics"][
+                    "text_diff_triviality"
+                ]["potential_confounder"],
+                "title": evidence["title"],
+                "expected_quality": annotation["expected_quality"],
+                "tags": annotation["tags"],
+                "failed_criteria": sorted(
+                    key
+                    for key, value in annotation["criteria"].items()
+                    if value.get("status") == "failed"
+                    and key not in RUBRIC_LABEL_MIRRORS
+                    and key != "review-coverage"
+                ),
+                "review_variant": annotation["review_variant"],
+                "review_coverage": annotation["criteria"]["review-coverage"]["status"],
+                "review": directory + "/review.md" if review else None,
+                "evidence": directory + "/evidence.json",
+                "metadata": directory + "/metadata.json",
+                "annotations": directory + "/annotations.json",
+            }
+        )
     write_json(
         output_root / "corpus.json",
         {
@@ -1369,6 +2055,8 @@ def main(output_root: Path = ROOT) -> None:
             ),
             "scenario_counts": dict(Counter(case["scenario"] for case in cases)),
             "quality_counts": dict(Counter(case["expected_quality"] for case in cases)),
+            "review_variant_counts": dict(Counter(case["review_variant"] for case in cases)),
+            "review_coverage_counts": dict(Counter(case["review_coverage"] for case in cases)),
             "cases": cases,
         },
     )
@@ -1386,13 +2074,21 @@ def main(output_root: Path = ROOT) -> None:
         "Text signals are diagnostic metadata, excluded from the criteria and scoring. "
         "Unknown or conflicting text receives no combined score. See annotations for separate title/body signals.",
         "",
-        "| PR | Family | Triviality (0–4) | Trivial? | Text score / relationship | Scenario / variant | Quality | Failed criteria | Companions |",
-        "| --- | --- | --- | --- | --- | --- | --- | --- | --- |",
+        "Review: the variant of the supplied `review.md` and its review-coverage label. "
+        "It describes the review, not the PR text, so it never changes Quality or Failed criteria.",
+        "",
+        "| PR | Family | Triviality (0–4) | Trivial? | Text score / relationship | Scenario / variant | Quality | Failed criteria | Review | Companions |",
+        "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
     ]
     for case in cases:
         failures = ", ".join(case["failed_criteria"]) or "None"
         variant = case["scenario"] + (
             " / " + case["variant"] if case["variant"] != case["scenario"] else ""
+        )
+        review_link = (
+            f"[{case['review_variant']}]({case['review']})"
+            if case["review"]
+            else case["review_variant"]
         )
         lines.append(
             f"| [{case['case_id']}]({case['evidence']}) | {case['family_id']} | "
@@ -1401,6 +2097,7 @@ def main(output_root: Path = ROOT) -> None:
             f"{case['text_triviality_score'] if case['text_triviality_score'] is not None else 'unknown'} / "
             f"{case['text_diff_triviality_relationship']} | "
             f"{variant} | {case['expected_quality']} | {failures} | "
+            f"{review_link} ({case['review_coverage']}) | "
             f"[commits]({case['metadata']}) / [labels]({case['annotations']}) |"
         )
     (output_root / "INDEX.md").write_text("\n".join(lines) + "\n", encoding="utf-8")

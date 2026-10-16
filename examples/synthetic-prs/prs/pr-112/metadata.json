@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "synthetic": true,
+  "case_id": "pr-112",
+  "url": "https://example.invalid/synthetic/pr-quality-demo/pull/112",
+  "state": "open",
+  "draft": false,
+  "author": {
+    "login": "synthetic-author-02",
+    "name": "Synthetic Author 02",
+    "email": "author-02@example.invalid"
+  },
+  "created_at": "2026-04-22T12:00:00+00:00",
+  "updated_at": "2026-04-22T13:00:00+00:00",
+  "base_ref": "main",
+  "head_ref": "synthetic/pr-112",
+  "base_sha": "a0406eca87112488de66428777db796ac477b2e6",
+  "head_sha": "808b036d40f5eac273ba1bbd829e33aba70b10d1",
+  "changed_files": 2,
+  "additions": 7,
+  "deletions": 1,
+  "commits": [
+    {
+      "sha": "677baaa5cc48e04bb973541b3889f2c008b742a3",
+      "parents": [
+        "a0406eca87112488de66428777db796ac477b2e6"
+      ],
+      "message": "fix(cache): lowercase lookup keys",
+      "author": {
+        "login": "synthetic-author-02",
+        "name": "Synthetic Author 02",
+        "email": "author-02@example.invalid"
+      },
+      "authored_at": "2026-04-22T11:50:00+00:00",
+      "files": [
+        "src/cache.py"
+      ],
+      "additions": 1,
+      "deletions": 1
+    },
+    {
+      "sha": "808b036d40f5eac273ba1bbd829e33aba70b10d1",
+      "parents": [
+        "677baaa5cc48e04bb973541b3889f2c008b742a3"
+      ],
+      "message": "test(cache): cover mixed-case lookup keys",
+      "author": {
+        "login": "synthetic-author-02",
+        "name": "Synthetic Author 02",
+        "email": "author-02@example.invalid"
+      },
+      "authored_at": "2026-04-22T11:51:00+00:00",
+      "files": [
+        "tests/test_cache.py"
+      ],
+      "additions": 6,
+      "deletions": 0
+    }
+  ]
+}

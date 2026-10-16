@@ -17,19 +17,24 @@ CORPUS = Path(__file__).resolve().parents[1] / "examples" / "synthetic-prs"
 def test_synthetic_pr_corpus_integrity():
     namespace = runpy.run_path(str(CORPUS / "validate.py"))
     summary = namespace["validate"](CORPUS)
-    assert summary["case_count"] == 100
-    assert summary["commit_count"] == 170
-    assert summary["quality_counts"] == {"good": 10, "needs_revision": 90}
-    assert summary["triviality_counts"] == {"0": 20, "1": 10, "2": 30, "3": 20, "4": 20}
-    assert summary["complexity_counts"] == {"trivial": 30, "non_trivial": 70}
+    assert summary["case_count"] == 125
+    assert summary["commit_count"] == 215
+    assert summary["quality_counts"] == {"good": 17, "needs_revision": 108}
+    assert summary["triviality_counts"] == {"0": 23, "1": 13, "2": 38, "3": 26, "4": 25}
+    assert summary["complexity_counts"] == {"trivial": 36, "non_trivial": 89}
     assert summary["text_diff_triviality_counts"] == {
-        "aligned": 88,
+        "aligned": 112,
         "conflicting_text": 8,
         "text_overstates": 1,
-        "text_understates": 2,
+        "text_understates": 3,
         "not_assessable": 1,
     }
-    assert summary["potential_triviality_confounders"] == 11
+    assert summary["potential_triviality_confounders"] == 12
+    assert summary["review_coverage_counts"] == {
+        "not_assessable": 42,
+        "passed": 43,
+        "failed": 40,
+    }
 
 
 def test_synthetic_pr_corpus_regenerates_deterministically(tmp_path):
@@ -42,9 +47,11 @@ def test_synthetic_pr_corpus_regenerates_deterministically(tmp_path):
         if path.is_file()
     }
     expected_paths = {path.relative_to(CORPUS) for path in CORPUS.rglob("*.json")}
+    expected_paths |= {path.relative_to(CORPUS) for path in CORPUS.rglob("review.md")}
     expected_paths.add(Path("INDEX.md"))
 
-    assert len(generated_files) == 303
+    # Three JSON files and an optional review per PR, plus the corpus and index.
+    assert len(generated_files) == 125 * 3 + 103 + 3
     assert set(generated_files) == expected_paths
     assert all(
         content == (CORPUS / relative_path).read_bytes()
@@ -106,9 +113,6 @@ def test_all_active_rubric_criteria_have_oracle_labels():
     for case in index["cases"]:
         annotation = json.loads((CORPUS / case["annotations"]).read_text())
         assert rubric_ids <= set(annotation["criteria"])
-        review = annotation["criteria"]["review-coverage"]
-        assert review["status"] == "not_assessable"
-        assert review["sources"] == []
 
 
 def test_router_corpus_derives_labels_from_oracle_and_rubric_policy():
@@ -116,19 +120,17 @@ def test_router_corpus_derives_labels_from_oracle_and_rubric_policy():
     corpus, evidence, _ = load_corpus(CORPUS / "corpus.json")
     rubric, reviews, _ = load_corpus_rubric(CORPUS / "corpus.json", corpus)
     assert rubric is not None
-    assert len(evidence) == 100
-    # Without supplied review text, enforced review coverage stays uncertain.
-    assert reviews == [""] * 100
-    good = corpus.cases[0].expectations.rubric
-    assert good is not None
-    assert good.criteria["review-coverage"] == "uncertain"
-    assert good.recommendation == "needs_human_review"
+    assert len(evidence) == 125
+    # Cases with no review keep enforced review coverage uncertain; the rest supply review text.
+    assert reviews.count("") == 22
+    assert all(text.strip() for text in reviews if text)
+    first = corpus.cases[0].expectations.rubric
+    assert first is not None
+    assert first.criteria["review-coverage"] == "uncertain"
+    assert first.recommendation == "needs_human_review"
     assert {
         case.expectations.rubric.recommendation for case in corpus.cases if case.expectations.rubric
-    } == {
-        "block",
-        "needs_human_review",
-    }
+    } == {"block", "needs_human_review", "suggest_changes", "skip_and_approve"}
 
 
 def test_benchmark_scores_oracle_identical_answers_as_full_agreement():
@@ -238,19 +240,19 @@ def test_triviality_benchmark_reports_ordinal_and_binary_errors(triviality_predi
     assert perfect["exact_score_accuracy"] == perfect["binary_triviality_accuracy"] == 1
     assert perfect["mean_absolute_error"] == 0
     assert perfect["confusion_matrix"]["counts"] == [
-        [20, 0, 0, 0, 0],
-        [0, 10, 0, 0, 0],
-        [0, 0, 30, 0, 0],
-        [0, 0, 0, 20, 0],
-        [0, 0, 0, 0, 20],
+        [23, 0, 0, 0, 0],
+        [0, 13, 0, 0, 0],
+        [0, 0, 38, 0, 0],
+        [0, 0, 0, 26, 0],
+        [0, 0, 0, 0, 25],
     ]
     # A documentation correction incorrectly classified as a behavior change.
     imperfect = copy.deepcopy(triviality_predictions)
     imperfect["predictions"][0]["score"] = 2
     result = evaluate(CORPUS, imperfect)
-    assert result["exact_score_accuracy"] == result["binary_triviality_accuracy"] == 0.99
-    assert result["mean_absolute_error"] == 0.02
-    assert result["exact_score_accuracy_by_pr_quality"] == {"good": 0.9, "needs_revision": 1}
+    assert result["exact_score_accuracy"] == result["binary_triviality_accuracy"] == 124 / 125
+    assert result["mean_absolute_error"] == 2 / 125
+    assert result["exact_score_accuracy_by_pr_quality"] == {"good": 16 / 17, "needs_revision": 1}
 
 
 @pytest.mark.parametrize("score", [-1, 5, True, 2.5, "2"])
@@ -272,3 +274,131 @@ def test_triviality_benchmark_requires_all_unique_case_ids(triviality_prediction
         triviality_predictions["predictions"][0]["case_id"] = "pr-unknown"
     with pytest.raises(ValueError, match="unique|exactly all"):
         evaluate(CORPUS, triviality_predictions)
+
+
+def _annotation(number):
+    return json.loads((CORPUS / "prs" / f"pr-{number:03d}" / "annotations.json").read_text())
+
+
+def test_review_variants_cover_every_coverage_outcome_and_route():
+    """Review text lets the benchmark reach every recommendation, not only block/handoff."""
+    corpus = json.loads((CORPUS / "corpus.json").read_text())
+    reviewed = {case["case_id"]: case for case in corpus["cases"]}
+    by_variant = {}
+    for number in range(1, 126):
+        annotation = _annotation(number)
+        by_variant.setdefault(annotation["review_variant"], []).append(annotation)
+        review = annotation["criteria"]["review-coverage"]
+        path = CORPUS / "prs" / f"pr-{number:03d}" / "review.md"
+        assert path.exists() == (annotation["review_variant"] != "none")
+        # Review quality never changes the PR-text quality label.
+        assert (annotation["expected_quality"] == "needs_revision") == any(
+            item.get("status") == "failed"
+            for key, item in annotation["criteria"].items()
+            if key != "review-coverage"
+        )
+        assert review["status"] in {"passed", "failed", "not_assessable"}
+    assert {
+        variant: {item["criteria"]["review-coverage"]["status"] for item in items}
+        for variant, items in by_variant.items()
+    } == {
+        "none": {"not_assessable"},
+        "ambiguous": {"not_assessable"},
+        "complete": {"passed"},
+        "open_concern": {"passed"},
+        "partial": {"failed"},
+        "off_target": {"failed"},
+        "generic": {"failed"},
+    }
+    recommendations = {
+        case["expectations"]["rubric"]["recommendation"] for case in reviewed.values()
+    }
+    assert {"skip_and_approve", "suggest_changes"} <= recommendations
+    # Every variant that avoids a blocker is exercised on at least one family of each depth.
+    assert all(len(items) >= 5 for items in by_variant.values())
+
+
+def test_review_variants_differ_in_what_they_address():
+    """Keep partial, generic, and unresolvable reviews distinguishable from complete ones."""
+    texts = {}
+    for number in range(1, 126):
+        annotation = _annotation(number)
+        path = CORPUS / "prs" / f"pr-{number:03d}" / "review.md"
+        if path.exists():
+            files = [
+                file["path"]
+                for file in json.loads((path.parent / "evidence.json").read_text())["files"]
+            ]
+            texts.setdefault(annotation["review_variant"], []).append((path.read_text(), files))
+    assert all(all(name in text for name in files) for text, files in texts["complete"]), (
+        "complete reviews name every changed file"
+    )
+    assert all(
+        files[0] in text and not any(name in text for name in files[1:])
+        for text, files in texts["partial"]
+    )
+    assert all(
+        not any(name in text for name in files)
+        for text, files in texts["generic"] + texts["ambiguous"]
+    )
+    assert all(text.startswith("Reviewed:") for text, _ in texts["generic"])
+    assert all("Open concern:" in text for text, _ in texts["open_concern"])
+    assert all(not any(name in text for name in files) for text, files in texts["off_target"])
+
+
+def test_contrastive_cases_reuse_base_patches_with_different_text_defects():
+    """Same diff, three outcomes: concrete why, restated what, and a partial change account."""
+    # pr-004 (empty-average) is the good case; pr-104 restates; pr-111 omits the test change.
+    base, restated, partial = (_annotation(number) for number in (4, 104, 111))
+    patches = [
+        json.loads((CORPUS / "prs" / f"pr-{number:03d}" / "evidence.json").read_text())["files"]
+        for number in (4, 104, 111)
+    ]
+    assert patches[0] == patches[1] == patches[2]
+    assert base["criteria"]["rationale"]["status"] == "passed"
+    assert restated["criteria"]["rationale"]["status"] == "failed"
+    assert restated["criteria"]["description_diff_consistency"]["status"] == "passed"
+    assert partial["criteria"]["rationale"]["status"] == "passed"
+    assert partial["criteria"]["description_diff_consistency"]["status"] == "failed"
+    body = json.loads((CORPUS / "prs" / "pr-104" / "evidence.json").read_text())["body"]
+    rationale = body.split("## Rationale\n")[1].split("\n\n")[0]
+    assert rationale.startswith("This PR does the following:")
+    # A restated rationale is a different defect from the existing vague one.
+    assert "improves the project" not in rationale
+
+
+def test_boundary_pairs_are_adjacent_levels_with_neutral_text():
+    pairs = [
+        ("comment-typo", "rename-local"),
+        ("extract-constant", "change-default"),
+        ("strip-input", "escape-output"),
+        ("optional-param", "required-param"),
+    ]
+    index = json.loads((CORPUS / "index.json").read_text())
+    levels = {
+        case["family_id"]: case["triviality_score"]
+        for case in index["cases"]
+        if case["scenario"] == "boundary"
+    }
+    assert [(levels[low], levels[high]) for low, high in pairs] == [(0, 1), (1, 2), (2, 3), (3, 4)]
+    for case in index["cases"]:
+        if case["scenario"] == "boundary":
+            evidence = json.loads((CORPUS / case["evidence"]).read_text())
+            assert evidence["title"].startswith("chore(")
+    # The incompatible change is not disclosed, so only the diff supports level 4.
+    required = next(case for case in index["cases"] if case["family_id"] == "required-param")
+    annotation = json.loads((CORPUS / required["annotations"]).read_text())
+    assert annotation["criteria"]["breaking_changes"]["status"] == "failed"
+    assert annotation["diagnostics"]["text_diff_triviality"]["relationship"] == "text_understates"
+
+
+def test_rubric_instructions_separate_failure_from_insufficient_evidence():
+    rubric = load_assessment_rubric(CORPUS / "rubric.toml")
+    instructions = {
+        criterion.criterion_id: criterion.instructions or "" for criterion in rubric.criteria
+    }
+    assert "says why" in instructions["change-rationale"]
+    assert "uncertain, not passed" in instructions["description-coverage"]
+    assert "Choose failed" in instructions["description-coverage"]
+    assert "Choose uncertain when no review is supplied" in instructions["review-coverage"]
+    assert "new required parameter" in instructions["change-triviality"]

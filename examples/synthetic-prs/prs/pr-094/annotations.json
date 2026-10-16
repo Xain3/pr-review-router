@@ -6,6 +6,7 @@
   "family_id": "empty-average",
   "scenario": "combined_failures",
   "variant": "combined_failures",
+  "review_variant": "none",
   "complexity": "non_trivial",
   "has_breaking_change": false,
   "expected_quality": "needs_revision",
@@ -31,7 +32,7 @@
     },
     "review-coverage": {
       "status": "not_assessable",
-      "explanation": "The corpus contains no supplied review text to compare with the patches.",
+      "explanation": "No review text is supplied for this case.",
       "sources": []
     },
     "title_meaningful": {

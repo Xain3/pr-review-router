@@ -1,0 +1,27 @@
+{
+  "repository": "synthetic/pr-quality-demo",
+  "number": 120,
+  "base_sha": "07d51996731790dda2e8a7fadf2025977bad8e21",
+  "head_sha": "f17e8e3c953cc4cb42956ce02a74b0e6f81cc065",
+  "title": "chore(pager): define a page size constant",
+  "body": "## Summary\nDefine _PAGE_SIZE = 100 in src/pager.py, use it in page(), and add tests/test_pager.py asserting that a 200-item input returns 100 rows.\n\n## Rationale\nA named constant documents what the number 100 means and gives one place to read it.\n\n## Testing\nValidation plan: run tests/test_pager.py, which expects 100 rows from a 200-item input.\n\n## Limitations\nOnly src/pager.py is edited; other uses of the page size in the repository are not searched.\n",
+  "files_complete": true,
+  "files": [
+    {
+      "path": "src/pager.py",
+      "status": "modified",
+      "additions": 4,
+      "deletions": 1,
+      "patch": "diff --git a/src/pager.py b/src/pager.py\n--- a/src/pager.py\n+++ b/src/pager.py\n@@ -1,2 +1,5 @@\n+_PAGE_SIZE = 100\n+\n+\n def page(rows):\n-    return rows[:100]\n+    return rows[:_PAGE_SIZE]\n",
+      "patch_truncated": false
+    },
+    {
+      "path": "tests/test_pager.py",
+      "status": "added",
+      "additions": 5,
+      "deletions": 0,
+      "patch": "diff --git a/tests/test_pager.py b/tests/test_pager.py\n--- /dev/null\n+++ b/tests/test_pager.py\n@@ -0,0 +1,5 @@\n+from src.pager import page\n+\n+\n+def test_page_length():\n+    assert len(page(list(range(200)))) == 100\n",
+      "patch_truncated": false
+    }
+  ]
+}

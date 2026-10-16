@@ -1,0 +1,1 @@
+- cli/help.js: the help string now says --output, matching the option the parser accepts. Only displayed text changes and parsing is not touched in this patch, so a user copying the example no longer gets an unknown-option error.

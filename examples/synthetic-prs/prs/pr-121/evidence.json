@@ -1,0 +1,27 @@
+{
+  "repository": "synthetic/pr-quality-demo",
+  "number": 121,
+  "base_sha": "1b1b4e5aef70fea4c5833c3838d0c5e7db1284a7",
+  "head_sha": "2966296cffb43c302ebfc4ba2cc3f2d7acdee366",
+  "title": "chore(pager): set the page size to 50",
+  "body": "## Summary\nChange _PAGE_SIZE from 100 to 50 in src/pager.py and add tests/test_pager.py asserting that a 200-item input returns 50 rows.\n\n## Rationale\nPages of 100 rows are too large for the narrow display that renders them; 50 rows fit on one screen.\n\n## Testing\nValidation plan: run tests/test_pager.py, which expects 50 rows from a 200-item input.\n\n## Limitations\nOnly src/pager.py is edited; other uses of the page size in the repository are not searched.\n",
+  "files_complete": true,
+  "files": [
+    {
+      "path": "src/pager.py",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "patch": "diff --git a/src/pager.py b/src/pager.py\n--- a/src/pager.py\n+++ b/src/pager.py\n@@ -1,4 +1,4 @@\n-_PAGE_SIZE = 100\n+_PAGE_SIZE = 50\n \n \n def page(rows):\n",
+      "patch_truncated": false
+    },
+    {
+      "path": "tests/test_pager.py",
+      "status": "added",
+      "additions": 5,
+      "deletions": 0,
+      "patch": "diff --git a/tests/test_pager.py b/tests/test_pager.py\n--- /dev/null\n+++ b/tests/test_pager.py\n@@ -0,0 +1,5 @@\n+from src.pager import page\n+\n+\n+def test_page_length():\n+    assert len(page(list(range(200)))) == 50\n",
+      "patch_truncated": false
+    }
+  ]
+}

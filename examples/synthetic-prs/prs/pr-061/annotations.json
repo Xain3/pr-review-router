@@ -6,6 +6,7 @@
   "family_id": "guide-typo",
   "scenario": "commit_description_mismatch",
   "variant": "commit_description_mismatch",
+  "review_variant": "none",
   "complexity": "trivial",
   "has_breaking_change": false,
   "expected_quality": "needs_revision",
@@ -30,7 +31,7 @@
     },
     "review-coverage": {
       "status": "not_assessable",
-      "explanation": "The corpus contains no supplied review text to compare with the patches.",
+      "explanation": "No review text is supplied for this case.",
       "sources": []
     },
     "title_meaningful": {

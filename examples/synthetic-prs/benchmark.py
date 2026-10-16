@@ -117,6 +117,19 @@ def score(summary: dict) -> dict:
     }
 
 
+def reviews_sha256() -> str:
+    """Hash every supplied review text in case order, since the corpus file only names them.
+
+    :returns: Hexadecimal digest of the case-ordered review paths and contents.
+    """
+    digest = hashlib.sha256()
+    for case in json.loads((ROOT / "corpus.json").read_text(encoding="utf-8"))["cases"]:
+        if case.get("review"):
+            digest.update(case["review"].encode() + b"\0")
+            digest.update((ROOT / case["review"]).read_bytes() + b"\0")
+    return digest.hexdigest()
+
+
 def main() -> None:
     """Run or replay the benchmark and save ``benchmark.json`` beside the router outputs."""
     parser = argparse.ArgumentParser(description=__doc__)
@@ -146,7 +159,10 @@ def main() -> None:
         "mode": summary["mode"],
         "label_status": summary["label_status"],
         "inputs_sha256": {
-            name: hashlib.sha256(path.read_bytes()).hexdigest() for name, path in inputs.items()
+            **{
+                name: hashlib.sha256(path.read_bytes()).hexdigest() for name, path in inputs.items()
+            },
+            "review texts": reviews_sha256(),
         },
         "failures": {
             key: summary["totals"][key]
@@ -155,8 +171,9 @@ def main() -> None:
         **score(summary),
         "limitations": (
             "Oracle labels are provisional synthetic-author intent, not human-reviewed. "
-            "The corpus supplies no review text, so review coverage is unassessable. "
-            "Replay validates recorded behavior, not current model quality."
+            "Some cases supply no review or an unresolvable one, so their "
+            "review coverage is unassessable. Replay validates recorded behavior, not "
+            "current model quality."
         ),
     }
     path = args.output_dir / "benchmark.json"
