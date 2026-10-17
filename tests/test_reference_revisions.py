@@ -109,6 +109,65 @@ def test_historical_and_original_sources_are_explicit_and_do_not_rewrite_cases()
     assert annotation["criteria"]["testing-explanation"]["status"] == "failed"
 
 
+@pytest.mark.parametrize(
+    "revision,split,count",
+    [
+        ("historical-125", "development", 125),
+        ("review-2026-10-17", "development", 125),
+        ("review-2026-10-17", "evaluation", 24),
+        ("review-2026-10-17", "all", 149),
+        ("review-2026-10-18", "development", 133),
+        ("latest", "all", 157),
+    ],
+)
+def test_registered_review_scopes_are_explicit_and_fully_validated(revision, split, count):
+    validation = runpy.run_path(str(ROOT / "validate.py"))
+    references = validation["load_grading_references"](ROOT, split, revision)
+    assert len(references.cases) == count
+    if revision in {"historical-125", "review-2026-10-17"}:
+        assert not set(references.cases) & {f"pr-{number}" for number in range(150, 158)}
+        assert len(references.metadata["case_ids"]["development"]) == 125
+
+
+@pytest.mark.parametrize("revision", ["historical-125", "review-2026-10-17"])
+def test_frozen_scopes_never_invent_references_for_explicitly_selected_new_cases(revision):
+    references = load_reference_revision(
+        ROOT, "development", revision, selected_case_ids=["pr-118", "pr-125"]
+    )
+    assert set(references.cases) == {"pr-118", "pr-125"}
+    with pytest.raises(ValueError, match="does not cover development: pr-150"):
+        load_reference_revision(
+            ROOT, "development", revision, selected_case_ids=["pr-118", "pr-150"]
+        )
+
+
+@pytest.mark.parametrize(
+    "corruption",
+    ["duplicate", "unknown", "wrong_partition", "missing", "unscoped", "latest_subset"],
+)
+def test_registered_scope_cannot_hide_missing_or_invalid_review_coverage(tmp_path, corruption):
+    root = tmp_path / "corpus"
+    shutil.copytree(ROOT, root, ignore=shutil.ignore_patterns("__pycache__"))
+    registry = json.loads((root / REGISTRY).read_text())
+    definition = registry["revisions"]["review-2026-10-17"]
+    scope = definition["case_ids"]["development"]
+    if corruption == "duplicate":
+        scope.append(scope[0])
+    elif corruption == "unknown":
+        scope.append("pr-999")
+    elif corruption == "wrong_partition":
+        scope.append("pr-126")
+    elif corruption == "missing":
+        scope.remove("pr-001")
+    elif corruption == "unscoped":
+        del definition["case_ids"]
+    else:
+        registry["latest"] = "review-2026-10-17"
+    (root / REGISTRY).write_text(json.dumps(registry))
+    with pytest.raises(ValueError, match="Invalid reference scope|incomplete reference archive"):
+        load_reference_revision(root, "development", "review-2026-10-17")
+
+
 @pytest.fixture
 def bound_predictions(tmp_path):
     root = tmp_path / "corpus"
@@ -192,7 +251,7 @@ def test_new_review_revision_changes_grading_without_invalidating_predictions(bo
         "kind": "adjudicated_review",
         "review_protocol": "blind_assessments",
         "archives": {
-            "development": "independent-review/legacy-reviews.json",
+            "development": "independent-review/development-reviews-2026-10-18.json",
             "evaluation": relative,
         },
     }
@@ -324,7 +383,7 @@ def test_binding_rejects_redirected_execution_inputs(bound_predictions, redirect
 def test_newly_named_reviews_receive_full_provenance_validation(bound_predictions, corruption):
     root, namespace, path, _ = bound_predictions
     development = corruption in {"history", "missing_history_hash"}
-    source = "legacy-reviews.json" if development else "authored-reviews.json"
+    source = "development-reviews-2026-10-18.json" if development else "authored-reviews.json"
     archive = json.loads((root / "independent-review" / source).read_text())
     case_id = "pr-001" if development else "pr-127" if corruption == "family" else "pr-126"
     criterion = "change-triviality" if corruption == "family" else "testing-explanation"

@@ -59,13 +59,18 @@ def reference_revisions(root: Path) -> dict[str, Any]:
 
 
 def load_reference_revision(
-    root: Path, split: str = "all", revision: str = "latest"
+    root: Path,
+    split: str = "all",
+    revision: str = "latest",
+    *,
+    selected_case_ids: list[str] | None = None,
 ) -> ReferenceRevision:
     """Resolve a grading revision and recompute its expected advisory recommendations.
 
     :param root: Corpus root with index, rubric, annotations, and review snapshots.
     :param split: Family-disjoint partition, or all cases explicitly.
     :param revision: Latest alias, original author baseline, or registered snapshot name.
+    :param selected_case_ids: Explicit required cases; omissions in a frozen scope must fail.
     :returns: Selected statuses, native triviality judgments, and source fingerprints.
     :raises ValueError: If a revision is unknown, stale, malformed, or lacks selected cases.
     """
@@ -79,6 +84,14 @@ def load_reference_revision(
         raise ValueError("Unknown corpus split")
     index = json.loads((root / "index.json").read_text(encoding="utf-8"))
     selected = [case for case in index["cases"] if split == "all" or case["split"] == split]
+    if selected_case_ids is not None:
+        if (
+            len(set(selected_case_ids)) != len(selected_case_ids)
+            or not selected_case_ids
+            or not set(selected_case_ids) <= {case["case_id"] for case in selected}
+        ):
+            raise ValueError("Invalid selected reference case IDs")
+        selected = [case for case in selected if case["case_id"] in selected_case_ids]
     definition = registry["revisions"][resolved]
     kind = definition.get("kind")
     if kind not in {"author_intent", "adjudicated_review"}:
@@ -96,12 +109,27 @@ def load_reference_revision(
     }
     records: dict[str, Any] = {}
     archives = definition.get("archives", {})
+    scopes = definition.get("case_ids", {})
+    if not isinstance(scopes, dict) or set(scopes) - set(archives):
+        raise ValueError(f"Invalid reference scope for {resolved}")
     for partition, relative in archives.items():
         if partition not in {"development", "evaluation"}:
             raise ValueError(f"Invalid reference partition: {partition}")
         path = _source(root, relative)
         archive = json.loads(path.read_text(encoding="utf-8"))
         expected_ids = {case["case_id"] for case in index["cases"] if case["split"] == partition}
+        if partition in scopes:
+            scope = scopes[partition]
+            if (
+                not isinstance(scope, list)
+                or not scope
+                or not all(isinstance(case_id, str) for case_id in scope)
+                or len(set(scope)) != len(scope)
+                or not set(scope) <= expected_ids
+                or (resolved == registry["latest"] and set(scope) != expected_ids)
+            ):
+                raise ValueError(f"Invalid reference scope for {resolved}/{partition}")
+            expected_ids = set(scope)
         if (
             archive.get("schema_version") != 1
             or archive.get("label_status") != "independent_ai_review"
@@ -112,6 +140,13 @@ def load_reference_revision(
             raise ValueError(f"Stale or incomplete reference archive: {relative}; re-review it")
         records.update(archive["cases"])
         paths[relative] = path
+    selected = [
+        case
+        for case in selected
+        if selected_case_ids is not None
+        or case["split"] not in scopes
+        or case["case_id"] in scopes[case["split"]]
+    ]
     if kind == "adjudicated_review":
         missing = [case["case_id"] for case in selected if case["case_id"] not in records]
         if missing:
@@ -184,6 +219,15 @@ def load_reference_revision(
             "review_protocol": protocol,
             "label_status": "provisional",
             "case_count": len(cases),
+            "case_ids": {
+                partition: list(
+                    scopes.get(
+                        partition,
+                        [case["case_id"] for case in index["cases"] if case["split"] == partition],
+                    )
+                )
+                for partition in archives
+            },
             "description": definition.get("description", ""),
             "sources_sha256": {
                 name: hashlib.sha256(path.read_bytes()).hexdigest() for name, path in paths.items()
