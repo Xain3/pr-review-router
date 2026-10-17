@@ -57,6 +57,11 @@ def evaluate(
                 **case,
                 "author_triviality_level": case["triviality_level"],
                 "triviality_level": reference["triviality_level"],
+                "reference_confidence": "author_intent"
+                if revision.metadata["kind"] == "author_intent"
+                else "contested"
+                if reference["contested_criteria"]
+                else "uncontested_ai",
                 "reference_score": expected,
                 "reference_label": "uncertain" if expected is None else str(expected),
                 "predicted_score": score,

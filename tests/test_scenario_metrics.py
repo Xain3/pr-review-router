@@ -151,6 +151,23 @@ def test_partition_validation_rejects_leaked_families_or_patches(tmp_path, mutat
         validate(root, index)
 
 
+def test_partition_validation_rejects_evidence_redirected_in_both_corpora(tmp_path):
+    root = tmp_path / "corpus"
+    shutil.copytree(ROOT, root, ignore=shutil.ignore_patterns("__pycache__"))
+    target_id = "pr-126"
+    redirected = "prs/pr-001/evidence.json"
+    for name in ("corpus.json", "corpus-evaluation.json"):
+        path = root / name
+        corpus = json.loads(path.read_text())
+        case = next(case for case in corpus["cases"] if case["case_id"] == target_id)
+        case["evidence"] = redirected
+        path.write_text(json.dumps(corpus))
+
+    validate = runpy.run_path(str(ROOT / "validate.py"))["validate_splits"]
+    with pytest.raises(ValueError, match="execution corpus inputs differ from index"):
+        validate(root, json.loads((root / "index.json").read_text()))
+
+
 def test_triviality_scores_only_the_selected_partition_and_counts_abstention():
     index = json.loads((ROOT / "index.json").read_text())
     predictions = {
@@ -168,6 +185,12 @@ def test_triviality_scores_only_the_selected_partition_and_counts_abstention():
     assert result["exact_score_accuracy"] == 23 / 24
     assert sum(result["confusion_matrix"]["uncertain"]) == 1
     assert sum(group["support"] for group in result["by_scenario"].values()) == 24
+
+    latest = evaluate(ROOT, predictions, "evaluation", "latest")
+    assert {
+        group: metrics["support"] for group, metrics in latest["by_reference_confidence"].items()
+    } == {"contested": 14, "uncontested_ai": 10}
+
     with pytest.raises(ValueError, match="selected"):
         evaluate(ROOT, predictions, "all")
 
