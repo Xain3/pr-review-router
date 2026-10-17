@@ -5,9 +5,12 @@ import hashlib
 import ipaddress
 import json
 import os
+import random
 import runpy
+import shutil
 import subprocess
 import sys
+from dataclasses import replace
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -16,6 +19,33 @@ from pr_review_router.corpus_references import reference_revisions
 
 ROOT = Path(__file__).resolve().parent
 RUBRIC_TRIVIALITY = "change-triviality"
+
+
+def sample_cases(size: int, seed: int) -> list[str]:
+    """Sample in balanced family rounds without replacement.
+
+    :param size: Number of cases requested from the full corpus.
+    :param seed: Recorded seed used to reproduce selection.
+    :returns: Selected case identifiers in canonical corpus order.
+    :raises ValueError: If the requested size is outside the corpus range.
+    """
+    cases = json.loads((ROOT / "index.json").read_text(encoding="utf-8"))["cases"]
+    if not 1 <= size <= len(cases):
+        raise ValueError(f"Sample size must be between 1 and {len(cases)}")
+    families = {}
+    for case in cases:
+        families.setdefault(case["family_id"], []).append(case["case_id"])
+    generator = random.Random(seed)
+    selected = set()
+    while len(selected) < size:
+        family_ids = sorted(family for family, members in families.items() if members)
+        generator.shuffle(family_ids)
+        for family in family_ids:
+            members = families[family]
+            selected.add(members.pop(generator.randrange(len(members))))
+            if len(selected) == size:
+                break
+    return [case["case_id"] for case in cases if case["case_id"] in selected]
 
 
 def run_router(
@@ -27,6 +57,7 @@ def run_router(
     record: bool,
     split: str = "evaluation",
     reference_revision: str = "latest",
+    selected_case_ids: list[str] | None = None,
 ) -> dict:
     """Run ``pr-review-router evaluate`` without environment policy overrides.
 
@@ -37,18 +68,40 @@ def run_router(
     :param record: Whether to record HTTP exchanges for later replay.
     :param split: Family-disjoint corpus partition, or all cases explicitly.
     :param reference_revision: Grading revision, validated before any provider call.
+    :param selected_case_ids: Exact random sample, required for the random split.
     :returns: The router's evaluation summary.
     :raises subprocess.CalledProcessError: If the router rejects inputs or replay.
     """
-    grading_references(split, reference_revision)
-    binding = input_binding(split, config, providers)
+    grading_references(split, reference_revision, selected_case_ids)
+    binding = input_binding(split, config, providers, selected_case_ids)
+    corpus_path = ROOT / ("corpus.json" if split == "all" else f"corpus-{split}.json")
+    if split == "random":
+        corpus = json.loads((ROOT / "corpus.json").read_text(encoding="utf-8"))
+        corpus["cases"] = [
+            case for case in corpus["cases"] if case["case_id"] in binding["selected_case_ids"]
+        ]
+        sample_root = output_dir / "sample-inputs"
+        sources = {corpus["assessment_rubric"]}
+        for case in corpus["cases"]:
+            for key in ("evidence", "review"):
+                if case.get(key):
+                    sources.add(case[key])
+        for relative in sources:
+            source = (ROOT / relative).resolve()
+            if Path(relative).is_absolute() or not source.is_relative_to(ROOT.resolve()):
+                raise ValueError("Sample inputs must stay beneath the corpus directory")
+            destination = sample_root / relative
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(source, destination)
+        corpus_path = (sample_root / "corpus.json").resolve()
+        corpus_path.write_text(json.dumps(corpus, indent=2) + "\n", encoding="utf-8")
     command = [
         sys.executable,
         "-c",
         "import sys; from pr_review_router.cli import main; sys.exit(main())",
         "evaluate",
         "--corpus",
-        str(ROOT / ("corpus.json" if split == "all" else f"corpus-{split}.json")),
+        str(corpus_path),
         "--config",
         str(config),
         "--providers-config",
@@ -65,21 +118,56 @@ def run_router(
         key: value for key, value in os.environ.items() if not key.startswith("PR_REVIEW_ROUTER_")
     }
     subprocess.run(command, check=True, env=environment, stdout=subprocess.DEVNULL)
-    if input_binding(split, config, providers) != binding:
+    if input_binding(split, config, providers, selected_case_ids) != binding:
         raise ValueError("Benchmark inputs changed during evaluation; rerun with frozen inputs")
     write_binding(output_dir / "summary.json", binding)
     return json.loads((output_dir / "summary.json").read_text(encoding="utf-8"))
 
 
-def grading_references(split: str, revision: str = "latest"):
+def grading_references(
+    split: str, revision: str = "latest", selected_case_ids: list[str] | None = None
+):
     """Load a complete grading revision and validate each selected archive.
 
     :param split: Required case partition.
     :param revision: Original baseline, latest alias, or registered review snapshot.
+    :param selected_case_ids: Exact random sample when using the random split.
     :returns: Policy-derived references with archive provenance.
     """
     validation = runpy.run_path(str(ROOT / "validate.py"))
-    return validation["load_grading_references"](ROOT, split, revision)
+    result = validation["load_grading_references"](
+        ROOT, "all" if split == "random" else split, revision
+    )
+    if split == "random":
+        selected = select_cases(split, selected_case_ids)
+        cases = {case["case_id"]: result.cases[case["case_id"]] for case in selected}
+        result = replace(
+            result, cases=cases, metadata={**result.metadata, "case_count": len(cases)}
+        )
+    return result
+
+
+def select_cases(split: str, selected_case_ids: list[str] | None = None) -> list[dict]:
+    """Validate a named partition or an explicitly pinned random sample.
+
+    :param split: Named partition, all cases, or random selection.
+    :param selected_case_ids: Unique known case identifiers for a random sample.
+    :returns: Selected index entries in canonical order.
+    :raises ValueError: If the partition or sample is invalid.
+    """
+    cases = json.loads((ROOT / "index.json").read_text(encoding="utf-8"))["cases"]
+    if split == "random":
+        known = {case["case_id"] for case in cases}
+        if (
+            not selected_case_ids
+            or len(selected_case_ids) != len(set(selected_case_ids))
+            or not set(selected_case_ids) <= known
+        ):
+            raise ValueError("Random sample requires unique known selected case IDs")
+        return [case for case in cases if case["case_id"] in selected_case_ids]
+    if split not in {"all", "development", "evaluation"}:
+        raise ValueError("Unknown corpus split")
+    return [case for case in cases if split == "all" or case["split"] == split]
 
 
 def score(
@@ -88,6 +176,7 @@ def score(
     reference_revision: str = "latest",
     *,
     prediction_references: dict | None = None,
+    selected_case_ids: list[str] | None = None,
 ) -> dict:
     """Compare router rubric outputs with the selected revision of reference judgments.
 
@@ -95,6 +184,7 @@ def score(
     :param split: Required partition; every selected case must occur exactly once.
     :param reference_revision: Selected grading labels; latest adjudications by default.
     :param prediction_references: Bound original labels from the prediction run, when rescoring.
+    :param selected_case_ids: Exact random sample used for predictions.
     :returns: Overall and stratified confusion, recommendation risks, and triviality metrics.
     :raises ValueError: If case coverage or embedded references differ from pinned inputs.
     """
@@ -104,9 +194,7 @@ def score(
     if summary.get("label_status", index["label_status"]) != index["label_status"]:
         raise ValueError("Summary label provenance differs from the provisional corpus")
     levels = {level["label"]: level["score"] for level in index["triviality_scale"]["levels"]}
-    if split not in {"all", "development", "evaluation"}:
-        raise ValueError("Unknown corpus split")
-    selected = [case for case in index["cases"] if split == "all" or case["split"] == split]
+    selected = select_cases(split, selected_case_ids)
     corpus = json.loads((ROOT / "corpus.json").read_text(encoding="utf-8"))
     origins = (
         prediction_references
@@ -129,7 +217,7 @@ def score(
         raise ValueError("Summary reference labels differ from the pinned selected corpus")
     outputs = {case["case_id"]: case.get("rubric") or {} for case in summary["cases"]}
     rows = []
-    revision = grading_references(split, reference_revision)
+    revision = grading_references(split, reference_revision, selected_case_ids)
     for case in selected:
         actual = outputs[case["case_id"]]
         answer = (actual.get("native_answers") or {}).get(RUBRIC_TRIVIALITY) or {}
@@ -188,18 +276,21 @@ def case_inputs_sha256(case: dict) -> str:
     return digest.hexdigest()
 
 
-def input_binding(split: str, config: Path, providers: Path) -> dict:
+def input_binding(
+    split: str, config: Path, providers: Path, selected_case_ids: list[str] | None = None
+) -> dict:
     """Capture the selected inputs before inference and validate fixed family assignments.
 
     :param split: Required corpus partition.
     :param config: Policy actually supplied to the evaluation.
     :param providers: Provider configuration actually supplied to the evaluation.
+    :param selected_case_ids: Exact random sample used for predictions.
     :returns: Content fingerprints bound to the selected case IDs.
     """
     index = json.loads((ROOT / "index.json").read_text(encoding="utf-8"))
     validation = runpy.run_path(str(ROOT / "validate.py"))
     validation["validate_splits"](ROOT, index)
-    selected = [case for case in index["cases"] if split == "all" or case["split"] == split]
+    selected = select_cases(split, selected_case_ids)
     paths = {name: ROOT / name for name in ("splits.json", "rubric.toml")}
     paths.update({"policy.toml": config, "providers.toml": providers})
     return {
@@ -374,7 +465,16 @@ def main() -> None:
     parser.add_argument("--config", type=Path, default=ROOT / "policy.toml")
     parser.add_argument("--providers-config", type=Path, default=ROOT / "providers.toml")
     parser.add_argument(
-        "--split", choices=["evaluation", "development", "all"], default="evaluation"
+        "--split", choices=["random", "evaluation", "development", "all"], default=None
+    )
+    parser.add_argument(
+        "--sample-size",
+        type=int,
+        default=None,
+        help="Random sample size (default: 60; quick run: 30).",
+    )
+    parser.add_argument(
+        "--seed", type=int, help="Reproduce a random sample; otherwise generate a seed."
     )
     parser.add_argument(
         "--reference-revision",
@@ -395,11 +495,35 @@ def main() -> None:
         print(json.dumps(reference_revisions(ROOT), indent=2))
         return
     prediction_references = None
+    selected_case_ids = None
+    sampling = None
     try:
-        grading_references(args.split, args.reference_revision)
+        if args.summary:
+            saved = json.loads(
+                args.summary.with_name("benchmark-inputs.json").read_text(encoding="utf-8")
+            )
+            args.split = args.split or saved["split"]
+            if args.split == "random":
+                selected_case_ids = saved["selected_case_ids"]
+                sampling = saved.get("sampling")
+                if args.seed is not None and args.seed != (sampling or {}).get("seed"):
+                    raise ValueError("Seed differs from the original prediction sample")
+                if args.sample_size is not None and args.sample_size != len(selected_case_ids):
+                    raise ValueError("Sample size differs from the original prediction sample")
+        else:
+            args.split = args.split or "random"
+            if args.split == "random":
+                seed = args.seed if args.seed is not None else random.SystemRandom().getrandbits(64)
+                size = args.sample_size if args.sample_size is not None else 60
+                selected_case_ids = sample_cases(size, seed)
+                sampling = {"method": "family_balanced_random", "seed": seed, "size": size}
+        if args.split != "random" and (args.seed is not None or args.sample_size is not None):
+            raise ValueError("--seed and --sample-size require --split random")
+        grading_references(args.split, args.reference_revision, selected_case_ids)
         if args.summary:
             prediction_references = verify_binding(
-                args.summary, input_binding(args.split, args.config, args.providers_config)
+                args.summary,
+                input_binding(args.split, args.config, args.providers_config, selected_case_ids),
             )
     except (OSError, ValueError) as error:
         parser.error(str(error))
@@ -414,21 +538,28 @@ def main() -> None:
             record=args.record,
             split=args.split,
             reference_revision=args.reference_revision,
+            selected_case_ids=selected_case_ids,
         )
     )
-    binding = input_binding(args.split, args.config, args.providers_config)
+    binding = input_binding(args.split, args.config, args.providers_config, selected_case_ids)
+    if sampling is not None:
+        binding["sampling"] = sampling
+        if not args.summary:
+            write_binding(args.output_dir / "summary.json", binding)
     try:
         metrics = score(
             summary,
             args.split,
             args.reference_revision,
             prediction_references=prediction_references,
+            selected_case_ids=selected_case_ids,
         )
     except (OSError, ValueError) as error:
         parser.error(str(error))
     benchmark = {
         "benchmark_version": 4,
         "mode": summary["mode"],
+        "sampling": sampling,
         "model_provenance": collect_model_provenance(
             args.summary.parent if args.summary else args.output_dir,
             binding["selected_case_ids"],

@@ -573,12 +573,12 @@ deterministic mock reviewer. The benchmark measures rubric decisions; the mock
 reviewer supplies synthetic fixtures and performs no substantive code review.
 
 ```sh
-# Live local inference, recording exact HTTP exchanges for replay.
-uv run python examples/synthetic-prs/benchmark.py --record \
+# Live local inference on a reproducible 60-case sample, recording HTTP exchanges.
+uv run python examples/synthetic-prs/benchmark.py --seed 42 --record \
   --output-dir reports/synthetic-prs-benchmark
 
 # Offline replay of that recording; no inference.
-uv run python examples/synthetic-prs/benchmark.py \
+uv run python examples/synthetic-prs/benchmark.py --seed 42 \
   --replay-dir reports/synthetic-prs-benchmark \
   --output-dir reports/synthetic-prs-benchmark-replay
 
@@ -627,8 +627,20 @@ expected-to-actual counts; recommendation agreement and unsafe approvals; and
 triviality accuracy from the native scale answers. Outputs stay under ignored
 `reports/`.
 
-Both runners default to the held-out evaluation partition. Use `--split development`
-for development runs and `--split all` only for combined diagnostics. Every metric
+The router benchmark defaults to `--split random --sample-size 60`. It randomly
+selects in balanced family rounds without replacement: exactly two cases per
+family. Use `--sample-size 30` for a quick run with exactly one per family.
+Other sizes continue across families with remaining cases; samples smaller than
+30 choose that many distinct families.
+Without `--seed`, a fresh seed is generated; `benchmark.json` and
+`benchmark-inputs.json` record `sampling.seed`, the method, size, and selected case
+IDs. Repeat `--seed` and `--sample-size` to compare models on the same inputs.
+Offline `--summary` rescoring automatically reuses the recorded selection and seed;
+HTTP replay requires the original seed and size. The selected corpus, rubric, and
+input snapshots are saved under the run directory's `sample-inputs/`.
+These cross-family random samples are not family-disjoint held-out evaluations.
+The standalone triviality scorer retains its evaluation default; explicit named
+partitions and `--split all` remain available in both runners. Every metric
 group includes its support. `by_scenario`, `by_triviality_level`, `by_family_id`,
 `by_split`, `by_author_id`, and `by_scenario_and_triviality_level` each retain the
 full criterion confusion. Thus a failed blocking criterion cannot disappear

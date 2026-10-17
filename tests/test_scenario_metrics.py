@@ -214,6 +214,56 @@ def test_benchmark_executes_only_the_selected_corpus(tmp_path, monkeypatch):
     assert json.loads((tmp_path / "benchmark-inputs.json").read_text())["split"] == "evaluation"
 
 
+@pytest.mark.parametrize("size,per_family", [(30, 1), (60, 2)])
+def test_random_sample_covers_families_and_reproduces_seed(size, per_family):
+    sample = runpy.run_path(str(ROOT / "benchmark.py"))["sample_cases"]
+    cases = json.loads((ROOT / "index.json").read_text())["cases"]
+    selected = sample(size, 42)
+    assert len(selected) == len(set(selected)) == size
+    assert selected == sample(size, 42)
+    assert selected != sample(size, 43)
+    assert {case["family_id"] for case in cases if case["case_id"] in selected} == {
+        case["family_id"] for case in cases
+    }
+    for family in {case["family_id"] for case in cases}:
+        assert (
+            sum(case["family_id"] == family and case["case_id"] in selected for case in cases)
+            == per_family
+        )
+    assert len(sample(10, 42)) == 10
+    assert len(sample(len(cases), 42)) == len(cases)
+    for size in (0, len(cases) + 1):
+        with pytest.raises(ValueError, match="Sample size"):
+            sample(size, 42)
+
+
+def test_random_sample_execution_corpus_loads_selected_inputs(tmp_path, monkeypatch):
+    namespace = runpy.run_path(str(ROOT / "benchmark.py"))
+    selected = namespace["sample_cases"](60, 42)
+    (tmp_path / "summary.json").write_text('{"cases": []}')
+
+    def check_corpus(command, **kwargs):
+        path = Path(command[command.index("--corpus") + 1])
+        corpus, evidence, _ = load_corpus(path)
+        rubric, reviews, _ = load_corpus_rubric(path, corpus)
+        assert [case.case_id for case in corpus.cases] == selected
+        assert len(evidence) == len(reviews) == 60
+        assert rubric is not None
+
+    monkeypatch.setattr(namespace["subprocess"], "run", check_corpus)
+    namespace["run_router"](
+        tmp_path,
+        config=ROOT / "policy.toml",
+        providers=ROOT / "providers.toml",
+        replay_dir=None,
+        record=False,
+        split="random",
+        selected_case_ids=selected,
+    )
+    binding = json.loads((tmp_path / "benchmark-inputs.json").read_text())
+    assert binding["selected_case_ids"] == selected
+
+
 def test_model_provenance_collects_configured_and_observed_models(tmp_path):
     collect = runpy.run_path(str(ROOT / "benchmark.py"))["collect_model_provenance"]
     artifact = {

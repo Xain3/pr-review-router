@@ -474,8 +474,19 @@ confusion against provisional author references. The label-review audit's
 selected grading revision. No original PR input, author
 annotation, rubric, or partition assignment is rewritten by the re-review.
 
-The benchmark runners default to evaluation; `--split development` and
-`--split all` are explicit alternatives. Scoring requires exactly one result for
+The router benchmark defaults to `--split random --sample-size 60`, sampling across
+the entire corpus in balanced family rounds without replacement: exactly two cases
+per family. `--sample-size 30` selects exactly one per family for a quick run.
+Other sizes continue in rounds across families with remaining cases; sizes below
+the family count select distinct random families.
+A supplied `--seed` reproduces selection; otherwise a fresh seed is
+generated. Reports and prediction bindings record the seed, sampling method, size,
+and selected case IDs. Offline rescoring reuses the original sample without drawing
+again. The sampled corpus and its confined input snapshots are saved with outputs.
+Random cross-family samples do not constitute family-disjoint held-out evaluation.
+The standalone triviality scorer retains its evaluation default. Explicit
+`--split evaluation`, `--split development`, and `--split all` remain available.
+Scoring requires exactly one result for
 each selected case. Both benchmark scorers default to `--reference-revision
 latest`, resolved through `independent-review/reference-revisions.json` to the
 current adjudications for both partitions. `original` selects preserved canonical

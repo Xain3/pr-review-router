@@ -206,6 +206,14 @@ human-reviewed labels are needed to assess model quality. Ollaya routing
 confidence remains unavailable until task calibration; reviewer confidence is
 self-reported.
 
+The [synthetic PR benchmark](examples/synthetic-prs/README.md#router-rubric-benchmark)
+defaults to 60 randomly selected cases, exactly two per family across all 30 families. Use
+`uv run python examples/synthetic-prs/benchmark.py --seed 42` to reproduce a sample;
+`--sample-size 30` for a quick run with one case per family; `--split all` runs all
+157 cases. Reports
+record the seed, selected case IDs, and model provenance separately for the decision
+and review roles, including explicit mock-provider labels.
+
 The [six-criterion PR and review rubric](examples/rubric-review/README.md)
 evaluates title format, Summary structure, meaningful rationale, description
 coverage of the diff, supplied-review coverage, and relevant testing. It shows

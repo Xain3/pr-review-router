@@ -226,6 +226,57 @@ def test_offline_cli_rescores_same_predictions_with_latest_and_original(
     )
 
 
+@pytest.mark.parametrize("seed", [42, None])
+def test_random_cli_records_seed_and_reuses_sample_offline(tmp_path, monkeypatch, seed):
+    namespace = runpy.run_path(str(ROOT / "benchmark.py"))
+    predictions = _summary()
+    output = tmp_path / "predictions"
+
+    def fake_run(output_dir, **kwargs):
+        selected = kwargs["selected_case_ids"]
+        summary = copy.deepcopy(predictions)
+        summary["cases"] = [case for case in summary["cases"] if case["case_id"] in selected]
+        summary["reference_labels"]["cases"] = [
+            case for case in summary["reference_labels"]["cases"] if case["case_id"] in selected
+        ]
+        output_dir.mkdir()
+        (output_dir / "summary.json").write_text(json.dumps(summary))
+        return summary
+
+    monkeypatch.setitem(namespace["main"].__globals__, "run_router", fake_run)
+    arguments = ["benchmark.py", "--output-dir", str(output)]
+    if seed is not None:
+        arguments += ["--seed", str(seed)]
+    monkeypatch.setattr(namespace["sys"], "argv", arguments)
+    namespace["main"]()
+    benchmark = json.loads((output / "benchmark.json").read_text())
+    binding = json.loads((output / "benchmark-inputs.json").read_text())
+    assert benchmark["sampling"] == binding["sampling"]
+    recorded_seed = benchmark["sampling"]["seed"]
+    assert isinstance(recorded_seed, int)
+    if seed is not None:
+        assert recorded_seed == seed
+    assert benchmark["sampling"]["size"] == 60
+    assert benchmark["sampling"]["method"] == "family_balanced_random"
+    assert benchmark["selected_case_ids"] == namespace["sample_cases"](60, recorded_seed)
+    assert benchmark["grading_reference"]["case_count"] == 60
+
+    def no_inference(*args, **kwargs):
+        raise AssertionError("offline rescoring called inference")
+
+    monkeypatch.setitem(namespace["main"].__globals__, "run_router", no_inference)
+    rescored = tmp_path / "rescored"
+    monkeypatch.setattr(
+        namespace["sys"],
+        "argv",
+        ["benchmark.py", "--summary", str(output / "summary.json"), "--output-dir", str(rescored)],
+    )
+    namespace["main"]()
+    result = json.loads((rescored / "benchmark.json").read_text())
+    assert result["sampling"] == benchmark["sampling"]
+    assert result["selected_case_ids"] == benchmark["selected_case_ids"]
+
+
 def test_new_review_revision_changes_grading_without_invalidating_predictions(bound_predictions):
     root, namespace, path, binding = bound_predictions
     archive_path = root / "independent-review/authored-reviews.json"
