@@ -11,6 +11,7 @@ from pr_review_router.assessment_rubric import (
     combine_assessments,
     load_assessment_rubric,
 )
+from pr_review_router.corpus_metrics import rubric_metrics
 
 ROOT = Path(__file__).resolve().parent
 
@@ -44,6 +45,9 @@ def report(split: str = "evaluation") -> dict:
     corpus = json.loads(corpus_path.read_text(encoding="utf-8"))
     rubric = load_assessment_rubric(ROOT / "rubric.toml")
     score = runpy.run_path(str(ROOT / "benchmark.py"))["score"]
+    index = json.loads((ROOT / "index.json").read_text())
+    indexed = {case["case_id"]: case for case in index["cases"]}
+    levels = {level["label"]: level["score"] for level in index["triviality_scale"]["levels"]}
     results = {}
     for reviewer in ("A", "B"):
         cases = []
@@ -82,7 +86,31 @@ def report(split: str = "evaluation") -> dict:
                     },
                 }
             )
-        results[reviewer] = score({"reference_labels": corpus, "cases": cases}, split)
+        results[reviewer] = score({"reference_labels": corpus, "cases": cases}, split, "original")
+        confidence_groups = {}
+        for case in cases:
+            case_id = case["case_id"]
+            reference = results[reviewer]["grading_references"][case_id]
+            contested = [
+                key for key, label in records[case_id]["labels"].items() if label["contested"]
+            ]
+            confidence = "contested" if contested else "uncontested_ai"
+            predicted = case["rubric"]["native_answers"]["change-triviality"]["choice"]
+            confidence_groups.setdefault(confidence, []).append(
+                {
+                    **indexed[case_id],
+                    "expected": reference,
+                    "actual": case["rubric"],
+                    "reference_score": reference["triviality_score"],
+                    "reference_label": reference["triviality_level"],
+                    "predicted_score": levels.get(predicted),
+                    "predicted_label": predicted,
+                    "contested_criteria": contested,
+                }
+            )
+        results[reviewer]["by_review_confidence"] = {
+            confidence: rubric_metrics(rows) for confidence, rows in confidence_groups.items()
+        }
     labels = [
         (case_id, key, label)
         for case_id, record in records.items()
@@ -130,11 +158,22 @@ def report(split: str = "evaluation") -> dict:
                 if label["adjudicated"] != label["oracle"]
             ],
         },
+        "review_confidence_support": {
+            "contested": sum(
+                any(label["contested"] for label in record["labels"].values())
+                for record in records.values()
+            ),
+            "uncontested_ai": sum(
+                not any(label["contested"] for label in record["labels"].values())
+                for record in records.values()
+            ),
+        },
         "limitations": "These are actual blind AI label judgments against provisional author intent, "
         "not live provider-quality measurements, human ground truth, or calibration. Recommendation "
         "confusion is a policy projection of those labels, not an observed router recommendation. "
         "All cases, including contested author references, remain in overall denominators; "
-        "by_reference_confidence separates contested cases. Final adjudications and unresolved "
+        "by_review_confidence separates contested review cases; grading_reference remains original "
+        "for this author-intent audit. Final adjudications and unresolved "
         "disagreements are recorded separately; confusion continues to use author-intent references.",
         "reviewers": results,
     }

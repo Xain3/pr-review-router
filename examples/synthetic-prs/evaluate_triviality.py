@@ -8,21 +8,24 @@ from pathlib import Path
 from pr_review_router.corpus_metrics import ordinal_metrics, stratify
 
 
-def evaluate(root: Path, predictions: dict, split: str = "all") -> dict:
+def evaluate(
+    root: Path, predictions: dict, split: str = "all", reference_revision: str = "latest"
+) -> dict:
     """Calculate ordinal and binary accuracy without running inference.
 
     :param root: Corpus directory with an index and independently stored annotations.
     :param predictions: Version-1 object containing one integer score per case.
     :param split: Selected family-disjoint partition; null scores explicitly abstain.
+    :param reference_revision: Latest adjudications by default; original or a named snapshot otherwise.
     :returns: Exact accuracy, mean absolute error, binary accuracy, and confusion counts.
     :raises ValueError: If predictions are incomplete, duplicated, or outside the scale.
     """
     index = json.loads((root / "index.json").read_text(encoding="utf-8"))
     if split not in {"all", "development", "evaluation"}:
         raise ValueError("Unknown corpus split")
-    runpy.run_path(str(Path(__file__).with_name("validate.py")))["validate_splits"](
-        root.resolve(), index
-    )
+    validation = runpy.run_path(str(Path(__file__).with_name("validate.py")))
+    validation["validate_splits"](root.resolve(), index)
+    revision = validation["load_grading_references"](root.resolve(), split, reference_revision)
     cases = [case for case in index["cases"] if split == "all" or case["split"] == split]
     if (
         set(predictions) != {"schema_version", "predictions"}
@@ -46,25 +49,30 @@ def evaluate(root: Path, predictions: dict, split: str = "all") -> dict:
         raise ValueError("Predictions must cover exactly all selected corpus case IDs")
     rows = []
     for case in cases:
-        annotation = json.loads((root / case["annotations"]).read_text(encoding="utf-8"))
-        expected = annotation["criteria"]["change_triviality"]["score"]
+        reference = revision.cases[case["case_id"]]
+        expected = reference["triviality_score"]
         score = predicted[case["case_id"]]
         rows.append(
             {
                 **case,
+                "author_triviality_level": case["triviality_level"],
+                "triviality_level": reference["triviality_level"],
                 "reference_score": expected,
+                "reference_label": "uncertain" if expected is None else str(expected),
                 "predicted_score": score,
                 "predicted_label": "uncertain" if score is None else str(score),
             }
         )
     metrics = ordinal_metrics(rows)
     return {
-        "schema_version": 2,
+        "schema_version": 3,
         "label_status": index["label_status"],
         "split": split,
         "case_count": len(rows),
         "family_count": len({row["family_id"] for row in rows}),
         "criterion": "change_triviality",
+        "grading_reference": revision.metadata,
+        "grading_references": revision.cases,
         "exact_score_accuracy": metrics["exact_accuracy"],
         "mean_absolute_error": metrics["mean_absolute_error_when_classified"],
         "binary_triviality_accuracy": metrics["binary_accuracy"],
@@ -91,12 +99,19 @@ def main() -> None:
     parser.add_argument(
         "--split", choices=["evaluation", "development", "all"], default="evaluation"
     )
+    parser.add_argument(
+        "--reference-revision",
+        default="latest",
+        help="Latest adjudications, original author labels, or a registered review snapshot.",
+    )
     args = parser.parse_args()
     try:
         predictions = json.loads(args.predictions.read_text(encoding="utf-8"))
         if not isinstance(predictions, dict):
             raise ValueError("Predictions must be a JSON object")
-        result = evaluate(Path(__file__).resolve().parent, predictions, args.split)
+        result = evaluate(
+            Path(__file__).resolve().parent, predictions, args.split, args.reference_revision
+        )
     except (OSError, ValueError) as error:
         parser.error(str(error))
     print(json.dumps(result, indent=2))

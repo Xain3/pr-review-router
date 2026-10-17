@@ -110,7 +110,9 @@ Run `uv run python examples/synthetic-prs/review_report.py --split development`
 to write the complete report to `reports/synthetic-prs-label-review-development.json`.
 Use `--split all` for the combined 149-case report; evaluation remains the default.
 Every group retains support, criterion confusion, native-level confusion, and
-the distinction between contested and uncontested AI references. Report version 2
+the distinction between contested and uncontested AI reviews in
+`by_review_confidence`. The audit explicitly grades against `original`; benchmark
+scoring defaults to the latest adjudications. Report version 2
 also lists final adjudication overrides and unresolved disagreements separately
 from agreement with author intent. The combined archive retains 41 unresolved
 triviality judgments: 35 original cases and six held-out cases.

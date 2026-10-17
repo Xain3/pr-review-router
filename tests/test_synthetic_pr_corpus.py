@@ -162,7 +162,7 @@ def test_benchmark_scores_oracle_identical_answers_as_full_agreement():
             for case in corpus["cases"]
         ],
     }
-    result = score(summary)
+    result = score(summary, reference_revision="original")
     assert result["recommendation"]["agreement"] == 1
     assert all(item["agreement"] == 1 for item in result["criteria"].values())
     assert result["triviality"]["exact_accuracy"] == result["triviality"]["binary_accuracy"] == 1
@@ -183,7 +183,10 @@ def test_triviality_scorer_does_not_use_diagnostic_text_scores(tmp_path, trivial
         destination.parent.mkdir(parents=True, exist_ok=True)
         destination.write_text(json.dumps(annotation))
     evaluate = runpy.run_path(str(CORPUS / "evaluate_triviality.py"))["evaluate"]
-    assert evaluate(tmp_path, triviality_predictions) == evaluate(CORPUS, triviality_predictions)
+    modified = evaluate(tmp_path, triviality_predictions, reference_revision="original")
+    baseline = evaluate(CORPUS, triviality_predictions, reference_revision="original")
+    assert modified.pop("grading_reference") != baseline.pop("grading_reference")
+    assert modified == baseline
 
 
 def test_text_projections_are_independent_of_reference_diff_label():
@@ -244,7 +247,7 @@ def triviality_predictions():
 
 def test_triviality_benchmark_reports_ordinal_and_binary_errors(triviality_predictions):
     evaluate = runpy.run_path(str(CORPUS / "evaluate_triviality.py"))["evaluate"]
-    perfect = evaluate(CORPUS, triviality_predictions)
+    perfect = evaluate(CORPUS, triviality_predictions, reference_revision="original")
     assert perfect["exact_score_accuracy"] == perfect["binary_triviality_accuracy"] == 1
     assert perfect["mean_absolute_error"] == 0
     assert perfect["confusion_matrix"]["counts"] == [
@@ -257,7 +260,7 @@ def test_triviality_benchmark_reports_ordinal_and_binary_errors(triviality_predi
     # A documentation correction incorrectly classified as a behavior change.
     imperfect = copy.deepcopy(triviality_predictions)
     imperfect["predictions"][0]["score"] = 2
-    result = evaluate(CORPUS, imperfect)
+    result = evaluate(CORPUS, imperfect, reference_revision="original")
     assert result["exact_score_accuracy"] == result["binary_triviality_accuracy"] == 148 / 149
     assert result["mean_absolute_error"] == 2 / 149
     assert result["exact_score_accuracy_by_pr_quality"] == {"good": 27 / 28, "needs_revision": 1}
@@ -268,7 +271,7 @@ def test_triviality_benchmark_rejects_invalid_scores(triviality_predictions, sco
     evaluate = runpy.run_path(str(CORPUS / "evaluate_triviality.py"))["evaluate"]
     triviality_predictions["predictions"][0]["score"] = score
     with pytest.raises(ValueError, match="integers from 0 through 4"):
-        evaluate(CORPUS, triviality_predictions)
+        evaluate(CORPUS, triviality_predictions, reference_revision="original")
 
 
 @pytest.mark.parametrize("kind", ["missing", "duplicate", "unknown"])
@@ -281,7 +284,7 @@ def test_triviality_benchmark_requires_all_unique_case_ids(triviality_prediction
     else:
         triviality_predictions["predictions"][0]["case_id"] = "pr-unknown"
     with pytest.raises(ValueError, match="unique|exactly all"):
-        evaluate(CORPUS, triviality_predictions)
+        evaluate(CORPUS, triviality_predictions, reference_revision="original")
 
 
 def _annotation(number):

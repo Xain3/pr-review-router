@@ -1,4 +1,4 @@
-"""Run the router's rubric evaluation on the synthetic corpus and score it against the oracle."""
+"""Run the router's rubric evaluation on the synthetic corpus and score versioned reference judgments."""
 
 import argparse
 import hashlib
@@ -10,6 +10,7 @@ import sys
 from pathlib import Path
 
 from pr_review_router.corpus_metrics import rubric_metrics, stratify
+from pr_review_router.corpus_references import reference_revisions
 
 ROOT = Path(__file__).resolve().parent
 RUBRIC_TRIVIALITY = "change-triviality"
@@ -23,6 +24,7 @@ def run_router(
     replay_dir: Path | None,
     record: bool,
     split: str = "evaluation",
+    reference_revision: str = "latest",
 ) -> dict:
     """Run ``pr-review-router evaluate`` without environment policy overrides.
 
@@ -32,9 +34,11 @@ def run_router(
     :param replay_dir: Optional directory of recorded tapes for offline replay.
     :param record: Whether to record HTTP exchanges for later replay.
     :param split: Family-disjoint corpus partition, or all cases explicitly.
+    :param reference_revision: Grading revision, validated before any provider call.
     :returns: The router's evaluation summary.
     :raises subprocess.CalledProcessError: If the router rejects inputs or replay.
     """
+    grading_references(split, reference_revision)
     binding = input_binding(split, config, providers)
     command = [
         sys.executable,
@@ -65,11 +69,30 @@ def run_router(
     return json.loads((output_dir / "summary.json").read_text(encoding="utf-8"))
 
 
-def score(summary: dict, split: str = "all") -> dict:
-    """Compare router rubric outputs with oracle-derived labels and triviality scores.
+def grading_references(split: str, revision: str = "latest"):
+    """Load a complete grading revision and validate each selected archive.
+
+    :param split: Required case partition.
+    :param revision: Original baseline, latest alias, or registered review snapshot.
+    :returns: Policy-derived references with archive provenance.
+    """
+    validation = runpy.run_path(str(ROOT / "validate.py"))
+    return validation["load_grading_references"](ROOT, split, revision)
+
+
+def score(
+    summary: dict,
+    split: str = "all",
+    reference_revision: str = "latest",
+    *,
+    prediction_references: dict | None = None,
+) -> dict:
+    """Compare router rubric outputs with the selected revision of reference judgments.
 
     :param summary: Router evaluation summary for the synthetic corpus.
     :param split: Required partition; every selected case must occur exactly once.
+    :param reference_revision: Selected grading labels; latest adjudications by default.
+    :param prediction_references: Bound original labels from the prediction run, when rescoring.
     :returns: Overall and stratified confusion, recommendation risks, and triviality metrics.
     :raises ValueError: If case coverage or embedded references differ from pinned inputs.
     """
@@ -83,51 +106,62 @@ def score(summary: dict, split: str = "all") -> dict:
         raise ValueError("Unknown corpus split")
     selected = [case for case in index["cases"] if split == "all" or case["split"] == split]
     corpus = json.loads((ROOT / "corpus.json").read_text(encoding="utf-8"))
-    references = {
-        case["case_id"]: case["expectations"]["rubric"]
-        for case in corpus["cases"]
-        if case["case_id"] in {item["case_id"] for item in selected}
-    }
+    origins = (
+        prediction_references
+        if prediction_references is not None
+        else {
+            case["case_id"]: case["expectations"]["rubric"]
+            for case in corpus["cases"]
+            if case["case_id"] in {item["case_id"] for item in selected}
+        }
+    )
     ids = [case["case_id"] for case in summary["cases"]]
-    if len(ids) != len(set(ids)) or set(ids) != set(references):
+    if len(ids) != len(set(ids)) or set(ids) != {case["case_id"] for case in selected}:
         raise ValueError("Results must cover exactly the selected case IDs once")
     embedded = summary["reference_labels"]["cases"]
     embedded_ids = [case["case_id"] for case in embedded]
     if (
         len(embedded_ids) != len(set(embedded_ids))
-        or {case["case_id"]: case["expectations"]["rubric"] for case in embedded} != references
+        or {case["case_id"]: case["expectations"]["rubric"] for case in embedded} != origins
     ):
         raise ValueError("Summary reference labels differ from the pinned selected corpus")
     outputs = {case["case_id"]: case.get("rubric") or {} for case in summary["cases"]}
     rows = []
-    review_labels = validation["load_active_reviews"](ROOT, index)
+    revision = grading_references(split, reference_revision)
     for case in selected:
         actual = outputs[case["case_id"]]
         answer = (actual.get("native_answers") or {}).get(RUBRIC_TRIVIALITY) or {}
         label = answer.get("choice") or "unanswered"
         if label not in {*levels, "uncertain", "unanswered"}:
             raise ValueError(f"Invalid native triviality label: {label}")
-        contested = [
-            key
-            for key, label in review_labels[case["case_id"]]["labels"].items()
-            if label["contested"]
-        ]
+        reference = revision.cases[case["case_id"]]
+        contested = reference["contested_criteria"]
         rows.append(
             {
                 **case,
-                "reference_score": case["triviality_score"],
+                "author_triviality_score": case["triviality_score"],
+                "author_triviality_level": case["triviality_level"],
+                "triviality_level": reference["triviality_level"],
+                "reference_score": reference["triviality_score"],
+                "reference_label": reference["triviality_level"],
                 "predicted_score": levels.get(label),
                 "predicted_label": label,
-                "expected": references[case["case_id"]],
+                "expected": reference,
                 "actual": actual,
                 "contested_criteria": contested,
-                "reference_confidence": "contested" if contested else "uncontested_ai",
+                "reference_confidence": "author_intent"
+                if revision.metadata["kind"] == "author_intent"
+                else "contested"
+                if contested
+                else "uncontested_ai",
             }
         )
     groups = stratify(rows, rubric_metrics)
     return {
         "split": split,
         "selected_case_ids": [case["case_id"] for case in selected],
+        "grading_reference": revision.metadata,
+        "grading_references": revision.cases,
         **rubric_metrics(rows),
         **groups,
         "macro_scenario_recommendation_agreement": sum(
@@ -163,31 +197,22 @@ def input_binding(split: str, config: Path, providers: Path) -> dict:
     index = json.loads((ROOT / "index.json").read_text(encoding="utf-8"))
     validation = runpy.run_path(str(ROOT / "validate.py"))
     validation["validate_splits"](ROOT, index)
-    validation["load_active_reviews"](ROOT, index)
     selected = [case for case in index["cases"] if split == "all" or case["split"] == split]
-    paths = {
-        name: ROOT / name
-        for name in (
-            "corpus.json",
-            "index.json",
-            "splits.json",
-            "rubric.toml",
-            "corpus-development.json",
-            "corpus-evaluation.json",
-            "independent-review/reviews.json",
-            "independent-review/legacy-reviews.json",
-            "independent-review/authored-reviews.json",
-        )
-    }
+    paths = {name: ROOT / name for name in ("splits.json", "rubric.toml")}
     paths.update({"policy.toml": config, "providers.toml": providers})
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "split": split,
         "selected_case_ids": [case["case_id"] for case in selected],
         "inputs_sha256": {
             name: hashlib.sha256(path.read_bytes()).hexdigest() for name, path in paths.items()
         },
         "case_inputs_sha256": {case["case_id"]: case_inputs_sha256(case) for case in selected},
+        "prediction_reference_labels": {
+            case["case_id"]: case["expectations"]["rubric"]
+            for case in json.loads((ROOT / "corpus.json").read_text())["cases"]
+            if case["case_id"] in {item["case_id"] for item in selected}
+        },
     }
 
 
@@ -203,35 +228,52 @@ def write_binding(summary_path: Path, binding: dict) -> None:
     )
 
 
-def verify_binding(summary_path: Path, expected: dict) -> None:
+def verify_binding(summary_path: Path, expected: dict) -> dict:
     """Reject unbound or stale summaries before attributing results to current inputs.
 
     :param summary_path: Summary to rescore offline.
     :param expected: Fingerprints of the currently selected inputs.
+    :returns: Verified labels used by the original prediction run, independently of grading revision.
     :raises ValueError: If the sidecar is missing or input/output content changed.
     """
     sidecar = summary_path.with_name("benchmark-inputs.json")
     if not sidecar.is_file():
         raise ValueError("Missing benchmark input binding; rerun the benchmark to create it")
     actual = json.loads(sidecar.read_text(encoding="utf-8"))
-    if actual != {
-        **expected,
-        "summary_sha256": hashlib.sha256(summary_path.read_bytes()).hexdigest(),
-    }:
+    if (
+        actual.get("schema_version") not in {1, 2}
+        or any(
+            actual.get(key) != expected[key]
+            for key in ("split", "selected_case_ids", "case_inputs_sha256")
+        )
+        or any(
+            actual.get("inputs_sha256", {}).get(key) != value
+            for key, value in expected["inputs_sha256"].items()
+        )
+        or actual.get("summary_sha256") != hashlib.sha256(summary_path.read_bytes()).hexdigest()
+    ):
         raise ValueError("Stale benchmark inputs or summary; rerun with the selected frozen inputs")
-
-
-def reviews_sha256() -> str:
-    """Hash every supplied review text in case order, since the corpus file only names them.
-
-    :returns: Hexadecimal digest of the case-ordered review paths and contents.
-    """
-    digest = hashlib.sha256()
-    for case in json.loads((ROOT / "corpus.json").read_text(encoding="utf-8"))["cases"]:
-        if case.get("review"):
-            digest.update(case["review"].encode() + b"\0")
-            digest.update((ROOT / case["review"]).read_bytes() + b"\0")
-    return digest.hexdigest()
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    if actual["schema_version"] == 1:
+        if (
+            actual["inputs_sha256"].get("corpus.json")
+            != hashlib.sha256((ROOT / "corpus.json").read_bytes()).hexdigest()
+        ):
+            raise ValueError(
+                "Legacy prediction labels cannot be verified; rerun to create a version-2 binding"
+            )
+        origins = expected["prediction_reference_labels"]
+    else:
+        origins = actual.get("prediction_reference_labels")
+    embedded = summary["reference_labels"]["cases"]
+    if (
+        not isinstance(origins, dict)
+        or set(origins) != set(expected["selected_case_ids"])
+        or len(embedded) != len(origins)
+        or {case["case_id"]: case["expectations"]["rubric"] for case in embedded} != origins
+    ):
+        raise ValueError("Summary prediction-origin references differ from their pinned binding")
+    return origins
 
 
 def main() -> None:
@@ -243,18 +285,33 @@ def main() -> None:
     parser.add_argument(
         "--split", choices=["evaluation", "development", "all"], default="evaluation"
     )
+    parser.add_argument(
+        "--reference-revision",
+        default="latest",
+        help="Grade latest adjudications (default), original author labels, or a named review revision.",
+    )
+    parser.add_argument(
+        "--list-reference-revisions",
+        action="store_true",
+        help="List registered grading revisions without inference.",
+    )
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--replay-dir", type=Path, help="Replay recorded tapes without inference.")
     mode.add_argument("--record", action="store_true", help="Record tapes for later replay.")
     mode.add_argument("--summary", type=Path, help="Score an existing evaluation summary offline.")
     args = parser.parse_args()
-    if args.summary:
-        try:
-            verify_binding(
+    if args.list_reference_revisions:
+        print(json.dumps(reference_revisions(ROOT), indent=2))
+        return
+    prediction_references = None
+    try:
+        grading_references(args.split, args.reference_revision)
+        if args.summary:
+            prediction_references = verify_binding(
                 args.summary, input_binding(args.split, args.config, args.providers_config)
             )
-        except (OSError, ValueError) as error:
-            parser.error(str(error))
+    except (OSError, ValueError) as error:
+        parser.error(str(error))
     summary = (
         json.loads(args.summary.read_text(encoding="utf-8"))
         if args.summary
@@ -265,38 +322,37 @@ def main() -> None:
             replay_dir=args.replay_dir,
             record=args.record,
             split=args.split,
+            reference_revision=args.reference_revision,
         )
     )
-    inputs = {
-        "corpus.json": ROOT / "corpus.json",
-        "rubric.toml": ROOT / "rubric.toml",
-        "index.json": ROOT / "index.json",
-        "splits.json": ROOT / "splits.json",
-        "policy.toml": args.config,
-        "providers.toml": args.providers_config,
-    }
+    binding = input_binding(args.split, args.config, args.providers_config)
+    try:
+        metrics = score(
+            summary,
+            args.split,
+            args.reference_revision,
+            prediction_references=prediction_references,
+        )
+    except (OSError, ValueError) as error:
+        parser.error(str(error))
     benchmark = {
-        "benchmark_version": 2,
+        "benchmark_version": 3,
         "mode": summary["mode"],
         "label_status": json.loads((ROOT / "index.json").read_text())["label_status"],
-        "inputs_sha256": {
-            **{
-                name: hashlib.sha256(path.read_bytes()).hexdigest() for name, path in inputs.items()
-            },
-            "review texts": reviews_sha256(),
-        },
+        "prediction_inputs_sha256": binding["inputs_sha256"],
+        "prediction_summary_sha256": hashlib.sha256(
+            (args.summary or args.output_dir / "summary.json").read_bytes()
+        ).hexdigest(),
         "failures": {
             key: summary["totals"][key]
             for key in ("schema_failures", "transport_failures", "rubric_schema_failures")
         },
-        "case_inputs_sha256": {
-            case["case_id"]: case_inputs_sha256(case)
-            for case in json.loads((ROOT / "index.json").read_text())["cases"]
-            if args.split == "all" or case["split"] == args.split
-        },
-        **score(summary, args.split),
+        "case_inputs_sha256": binding["case_inputs_sha256"],
+        **metrics,
         "limitations": (
-            "Oracle labels are provisional synthetic-author intent, not human-reviewed. "
+            "Selected reference judgments remain provisional, not human-reviewed. "
+            "Uncertain references are retained explicitly; numeric ordinal accuracy uses only known reference levels. "
+            "Raw summary labels retain prediction-run provenance; benchmark.json grades the selected reference revision. "
             "Some cases supply no review or an unresolvable one, so their "
             "review coverage is unassessable. Replay validates recorded behavior, not "
             "current model quality."

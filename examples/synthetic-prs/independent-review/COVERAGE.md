@@ -71,7 +71,9 @@ correctness, and an open review concern can still cover every changed file.
 Run `uv run python examples/synthetic-prs/review_report.py` to regenerate
 `reports/synthetic-prs-label-review.json` from the hash-validated archive.
 It contains support and complete confusion by criterion, scenario, reference
-triviality level, family, author, split, reference confidence, and scenario/level
-intersection. Its recommendation metrics project the rubric policy onto review
+triviality level, family, author, split, review confidence (`by_review_confidence`),
+and scenario/level intersection. Its grading revision is explicitly `original`
+to preserve this author-intent audit while benchmark scoring defaults to latest
+adjudications. Its recommendation metrics project the rubric policy onto review
 labels; they are not observed router decisions. Human review and broader
 external data are still needed before quality assessment or calibration.
