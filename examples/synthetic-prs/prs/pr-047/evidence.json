@@ -4,7 +4,7 @@
   "base_sha": "24b046c6af49f7c3f00293559bf7dab40ec961c7",
   "head_sha": "9a7ef4c6a7e476b1e00f162bb4d83c7440b956ea",
   "title": "fix(auth): compare tokens in constant time",
-  "body": "## Rationale\nOrdinary equality may reveal the first differing position through timing; token validation should avoid that comparison leak.\n\n## Testing\nValidation has not been performed; test selection is pending.\n\n## Limitations\nUnrelated features remain outside scope; risk assessment is pending.\n\n## Breaking changes\nNone for supported ASCII tokens; unsupported token types are outside the contract.\n",
+  "body": "## Rationale\nOrdinary equality may reveal the first differing position through timing; token validation should avoid that comparison leak.\n\n## Testing\nValidation has not been performed; test selection is pending.\n\n## Limitations\nUnrelated features remain outside scope; risk assessment is pending.\n",
   "files_complete": true,
   "files": [
     {

@@ -4,7 +4,7 @@
   "base_sha": "5802e190d17d257bb46987905143a51d35dfa2ea",
   "head_sha": "a89b6ffb59ec79dd51d0cc023cd948260a7dfaa5",
   "title": "docs(guide): remove a repeated word",
-  "body": "## Rationale\nThe repeated word interrupts the onboarding instructions and can confuse readers.\n\n## Testing\nValidation has not been performed; test selection is pending.\n\n## Limitations\nUnrelated features remain outside scope; risk assessment is pending.\n\n## Breaking changes\nNone; this is a prose correction.\n",
+  "body": "## Rationale\nThe repeated word interrupts the onboarding instructions and can confuse readers.\n\n## Testing\nValidation has not been performed; test selection is pending.\n\n## Limitations\nUnrelated features remain outside scope; risk assessment is pending.\n",
   "files_complete": true,
   "files": [
     {

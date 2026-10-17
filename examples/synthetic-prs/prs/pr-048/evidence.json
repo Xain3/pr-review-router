@@ -4,7 +4,7 @@
   "base_sha": "0a4554ac1f9142dd5a1c4063b22489f4a8c2b6f8",
   "head_sha": "3bf0cd9c06b39928d93242c8ff0f73d075a244ca",
   "title": "feat(export): add CSV serialization",
-  "body": "## Rationale\nDownstream spreadsheet imports require delimited text; naive joining would corrupt fields that contain commas.\n\n## Testing\nValidation has not been performed; test selection is pending.\n\n## Limitations\nUnrelated features remain outside scope; risk assessment is pending.\n\n## Breaking changes\nNone; this adds a new helper without replacing an existing API.\n",
+  "body": "## Rationale\nDownstream spreadsheet imports require delimited text; naive joining would corrupt fields that contain commas.\n\n## Testing\nValidation has not been performed; test selection is pending.\n\n## Limitations\nUnrelated features remain outside scope; risk assessment is pending.\n",
   "files_complete": true,
   "files": [
     {

@@ -4,7 +4,7 @@
   "base_sha": "666bcffd244693b9b4af1f8a2eef18258317baa6",
   "head_sha": "ad5d25a2cb126688c51c6bdda9ca2de16d05dcb1",
   "title": "feat(batch): raise the batch limit to 100",
-  "body": "## Rationale\nThe import worker supplies up to 100 items per page; the current limit rejects valid pages and forces an unnecessary split.\n\n## Testing\nValidation has not been performed; test selection is pending.\n\n## Limitations\nUnrelated features remain outside scope; risk assessment is pending.\n\n## Breaking changes\nNone expected; batches previously accepted remain accepted.\n",
+  "body": "## Rationale\nThe import worker supplies up to 100 items per page; the current limit rejects valid pages and forces an unnecessary split.\n\n## Testing\nValidation has not been performed; test selection is pending.\n\n## Limitations\nUnrelated features remain outside scope; risk assessment is pending.\n",
   "files_complete": true,
   "files": [
     {

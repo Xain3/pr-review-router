@@ -4,7 +4,7 @@
   "base_sha": "934513e1420e8d449c33f405e7a7081d676b546f",
   "head_sha": "9b6b6d2245773e0f4804a208c7acff9199a759fc",
   "title": "docs: correct the getting started link",
-  "body": "## Rationale\nThe misspelled path leads new users to a missing documentation page.\n\n## Testing\nValidation has not been performed; test selection is pending.\n\n## Limitations\nUnrelated features remain outside scope; risk assessment is pending.\n\n## Breaking changes\nNone; no public API or command changes.\n",
+  "body": "## Rationale\nThe misspelled path leads new users to a missing documentation page.\n\n## Testing\nValidation has not been performed; test selection is pending.\n\n## Limitations\nUnrelated features remain outside scope; risk assessment is pending.\n",
   "files_complete": true,
   "files": [
     {

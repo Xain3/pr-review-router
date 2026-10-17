@@ -4,7 +4,7 @@
   "base_sha": "ebbf30c3e069a318ad71161b7574e6171addda2b",
   "head_sha": "c3a4b1c2de7c2c76b25ab732d30a679a870e07a2",
   "title": "fix(stats): handle an empty average input",
-  "body": "## Rationale\nAn empty batch currently raises ZeroDivisionError; the reporting contract requires a neutral numeric result for batches with no observations.\n\n## Testing\nValidation has not been performed; test selection is pending.\n\n## Limitations\nUnrelated features remain outside scope; risk assessment is pending.\n\n## Breaking changes\nNo signature change. Empty input now returns 0 instead of raising ZeroDivisionError, which may affect exception-based callers.\n",
+  "body": "## Rationale\nAn empty batch currently raises ZeroDivisionError; the reporting contract requires a neutral numeric result for batches with no observations.\n\n## Testing\nValidation has not been performed; test selection is pending.\n\n## Limitations\nUnrelated features remain outside scope; risk assessment is pending.\n",
   "files_complete": true,
   "files": [
     {

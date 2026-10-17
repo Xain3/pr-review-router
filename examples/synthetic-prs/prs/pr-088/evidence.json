@@ -4,7 +4,7 @@
   "base_sha": "0a4554ac1f9142dd5a1c4063b22489f4a8c2b6f8",
   "head_sha": "11504711ed808d14fbeada3041198007d8b95808",
   "title": "feat(export): add CSV serialization",
-  "body": "## Summary\nAdd csv_text(rows) using csv.writer with LF line endings.\n\n## Rationale\nDownstream spreadsheet imports require delimited text; naive joining would corrupt fields that contain commas.\n\n## Testing\nValidation plan: manually inspect the generated CSV.\n\n## Limitations\nThe helper returns an in-memory string and adds no header automatically; large streaming exports and spreadsheet formula escaping are outside scope.\n\n## Breaking changes\nNone; this adds a new helper without replacing an existing API.\n",
+  "body": "## Summary\nAdd csv_text(rows) using csv.writer with LF line endings.\n\n## Rationale\nDownstream spreadsheet imports require delimited text; naive joining would corrupt fields that contain commas.\n\n## Testing\nValidation plan: write csv_text([['a', 'b']]) to a file and open it in a spreadsheet.\n\n## Limitations\nThe helper returns an in-memory string and adds no header automatically; large streaming exports and spreadsheet formula escaping are outside scope.\n\n## Breaking changes\nNone; this adds a new helper without replacing an existing API.\n",
   "files_complete": true,
   "files": [
     {

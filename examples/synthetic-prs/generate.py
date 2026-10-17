@@ -882,7 +882,7 @@ PARTIAL_COVERAGE = {
     ),
     "csv-export": (
         "Add csv_text(rows) using csv.writer with LF line endings.",
-        "Validation plan: manually inspect the generated CSV.",
+        "Validation plan: write csv_text([['a', 'b']]) to a file and open it in a spreadsheet.",
     ),
     "api-field": (
         "Replace the JSON response key name with full_name in src/users.py.",
@@ -1404,6 +1404,8 @@ def make_case(
         body_score = None
         body_projection_reason = "The body provides motivation and generic scope statements without describing actual edits."
         sections.pop("Summary", None)
+        # Family compatibility text often states the behavior change, so it would answer the omission.
+        sections.pop("Breaking changes", None)
         sections["Testing"] = "Validation has not been performed; test selection is pending."
         sections["Limitations"] = (
             "Unrelated features remain outside scope; risk assessment is pending."
@@ -1586,7 +1588,9 @@ def make_case(
     def partial_description() -> None:
         """Describe a serializer while omitting its independently added regression tests."""
         sections["Summary"] = family.partial_summary
-        sections["Testing"] = "Validation plan: manually inspect the generated CSV."
+        sections["Testing"] = (
+            "Validation plan: write csv_text([['a', 'b']]) to a file and open it in a spreadsheet."
+        )
         mark(
             "description_diff_consistency",
             "failed",

@@ -4,7 +4,7 @@
   "base_sha": "a0406eca87112488de66428777db796ac477b2e6",
   "head_sha": "0f6164373890490142a14c903ae14300836ebe49",
   "title": "Normalize keys for lookup",
-  "body": "## Rationale\nCallers use different capitalization for keys, causing misses against a store whose keys are already lowercase.\n\n## Testing\nValidation has not been performed; test selection is pending.\n\n## Limitations\nUnrelated features remain outside scope; risk assessment is pending.\n\n## Breaking changes\nNo signature change; key matching becomes case-insensitive for lookup.\n",
+  "body": "## Rationale\nCallers use different capitalization for keys, causing misses against a store whose keys are already lowercase.\n\n## Testing\nValidation has not been performed; test selection is pending.\n\n## Limitations\nUnrelated features remain outside scope; risk assessment is pending.\n",
   "files_complete": true,
   "files": [
     {
