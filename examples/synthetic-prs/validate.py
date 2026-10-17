@@ -14,7 +14,8 @@ from pr_review_router.engine import assess_coverage, assess_pr_text
 
 BASE_CASES = 100
 LEGACY_CASE_COUNT = 125
-CASE_COUNT = 149
+EVALUATION_CASE_COUNT = 24
+CASE_COUNT = 157
 REVIEWED_CRITERIA = [
     "title-format",
     "summary-section",
@@ -25,7 +26,7 @@ REVIEWED_CRITERIA = [
     "change-triviality",
 ]
 ACTIVE_REVIEW_ARCHIVES = {
-    "development": "independent-review/legacy-reviews.json",
+    "development": "independent-review/development-reviews-2026-10-18.json",
     "evaluation": "independent-review/authored-reviews.json",
 }
 REVIEW_STATUSES = {
@@ -37,7 +38,7 @@ REVIEW_STATUSES = {
     "off_target": "failed",
     "generic": "failed",
 }
-EXTENSION_SCENARIOS = {"what_not_why": 10, "omitted_change": 7, "boundary": 8}
+EXTENSION_SCENARIOS = {"what_not_why": 10, "omitted_change": 7, "boundary": 16}
 # Reference levels of the matched boundary pairs, adjacent levels differing by one.
 BOUNDARY_SCORES = {
     "comment-typo": 0,
@@ -128,7 +129,7 @@ def validate_independent_review(
         for label in record.get("labels", {}).values()
     )
     requires_history = (
-        relative == ACTIVE_REVIEW_ARCHIVES["development"] or has_previous_adjudications
+        relative == "independent-review/legacy-reviews.json" or has_previous_adjudications
     )
     require(
         not requires_history or "historical_review_sha256" in review,
@@ -186,11 +187,16 @@ def validate_independent_review(
                     == label["adjudicated"],
                     f"{case_id}: final triviality differs across matched family patches",
                 )
-            if historical is not None:
+            if historical is not None and case_id in historical["cases"]:
                 require(
                     label.get("previous_adjudicated")
                     == historical["cases"][case_id]["labels"][criterion]["adjudicated"],
                     f"{case_id}/{criterion}: historical adjudication provenance disagrees",
+                )
+            else:
+                require(
+                    "previous_adjudicated" not in label,
+                    f"{case_id}/{criterion}: invented historical adjudication provenance",
                 )
             allowed = levels | {"uncertain"} if criterion == "change-triviality" else statuses
             reference = oracle[criterion]
@@ -278,6 +284,18 @@ def validate_independent_review(
         },
         "Stale independent-review summary",
     )
+    if "preserved_review_sha256" in review:
+        preserved_path = "independent-review/legacy-reviews.json"
+        preserved = read_json(root, preserved_path)
+        require(
+            review["preserved_review_sha256"]
+            == hashlib.sha256((root / preserved_path).read_bytes()).hexdigest()
+            and all(
+                review["cases"].get(case_id) == record
+                for case_id, record in preserved["cases"].items()
+            ),
+            "Preserved blind assessments changed; re-review provenance",
+        )
     return dict(counts)
 
 
@@ -308,7 +326,8 @@ def load_grading_references(root: Path, split: str, revision: str = "latest"):
     references = load_reference_revision(root, split, revision)
     index = read_json(root, "index.json")
     for partition, relative in references.archives.items():
-        subset = {**index, "cases": [case for case in index["cases"] if case["split"] == partition]}
+        scope = references.metadata["case_ids"][partition]
+        subset = {**index, "cases": [case for case in index["cases"] if case["case_id"] in scope]}
         validate_independent_review(
             root,
             subset,
@@ -380,9 +399,10 @@ def validate_splits(root: Path, index: dict) -> dict:
                 family_patches.setdefault(case["family_id"], fingerprint) == fingerprint,
                 f"{case['family_id']}: matched family patches differ",
             )
-            legacy = int(case["case_id"].removeprefix("pr-")) <= LEGACY_CASE_COUNT
-            require((split == "development") == legacy, "Fixed held-out family assignment changed")
-            if not legacy:
+            number = int(case["case_id"].removeprefix("pr-"))
+            held_out = LEGACY_CASE_COUNT < number <= LEGACY_CASE_COUNT + EVALUATION_CASE_COUNT
+            require((split == "evaluation") == held_out, "Fixed held-out family assignment changed")
+            if held_out:
                 labels = read_json(root, case["annotations"])
                 require(
                     labels["authorship"]["method"] == "independent_agent_authored"
@@ -398,8 +418,17 @@ def validate_splits(root: Path, index: dict) -> dict:
                 "Evaluation must hold out twelve paired families spanning every triviality level",
             )
     require(
-        sum(item["case_count"] for item in support.values()) == len(index["cases"]),
-        "Unassigned cases",
+        support
+        == {
+            "development": {"case_count": 133, "family_count": 18},
+            "evaluation": {"case_count": EVALUATION_CASE_COUNT, "family_count": 12},
+        },
+        "Expected 133 development cases and 24 evaluation cases in disjoint families",
+    )
+    require(
+        len(families) == 30
+        and min(Counter(case["family_id"] for case in index["cases"]).values()) >= 2,
+        "Every one of thirty families must support at least two unique cases",
     )
     return support
 
@@ -925,6 +954,18 @@ def validate(root: Path) -> dict:
             "independent-review/authored-reviews.json",
         ),
         "legacy_independent_review": validate_independent_review(
+            root,
+            {
+                **index,
+                "cases": [
+                    case
+                    for case in index["cases"]
+                    if int(case["case_id"].removeprefix("pr-")) <= LEGACY_CASE_COUNT
+                ],
+            },
+            "independent-review/legacy-reviews.json",
+        ),
+        "development_independent_review": validate_independent_review(
             root,
             {**index, "cases": [case for case in index["cases"] if case["split"] == "development"]},
             ACTIVE_REVIEW_ARCHIVES["development"],

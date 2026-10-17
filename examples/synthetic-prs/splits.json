@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "unit": "family_id",
-  "protocol": "Original 125 cases for development; independently authored families held out for evaluation. Freeze this assignment before running models; evaluation is public and is not a sealed test set.",
+  "protocol": "Original 125 cases plus eight matched boundary variants for development (133 cases); 24 independently authored cases in twelve disjoint families held out for evaluation. Freeze this assignment before running models; evaluation is public and is not a sealed test set.",
   "partitions": {
     "development": {
       "family_ids": [
@@ -149,7 +149,15 @@
         "pr-122",
         "pr-123",
         "pr-124",
-        "pr-125"
+        "pr-125",
+        "pr-150",
+        "pr-151",
+        "pr-152",
+        "pr-153",
+        "pr-154",
+        "pr-155",
+        "pr-156",
+        "pr-157"
       ]
     },
     "evaluation": {

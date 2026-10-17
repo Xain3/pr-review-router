@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "synthetic": true,
+  "case_id": "pr-155",
+  "url": "https://example.invalid/synthetic/pr-quality-demo/pull/155",
+  "state": "open",
+  "draft": false,
+  "author": {
+    "login": "synthetic-author-06",
+    "name": "Synthetic Author 06",
+    "email": "author-06@example.invalid"
+  },
+  "created_at": "2026-06-04T12:00:00+00:00",
+  "updated_at": "2026-06-04T13:00:00+00:00",
+  "base_ref": "main",
+  "head_ref": "synthetic/pr-155",
+  "base_sha": "1c1c9ed5dd7b15e8cd56bca445ebcd7e5ea5755d",
+  "head_sha": "58fb259364ac66bf8a63c27c4876015ccbe0636b",
+  "changed_files": 2,
+  "additions": 9,
+  "deletions": 1,
+  "commits": [
+    {
+      "sha": "7dc047427581ff5a515410cb7676a83a769e8180",
+      "parents": [
+        "1c1c9ed5dd7b15e8cd56bca445ebcd7e5ea5755d"
+      ],
+      "message": "chore(render): escape cell text",
+      "author": {
+        "login": "synthetic-author-06",
+        "name": "Synthetic Author 06",
+        "email": "author-06@example.invalid"
+      },
+      "authored_at": "2026-06-04T11:50:00+00:00",
+      "files": [
+        "src/render.py"
+      ],
+      "additions": 4,
+      "deletions": 1
+    },
+    {
+      "sha": "58fb259364ac66bf8a63c27c4876015ccbe0636b",
+      "parents": [
+        "7dc047427581ff5a515410cb7676a83a769e8180"
+      ],
+      "message": "test(render): cover angle brackets",
+      "author": {
+        "login": "synthetic-author-06",
+        "name": "Synthetic Author 06",
+        "email": "author-06@example.invalid"
+      },
+      "authored_at": "2026-06-04T11:51:00+00:00",
+      "files": [
+        "tests/test_render.py"
+      ],
+      "additions": 5,
+      "deletions": 0
+    }
+  ]
+}

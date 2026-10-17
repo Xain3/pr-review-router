@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "synthetic": true,
+  "case_id": "pr-154",
+  "url": "https://example.invalid/synthetic/pr-quality-demo/pull/154",
+  "state": "open",
+  "draft": false,
+  "author": {
+    "login": "synthetic-author-05",
+    "name": "Synthetic Author 05",
+    "email": "author-05@example.invalid"
+  },
+  "created_at": "2026-06-03T12:00:00+00:00",
+  "updated_at": "2026-06-03T13:00:00+00:00",
+  "base_ref": "main",
+  "head_ref": "synthetic/pr-154",
+  "base_sha": "70fee1ee15baae3e05148c3241f6f5fa9168ecb4",
+  "head_sha": "7f9503fb7c811e0868f1b332590961881c2f56d0",
+  "changed_files": 2,
+  "additions": 6,
+  "deletions": 1,
+  "commits": [
+    {
+      "sha": "618a5116c8ab1d21a1eeb2b40746710c4f9623d3",
+      "parents": [
+        "70fee1ee15baae3e05148c3241f6f5fa9168ecb4"
+      ],
+      "message": "chore(names): strip whitespace in clean",
+      "author": {
+        "login": "synthetic-author-05",
+        "name": "Synthetic Author 05",
+        "email": "author-05@example.invalid"
+      },
+      "authored_at": "2026-06-03T11:50:00+00:00",
+      "files": [
+        "src/names.py"
+      ],
+      "additions": 1,
+      "deletions": 1
+    },
+    {
+      "sha": "7f9503fb7c811e0868f1b332590961881c2f56d0",
+      "parents": [
+        "618a5116c8ab1d21a1eeb2b40746710c4f9623d3"
+      ],
+      "message": "test(names): cover padded names",
+      "author": {
+        "login": "synthetic-author-05",
+        "name": "Synthetic Author 05",
+        "email": "author-05@example.invalid"
+      },
+      "authored_at": "2026-06-03T11:51:00+00:00",
+      "files": [
+        "tests/test_names.py"
+      ],
+      "additions": 5,
+      "deletions": 0
+    }
+  ]
+}

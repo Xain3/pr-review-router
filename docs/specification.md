@@ -442,13 +442,20 @@ See the [nine-case, six-criterion examples](../examples/rubric-review/README.md)
 Labels remain provisional and offline tapes explicitly synthetic.
 
 The separate [synthetic PR benchmark](../examples/synthetic-prs/README.md) contains
-149 sanitized fictional PRs across 30 families. Its fixed `splits.json` assigns
-the original 125 cases (18 families) to development and 24 independently authored
+157 sanitized fictional PRs across 30 families. Its fixed `splits.json` assigns
+133 cases (18 families) to development and 24 independently authored
 cases (12 new families) to evaluation. Matching description/review variants of a
 family stay together. Validation rejects overlapping families, identical patch
 sets across partitions, stale partition corpora, and missing author provenance.
 Independent authoring and blind AI label review do not confer human-reviewed
 ground truth; contested judgments retain their dissent and provisional labels.
+
+Eight boundary-family variants (PRs 150-157) extend the original development
+corpus so every family contains at least two cases. Existing 149 case inputs and
+review archives remain unchanged. The new `review-2026-10-18` snapshot adds two
+blind AI assessments per new case and retains their raw judgments and disagreements.
+Historical review revisions declare their original scopes explicitly and cannot
+grade new cases they did not review.
 
 The original 125 development cases also receive two fresh blind judgments per
 criterion under the same current seven-criterion rubric and adjudication rules

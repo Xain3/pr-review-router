@@ -4,6 +4,7 @@ import copy
 import json
 import runpy
 import shutil
+from collections import Counter
 from pathlib import Path
 
 import pytest
@@ -18,24 +19,31 @@ CORPUS = Path(__file__).resolve().parents[1] / "examples" / "synthetic-prs"
 def test_synthetic_pr_corpus_integrity():
     namespace = runpy.run_path(str(CORPUS / "validate.py"))
     summary = namespace["validate"](CORPUS)
-    assert summary["case_count"] == 149
-    assert summary["commit_count"] == 263
-    assert summary["quality_counts"] == {"good": 28, "needs_revision": 121}
-    assert summary["triviality_counts"] == {"0": 27, "1": 17, "2": 46, "3": 30, "4": 29}
-    assert summary["complexity_counts"] == {"trivial": 44, "non_trivial": 105}
+    assert summary["case_count"] == 157
+    assert summary["commit_count"] == 277
+    assert summary["quality_counts"] == {"good": 35, "needs_revision": 122}
+    assert summary["triviality_counts"] == {"0": 28, "1": 19, "2": 48, "3": 32, "4": 30}
+    assert summary["complexity_counts"] == {"trivial": 47, "non_trivial": 110}
     assert summary["text_diff_triviality_counts"] == {
-        "aligned": 132,
+        "aligned": 139,
         "conflicting_text": 8,
         "text_overstates": 2,
-        "text_understates": 6,
+        "text_understates": 7,
         "not_assessable": 1,
     }
-    assert summary["potential_triviality_confounders"] == 16
+    assert summary["potential_triviality_confounders"] == 17
     assert summary["review_coverage_counts"] == {
-        "not_assessable": 47,
-        "passed": 55,
-        "failed": 47,
+        "not_assessable": 50,
+        "passed": 58,
+        "failed": 49,
     }
+    assert summary["splits"] == {
+        "development": {"case_count": 133, "family_count": 18},
+        "evaluation": {"case_count": 24, "family_count": 12},
+    }
+    assert summary["independent_review"]["labels"] == 125 * 7
+    assert summary["legacy_independent_review"]["labels"] == 125 * 7
+    assert summary["authored_independent_review"]["labels"] == 24 * 7
 
 
 def test_synthetic_pr_corpus_regenerates_deterministically(tmp_path):
@@ -56,7 +64,7 @@ def test_synthetic_pr_corpus_regenerates_deterministically(tmp_path):
     expected_paths.add(Path("INDEX.md"))
 
     # Three JSON files and an optional review per PR, plus the corpus and index.
-    assert len(generated_files) == 149 * 3 + 125 + 8
+    assert len(generated_files) == 157 * 3 + 132 + 8
     assert set(generated_files) == expected_paths
     assert all(
         content == (CORPUS / relative_path).read_bytes()
@@ -125,9 +133,9 @@ def test_router_corpus_derives_labels_from_oracle_and_rubric_policy():
     corpus, evidence, _ = load_corpus(CORPUS / "corpus.json")
     rubric, reviews, _ = load_corpus_rubric(CORPUS / "corpus.json", corpus)
     assert rubric is not None
-    assert len(evidence) == 149
+    assert len(evidence) == 157
     # Cases with no review keep enforced review coverage uncertain; the rest supply review text.
-    assert reviews.count("") == 24
+    assert reviews.count("") == 25
     assert all(text.strip() for text in reviews if text)
     first = corpus.cases[0].expectations.rubric
     assert first is not None
@@ -251,19 +259,19 @@ def test_triviality_benchmark_reports_ordinal_and_binary_errors(triviality_predi
     assert perfect["exact_score_accuracy"] == perfect["binary_triviality_accuracy"] == 1
     assert perfect["mean_absolute_error"] == 0
     assert perfect["confusion_matrix"]["counts"] == [
-        [27, 0, 0, 0, 0],
-        [0, 17, 0, 0, 0],
-        [0, 0, 46, 0, 0],
-        [0, 0, 0, 30, 0],
-        [0, 0, 0, 0, 29],
+        [28, 0, 0, 0, 0],
+        [0, 19, 0, 0, 0],
+        [0, 0, 48, 0, 0],
+        [0, 0, 0, 32, 0],
+        [0, 0, 0, 0, 30],
     ]
     # A documentation correction incorrectly classified as a behavior change.
     imperfect = copy.deepcopy(triviality_predictions)
     imperfect["predictions"][0]["score"] = 2
     result = evaluate(CORPUS, imperfect, reference_revision="original")
-    assert result["exact_score_accuracy"] == result["binary_triviality_accuracy"] == 148 / 149
-    assert result["mean_absolute_error"] == 2 / 149
-    assert result["exact_score_accuracy_by_pr_quality"] == {"good": 27 / 28, "needs_revision": 1}
+    assert result["exact_score_accuracy"] == result["binary_triviality_accuracy"] == 156 / 157
+    assert result["mean_absolute_error"] == 2 / 157
+    assert result["exact_score_accuracy_by_pr_quality"] == {"good": 34 / 35, "needs_revision": 1}
 
 
 @pytest.mark.parametrize("score", [-1, 5, True, 2.5, "2"])
@@ -403,6 +411,37 @@ def test_boundary_pairs_are_adjacent_levels_with_neutral_text():
     assert annotation["diagnostics"]["text_diff_triviality"]["relationship"] == "text_understates"
 
 
+def test_appended_boundary_variants_complete_family_pairs_without_changing_holdout():
+    """Keep appended review variants in development with identical matched patches."""
+    index = json.loads((CORPUS / "index.json").read_text())
+    cases = index["cases"]
+    assert [case["case_id"] for case in cases] == [f"pr-{number:03d}" for number in range(1, 158)]
+    counts = Counter(case["family_id"] for case in cases)
+    assert len(counts) == 30 and min(counts.values()) == 2
+    assert [case["case_id"] for case in cases if case["split"] == "evaluation"] == [
+        f"pr-{number:03d}" for number in range(126, 150)
+    ]
+    assert [case["family_id"] for case in cases[149:]] == [
+        "comment-typo",
+        "rename-local",
+        "extract-constant",
+        "change-default",
+        "strip-input",
+        "escape-output",
+        "optional-param",
+        "required-param",
+    ]
+    for original, appended in zip(cases[117:125], cases[149:], strict=True):
+        assert original["family_id"] == appended["family_id"]
+        assert appended["scenario"] == "boundary" and appended["split"] == "development"
+        before = json.loads((CORPUS / original["evidence"]).read_text())
+        after = json.loads((CORPUS / appended["evidence"]).read_text())
+        assert before["files"] == after["files"]
+        old_review = (CORPUS / original["review"]).read_text() if original["review"] else ""
+        new_review = (CORPUS / appended["review"]).read_text() if appended["review"] else ""
+        assert old_review != new_review
+
+
 def test_rubric_instructions_separate_failure_from_insufficient_evidence():
     rubric = load_assessment_rubric(CORPUS / "rubric.toml")
     instructions = {
@@ -427,7 +466,9 @@ def test_historical_independent_review_retains_its_original_scope_and_provenance
     # The router's own corpus must keep saying that no human has reviewed the labels.
     assert corpus["label_status"] == index["label_status"] == "provisional"
     assert set(reviews["cases"]) == {
-        case["case_id"] for case in index["cases"] if case["split"] == "development"
+        case["case_id"]
+        for case in index["cases"]
+        if int(case["case_id"].removeprefix("pr-")) <= 125
     }
     assert all(len(record["labels"]) == 7 for record in reviews["cases"].values())
     # Every split is recorded with the dissenting rationale rather than silently resolved.

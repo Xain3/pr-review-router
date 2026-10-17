@@ -2,7 +2,7 @@
   "schema_version": 3,
   "synthetic": true,
   "label_status": "provisional",
-  "case_count": 149,
+  "case_count": 157,
   "criteria": {
     "change_triviality": "Ordinal 0–4 assessment of the actual diff: higher scores mean less trivial changes; scores 0–1 are trivial.",
     "summary-section": "Description contains a populated level-two Summary section.",
@@ -69,21 +69,21 @@
     ]
   },
   "triviality_counts": {
-    "0": 27,
-    "1": 17,
-    "2": 46,
-    "3": 30,
-    "4": 29
+    "0": 28,
+    "1": 19,
+    "2": 48,
+    "3": 32,
+    "4": 30
   },
   "complexity_counts": {
-    "trivial": 44,
-    "non_trivial": 105
+    "trivial": 47,
+    "non_trivial": 110
   },
   "text_diff_triviality_counts": {
-    "aligned": 132,
+    "aligned": 139,
     "conflicting_text": 8,
     "text_overstates": 2,
-    "text_understates": 6,
+    "text_understates": 7,
     "not_assessable": 1
   },
   "scenario_counts": {
@@ -99,7 +99,7 @@
     "combined_failures": 10,
     "what_not_why": 10,
     "omitted_change": 7,
-    "boundary": 8,
+    "boundary": 16,
     "complete_account": 6,
     "partial_account": 2,
     "rationale_only": 2,
@@ -118,22 +118,22 @@
     "motivation_only_and_ambiguous_review": 1
   },
   "quality_counts": {
-    "good": 28,
-    "needs_revision": 121
+    "good": 35,
+    "needs_revision": 122
   },
   "review_variant_counts": {
-    "none": 24,
-    "complete": 30,
+    "none": 25,
+    "complete": 31,
     "off_target": 7,
-    "generic": 22,
-    "ambiguous": 23,
-    "open_concern": 25,
-    "partial": 18
+    "generic": 23,
+    "ambiguous": 25,
+    "open_concern": 27,
+    "partial": 19
   },
   "review_coverage_counts": {
-    "not_assessable": 47,
-    "passed": 55,
-    "failed": 47
+    "not_assessable": 50,
+    "passed": 58,
+    "failed": 49
   },
   "cases": [
     {
@@ -4802,6 +4802,234 @@
       "evidence": "prs/pr-149/evidence.json",
       "metadata": "prs/pr-149/metadata.json",
       "annotations": "prs/pr-149/annotations.json"
+    },
+    {
+      "case_id": "pr-150",
+      "family_id": "comment-typo",
+      "scenario": "boundary",
+      "split": "development",
+      "author_id": "template_generator",
+      "variant": "boundary",
+      "complexity": "trivial",
+      "triviality_score": 0,
+      "triviality_level": "editorial",
+      "is_trivial": true,
+      "text_triviality_score": 0,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
+      "title": "chore(totals): fix a repeated word in a comment",
+      "expected_quality": "good",
+      "tags": [
+        "boundary",
+        "trivial"
+      ],
+      "failed_criteria": [],
+      "review_variant": "ambiguous",
+      "review_coverage": "not_assessable",
+      "review": "prs/pr-150/review.md",
+      "evidence": "prs/pr-150/evidence.json",
+      "metadata": "prs/pr-150/metadata.json",
+      "annotations": "prs/pr-150/annotations.json"
+    },
+    {
+      "case_id": "pr-151",
+      "family_id": "rename-local",
+      "scenario": "boundary",
+      "split": "development",
+      "author_id": "template_generator",
+      "variant": "boundary",
+      "complexity": "trivial",
+      "triviality_score": 1,
+      "triviality_level": "mechanical",
+      "is_trivial": true,
+      "text_triviality_score": 1,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
+      "title": "chore(totals): rename a local variable in total",
+      "expected_quality": "good",
+      "tags": [
+        "boundary",
+        "trivial"
+      ],
+      "failed_criteria": [],
+      "review_variant": "open_concern",
+      "review_coverage": "passed",
+      "review": "prs/pr-151/review.md",
+      "evidence": "prs/pr-151/evidence.json",
+      "metadata": "prs/pr-151/metadata.json",
+      "annotations": "prs/pr-151/annotations.json"
+    },
+    {
+      "case_id": "pr-152",
+      "family_id": "extract-constant",
+      "scenario": "boundary",
+      "split": "development",
+      "author_id": "template_generator",
+      "variant": "boundary",
+      "complexity": "trivial",
+      "triviality_score": 1,
+      "triviality_level": "mechanical",
+      "is_trivial": true,
+      "text_triviality_score": 1,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
+      "title": "chore(pager): define a page size constant",
+      "expected_quality": "good",
+      "tags": [
+        "boundary",
+        "trivial"
+      ],
+      "failed_criteria": [],
+      "review_variant": "none",
+      "review_coverage": "not_assessable",
+      "review": null,
+      "evidence": "prs/pr-152/evidence.json",
+      "metadata": "prs/pr-152/metadata.json",
+      "annotations": "prs/pr-152/annotations.json"
+    },
+    {
+      "case_id": "pr-153",
+      "family_id": "change-default",
+      "scenario": "boundary",
+      "split": "development",
+      "author_id": "template_generator",
+      "variant": "boundary",
+      "complexity": "non_trivial",
+      "triviality_score": 2,
+      "triviality_level": "bounded_behavior",
+      "is_trivial": false,
+      "text_triviality_score": 2,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
+      "title": "chore(pager): set the page size to 50",
+      "expected_quality": "good",
+      "tags": [
+        "boundary",
+        "non_trivial"
+      ],
+      "failed_criteria": [],
+      "review_variant": "complete",
+      "review_coverage": "passed",
+      "review": "prs/pr-153/review.md",
+      "evidence": "prs/pr-153/evidence.json",
+      "metadata": "prs/pr-153/metadata.json",
+      "annotations": "prs/pr-153/annotations.json"
+    },
+    {
+      "case_id": "pr-154",
+      "family_id": "strip-input",
+      "scenario": "boundary",
+      "split": "development",
+      "author_id": "template_generator",
+      "variant": "boundary",
+      "complexity": "non_trivial",
+      "triviality_score": 2,
+      "triviality_level": "bounded_behavior",
+      "is_trivial": false,
+      "text_triviality_score": 2,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
+      "title": "chore(names): strip whitespace in clean",
+      "expected_quality": "good",
+      "tags": [
+        "boundary",
+        "non_trivial"
+      ],
+      "failed_criteria": [],
+      "review_variant": "partial",
+      "review_coverage": "failed",
+      "review": "prs/pr-154/review.md",
+      "evidence": "prs/pr-154/evidence.json",
+      "metadata": "prs/pr-154/metadata.json",
+      "annotations": "prs/pr-154/annotations.json"
+    },
+    {
+      "case_id": "pr-155",
+      "family_id": "escape-output",
+      "scenario": "boundary",
+      "split": "development",
+      "author_id": "template_generator",
+      "variant": "boundary",
+      "complexity": "non_trivial",
+      "triviality_score": 3,
+      "triviality_level": "substantive",
+      "is_trivial": false,
+      "text_triviality_score": 3,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
+      "title": "chore(render): escape cell text",
+      "expected_quality": "good",
+      "tags": [
+        "boundary",
+        "non_trivial"
+      ],
+      "failed_criteria": [],
+      "review_variant": "generic",
+      "review_coverage": "failed",
+      "review": "prs/pr-155/review.md",
+      "evidence": "prs/pr-155/evidence.json",
+      "metadata": "prs/pr-155/metadata.json",
+      "annotations": "prs/pr-155/annotations.json"
+    },
+    {
+      "case_id": "pr-156",
+      "family_id": "optional-param",
+      "scenario": "boundary",
+      "split": "development",
+      "author_id": "template_generator",
+      "variant": "boundary",
+      "complexity": "non_trivial",
+      "triviality_score": 3,
+      "triviality_level": "substantive",
+      "is_trivial": false,
+      "text_triviality_score": 3,
+      "text_diff_triviality_relationship": "aligned",
+      "potential_triviality_confounder": false,
+      "title": "chore(client): add a timeout argument to fetch",
+      "expected_quality": "good",
+      "tags": [
+        "boundary",
+        "non_trivial"
+      ],
+      "failed_criteria": [],
+      "review_variant": "ambiguous",
+      "review_coverage": "not_assessable",
+      "review": "prs/pr-156/review.md",
+      "evidence": "prs/pr-156/evidence.json",
+      "metadata": "prs/pr-156/metadata.json",
+      "annotations": "prs/pr-156/annotations.json"
+    },
+    {
+      "case_id": "pr-157",
+      "family_id": "required-param",
+      "scenario": "boundary",
+      "split": "development",
+      "author_id": "template_generator",
+      "variant": "boundary",
+      "complexity": "non_trivial",
+      "triviality_score": 4,
+      "triviality_level": "incompatible",
+      "is_trivial": false,
+      "text_triviality_score": 3,
+      "text_diff_triviality_relationship": "text_understates",
+      "potential_triviality_confounder": true,
+      "title": "chore(client): add a timeout argument to fetch",
+      "expected_quality": "needs_revision",
+      "tags": [
+        "boundary",
+        "breaking_change",
+        "non_trivial",
+        "undocumented_breaking_change"
+      ],
+      "failed_criteria": [
+        "breaking_changes"
+      ],
+      "review_variant": "open_concern",
+      "review_coverage": "passed",
+      "review": "prs/pr-157/review.md",
+      "evidence": "prs/pr-157/evidence.json",
+      "metadata": "prs/pr-157/metadata.json",
+      "annotations": "prs/pr-157/annotations.json"
     }
   ]
 }

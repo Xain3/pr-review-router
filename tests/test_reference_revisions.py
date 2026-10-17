@@ -58,12 +58,12 @@ def test_latest_defaults_use_adjudications_and_preserve_unknown_reference_levels
     original = score(summary, reference_revision="original")
     assert summary == before
     assert original["recommendation"]["agreement"] == original["triviality"]["exact_accuracy"] == 1
-    assert latest["grading_reference"]["revision"] == "review-2026-10-17"
+    assert latest["grading_reference"]["revision"] == "review-2026-10-18"
     assert latest["grading_references"]["pr-087"]["criteria"]["testing-explanation"] == "passed"
     assert latest["grading_references"]["pr-120"]["criteria"]["description-coverage"] == "failed"
     assert latest["grading_references"]["pr-121"]["recommendation"] == "block"
     assert latest["triviality"]["reference_uncertain"] == 41
-    assert latest["triviality"]["reference_classified"] == 108
+    assert latest["triviality"]["reference_classified"] == 116
     assert latest["triviality"]["unresolved_reference_classifications"] == 41
     assert latest["by_triviality_level"]["uncertain"]["case_count"] == 41
     for reference in latest["grading_references"].values():
@@ -71,7 +71,7 @@ def test_latest_defaults_use_adjudications_and_preserve_unknown_reference_levels
             assert reference["criteria"]["change-triviality"] == "uncertain"
             assert reference["recommendation"] in {"block", "needs_human_review"}
     for dimension in ("scenario", "triviality_level", "family_id", "split"):
-        assert sum(group["case_count"] for group in latest[f"by_{dimension}"].values()) == 149
+        assert sum(group["case_count"] for group in latest[f"by_{dimension}"].values()) == 157
 
 
 def test_latest_perfect_answers_grade_uncertainty_separately_from_numeric_accuracy():
@@ -80,7 +80,7 @@ def test_latest_perfect_answers_grade_uncertainty_separately_from_numeric_accura
     assert result["recommendation"]["agreement"] == 1
     assert all(value["agreement"] == 1 for value in result["criteria"].values())
     assert result["triviality"]["native_label_agreement"] == 1
-    assert result["triviality"]["paired_classified"] == 108
+    assert result["triviality"]["paired_classified"] == 116
     assert result["triviality"]["confusion_matrix"]["uncertain_reference"]["uncertain"] == 41
     unknown = result["by_triviality_level"]["uncertain"]["triviality"]
     assert unknown["exact_accuracy"] is unknown["binary_accuracy"] is None

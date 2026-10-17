@@ -1,6 +1,6 @@
 # Synthetic PR quality corpus
 
-149 fictional, sanitized pull requests across 30 change families for benchmarking PR title and description
+157 fictional, sanitized pull requests across 30 change families for benchmarking PR title and description
 quality, supplied-review coverage, and actual change triviality. Each has metadata, a one- to three-commit
 list, complete unified file patches, independent criterion annotations, and (for
 most) a supplied review.
@@ -82,8 +82,15 @@ authored held-out families (PRs 126–149):
 | 118–125 | Neutral `chore` text around adjacent triviality boundaries (four matched pairs) | 8 |
 | 126–137 | Independent author A: Unicode prose, accessible label, lint pin, CI permissions, SQL migration, Java retry boundary | 12 |
 | 138–149 | Independent author B: resource cleanup, timezone guide, localization constant, reproducible archives, Ruby loader migration, optional schema field | 12 |
+| 150-157 | Additional supplied-review variants for the eight boundary families | 8 |
 
-There are 28 good cases and 121 cases needing revision, with 263 commits total.
+PRs 150-157 retain their families' original patches but rotate the supplied-review
+variants. Two blind AI reviewers assessed the new inputs for the
+`review-2026-10-18` snapshot, now `latest`; raw judgments, disagreements, and
+adjudication explanations are retained. These labels remain provisional, not
+human-reviewed. The original 149 case files and prior review archives are unchanged.
+
+There are 35 good cases and 122 cases needing revision, with 277 commits total.
 The invariants for the first 100 cases (ten good, ninety needing revision, and the
 20/10/30/20/20 triviality distribution) are unchanged; the extension adds eight
 new families and reuses ten existing ones.
@@ -112,11 +119,13 @@ apply the existing text or review templates to these cases. Each new family has
 two variants sharing identical patches but independently written communication
 and supplied-review contrasts. Authorship is separate from label-review provenance.
 
-[`splits.json`](splits.json) fixes **development: 125 cases / 18 families** and
+[`splits.json`](splits.json) fixes **development: 133 cases / 18 families** and
 **evaluation: 24 cases / 12 new families**. `corpus-development.json` and
-`corpus-evaluation.json` are directly accepted by `evaluate`. The benchmark and
-triviality CLI default to evaluation; choose `--split development` for iteration,
-or `--split all` for an explicit combined diagnostic. Validation rejects family
+`corpus-evaluation.json` are directly accepted by `evaluate`. The router benchmark
+defaults to a random 60-case sample across the full corpus, exactly two per family.
+The standalone triviality CLI still defaults to evaluation. Explicit
+`--split development`, `--split evaluation`, and `--split all` remain available.
+Validation rejects family
 overlap, identical patch sets across partitions, missing assignments, or stale
 partition corpora. Every index entry records `split` and `author_id`; these are
 evaluation metadata and must also be withheld from model inputs.
@@ -137,13 +146,13 @@ PR text, so it never changes `expected_quality` or `failed_criteria`.
 
 | Variant | Review content | `review-coverage` | Cases |
 | --- | --- | --- | ---: |
-| `none` | No review supplied | `not_assessable` | 24 |
-| `complete` | Addresses every changed file and its implications | `passed` | 30 |
-| `open_concern` | Complete, plus an open question that must be answered before merging | `passed` | 25 |
-| `partial` | Addresses only some changed files | `failed` | 18 |
+| `none` | No review supplied | `not_assessable` | 25 |
+| `complete` | Addresses every changed file and its implications | `passed` | 31 |
+| `open_concern` | Complete, plus an open question that must be answered before merging | `passed` | 27 |
+| `partial` | Addresses only some changed files | `failed` | 19 |
 | `off_target` | Reviews a different change | `failed` | 7 |
-| `generic` | Approves without a specific comment | `failed` | 22 |
-| `ambiguous` | Refers only to unseen discussion and unspecified items ("the second change", "as discussed") | `not_assessable` | 23 |
+| `generic` | Approves without a specific comment | `failed` | 23 |
+| `ambiguous` | Refers only to unseen discussion and unspecified items ("the second change", "as discussed") | `not_assessable` | 25 |
 
 An unresolved concern does not reduce coverage; coverage asks whether each
 change was addressed, not whether the review is satisfied. The `ambiguous` and
@@ -520,9 +529,9 @@ combined level is forced. `pr-092` has gibberish plus an empty body; its project
 levels stay null instead of being labeled trivial.
 
 The index exposes the combined text score, relationship, potential-confounder
-flag, and relationship counts. The 149 cases contain 132 aligned levels, eight
+flag, and relationship counts. The 157 cases contain 139 aligned levels, nine
 directional mismatches, eight conflicting text signals, and one unassessable
-case. Sixteen cases have at least one text level differing from the diff.
+case. Seventeen cases have at least one text level differing from the diff.
 Level agreement does not imply factual agreement: claiming a return value of
 1 instead of 0 can remain level 2. Use the existing consistency criteria for
 that distinction. Diagnostic flags identify candidate confounders without
@@ -582,7 +591,7 @@ uv run python examples/synthetic-prs/benchmark.py \
 Select grading labels independently of model inputs:
 
 ```sh
-# List names without inference: latest, original, historical-125, review-2026-10-17.
+# List available revisions without inference, including review-2026-10-18.
 uv run python examples/synthetic-prs/benchmark.py --list-reference-revisions
 
 # Compare the same bound predictions with the canonical author-intent baseline.
@@ -594,7 +603,7 @@ uv run python examples/synthetic-prs/benchmark.py \
 # Pin an immutable named review rather than the moving latest alias.
 uv run python examples/synthetic-prs/benchmark.py \
   --summary reports/synthetic-prs-benchmark/summary.json \
-  --reference-revision review-2026-10-17 \
+  --reference-revision review-2026-10-18 \
   --output-dir reports/synthetic-prs-pinned-grade
 ```
 

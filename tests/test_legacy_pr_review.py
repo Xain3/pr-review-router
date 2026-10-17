@@ -1,5 +1,6 @@
 """Preserve fresh blind review and conservative adjudication of the original corpus."""
 
+import hashlib
 import json
 import runpy
 import shutil
@@ -11,6 +12,104 @@ pytestmark = pytest.mark.unit
 ROOT = Path(__file__).resolve().parents[1] / "examples" / "synthetic-prs"
 
 
+@pytest.mark.parametrize(
+    "filename,digest",
+    [
+        ("reviews.json", "8811b7d292712a04349285f3b8809264e280fda89e55a78b4af6c08f4b1fd0b2"),
+        ("legacy-reviews.json", "d69bfd0bb58b622b2f9c8ddb5a800ff0d225818e2577c50b565447612582696a"),
+        (
+            "authored-reviews.json",
+            "35f3254ccff704f2bf6799fb530abe6c0733aa2106097cbeaaf5b0f2998d3db2",
+        ),
+    ],
+)
+def test_frozen_review_archives_remain_byte_identical(filename, digest):
+    assert (
+        hashlib.sha256((ROOT / "independent-review" / filename).read_bytes()).hexdigest() == digest
+    )
+
+
+def test_expanded_development_archive_preserves_old_records_and_actual_new_judgments():
+    validation = runpy.run_path(str(ROOT / "validate.py"))
+    index = json.loads((ROOT / "index.json").read_text())
+    active = json.loads((ROOT / validation["ACTIVE_REVIEW_ARCHIVES"]["development"]).read_text())
+    legacy = json.loads((ROOT / "independent-review/legacy-reviews.json").read_text())
+    assert len(active["cases"]) == 133
+    assert {case_id: active["cases"][case_id] for case_id in legacy["cases"]} == legacy["cases"]
+    assert len(validation["load_active_reviews"](ROOT, index)) == 157
+    expected_levels = [
+        "editorial",
+        "mechanical",
+        "mechanical",
+        "bounded_behavior",
+        "bounded_behavior",
+        "substantive",
+        "substantive",
+        "incompatible",
+    ]
+    expected_coverage = [
+        "uncertain",
+        "passed",
+        "uncertain",
+        "passed",
+        "failed",
+        "failed",
+        "uncertain",
+        "passed",
+    ]
+    for number, level, coverage in zip(
+        range(150, 158), expected_levels, expected_coverage, strict=True
+    ):
+        case_id = f"pr-{number}"
+        labels = active["cases"][case_id]["labels"]
+        assert labels["change-triviality"]["adjudicated"] == level
+        assert labels["review-coverage"]["adjudicated"] == coverage
+        assert (
+            level
+            == legacy["cases"][f"pr-{number - 32}"]["labels"]["change-triviality"]["adjudicated"]
+        )
+        for label in labels.values():
+            assert "previous_adjudicated" not in label
+            for assessment in label["reviewer_assessments"].values():
+                assert assessment["raw_judgment"]["value"] == assessment["label"]
+                assert assessment["raw_judgment"]["explanation"] == assessment["rationale"]
+                assert isinstance(assessment["raw_judgment"]["sources"], list)
+        if number in {152, 153}:
+            label = labels["description-coverage"]
+            assert label["adjudicated"] == "failed" and label["oracle"] == "passed"
+            assert label["contested"] and label["dissent"]
+    reservation = active["cases"]["pr-153"]["labels"]["change-triviality"]
+    assert reservation["contested"] and "pr-121" in reservation["rationale"]
+
+
+@pytest.mark.parametrize(
+    "mutation", ["invented_history", "missing_case", "raw_label", "copied_record"]
+)
+def test_expanded_review_rejects_fabricated_or_incomplete_provenance(tmp_path, mutation):
+    root = tmp_path / "corpus"
+    shutil.copytree(ROOT, root, ignore=shutil.ignore_patterns("__pycache__"))
+    validation = runpy.run_path(str(root / "validate.py"))
+    path = root / validation["ACTIVE_REVIEW_ARCHIVES"]["development"]
+    archive = json.loads(path.read_text())
+    label = archive["cases"]["pr-150"]["labels"]["title-format"]
+    if mutation == "invented_history":
+        label["previous_adjudicated"] = "passed"
+    elif mutation == "missing_case":
+        archive["cases"].pop("pr-157")
+    elif mutation == "raw_label":
+        label["reviewer_assessments"]["A"]["label"] = "failed"
+    else:
+        archive["cases"]["pr-001"]["labels"]["title-format"]["rationale"] = (
+            "Changed old assessment."
+        )
+    path.write_text(json.dumps(archive))
+    index = json.loads((root / "index.json").read_text())
+    with pytest.raises(
+        ValueError, match="historical adjudication|cover exactly|blind judgment|Preserved"
+    ):
+        validation["load_active_reviews"](root, index)
+
+
 def test_fresh_legacy_review_covers_every_original_case_and_criterion():
     archive = json.loads((ROOT / "independent-review/legacy-reviews.json").read_text())
     historical = json.loads((ROOT / "independent-review/reviews.json").read_text())
@@ -18,10 +117,12 @@ def test_fresh_legacy_review_covers_every_original_case_and_criterion():
     validation = runpy.run_path(str(ROOT / "validate.py"))
     selected = {
         **index,
-        "cases": [case for case in index["cases"] if case["split"] == "development"],
+        "cases": [
+            case for case in index["cases"] if int(case["case_id"].removeprefix("pr-")) <= 125
+        ],
     }
     counts = validation["validate_independent_review"](
-        ROOT, selected, validation["ACTIVE_REVIEW_ARCHIVES"]["development"]
+        ROOT, selected, "independent-review/legacy-reviews.json"
     )
     assert counts["labels"] == 125 * 7
     assert set(archive["cases"]) == set(historical["cases"])
@@ -75,7 +176,9 @@ def test_legacy_review_rejects_incomplete_stale_or_inconsistent_records(tmp_path
     index = json.loads((root / "index.json").read_text())
     selected = {
         **index,
-        "cases": [case for case in index["cases"] if case["split"] == "development"],
+        "cases": [
+            case for case in index["cases"] if int(case["case_id"].removeprefix("pr-")) <= 125
+        ],
     }
     validate = runpy.run_path(str(ROOT / "validate.py"))["validate_independent_review"]
     with pytest.raises(
@@ -95,7 +198,7 @@ def test_legacy_arbitration_corrects_evidence_errors_and_keeps_ambiguous_familie
     index = json.loads((ROOT / "index.json").read_text())
     uncertain = []
     for case in index["cases"]:
-        if case["split"] != "development":
+        if int(case["case_id"].removeprefix("pr-")) > 125:
             continue
         label = archive["cases"][case["case_id"]]["labels"]["change-triviality"]
         if case["family_id"] in {"cli-help", "cache-key", "token-compare"}:
@@ -124,7 +227,7 @@ def test_benchmark_rejects_stale_grading_without_invalidating_prediction_binding
     namespace["input_binding"]("development", root / "policy.toml", root / "providers.toml")
 
 
-@pytest.mark.parametrize("split,count", [("development", 125), ("evaluation", 24), ("all", 149)])
+@pytest.mark.parametrize("split,count", [("development", 133), ("evaluation", 24), ("all", 157)])
 def test_review_report_scores_selected_partition_and_exposes_final_adjudications(split, count):
     result = runpy.run_path(str(ROOT / "review_report.py"))["report"](split)
     assert result["split"] == split

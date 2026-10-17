@@ -2103,6 +2103,13 @@ def main(output_root: Path = ROOT) -> None:
         payload = json.loads(source.read_text(encoding="utf-8"))
         write_json(output_root / "authored" / source.name, payload)
         packaged.extend(authored_case(spec, payload["author_id"]) for spec in payload["cases"])
+    for family_index, family in enumerate(BOUNDARY_FAMILIES):
+        profile_index = len(PROFILES) + 4
+        evidence, metadata, annotation = make_case(
+            len(packaged) + 1, family, "boundary", family_index, profile_index
+        )
+        _, review, _ = review_for(family, evidence["title"], family_index, profile_index)
+        packaged.append((evidence, metadata, annotation, review))
     for evidence, metadata, annotation, review in packaged:
         case_id = annotation["case_id"]
         directory = f"prs/{case_id}"
@@ -2189,7 +2196,8 @@ def main(output_root: Path = ROOT) -> None:
         {
             "schema_version": 1,
             "unit": "family_id",
-            "protocol": "Original 125 cases for development; independently authored families held out for evaluation. "
+            "protocol": "Original 125 cases plus eight matched boundary variants for development (133 cases); "
+            "24 independently authored cases in twelve disjoint families held out for evaluation. "
             "Freeze this assignment before running models; evaluation is public and is not a sealed test set.",
             "partitions": partitions,
         },
@@ -2241,7 +2249,8 @@ def main(output_root: Path = ROOT) -> None:
         "Review: the variant of the supplied `review.md` and its review-coverage label. "
         "It describes the review, not the PR text, so it never changes Quality or Failed criteria.",
         "",
-        "Development contains the original 125 cases (18 families). Evaluation holds out "
+        "Development contains the original 125 cases plus eight matched boundary variants "
+        "(133 cases, 18 families). Evaluation holds out "
         "24 independently authored cases (12 new families). See [splits.json](splits.json).",
         "",
         "| PR | Family | Triviality (0–4) | Trivial? | Text score / relationship | Scenario / variant | Quality | Failed criteria | Review | Companions | Partition / author |",
