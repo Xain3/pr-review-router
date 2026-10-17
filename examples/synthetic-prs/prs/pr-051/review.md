@@ -1,0 +1,1 @@
+- docs/usage.md: the repeated word is removed, so the sentence reads 'Read the guide before starting.' The edit is limited to prose; there is no runtime or interface effect to review.

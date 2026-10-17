@@ -1,0 +1,1 @@
+The SQL migration renames `customer_ref` to `account_ref`, so existing readers of the old name will fail. The receipt guide now documents the new name and explicitly says there is no alias. I have addressed both changed files, but I am requesting changes: can the author explain a coordinated rollout for external SQL consumers before this is merged?

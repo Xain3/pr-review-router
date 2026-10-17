@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "synthetic": true,
+  "case_id": "pr-064",
+  "url": "https://example.invalid/synthetic/pr-quality-demo/pull/64",
+  "state": "open",
+  "draft": false,
+  "author": {
+    "login": "synthetic-author-04",
+    "name": "Synthetic Author 04",
+    "email": "author-04@example.invalid"
+  },
+  "created_at": "2026-03-05T12:00:00+00:00",
+  "updated_at": "2026-03-05T13:00:00+00:00",
+  "base_ref": "main",
+  "head_ref": "synthetic/pr-064",
+  "base_sha": "ebbf30c3e069a318ad71161b7574e6171addda2b",
+  "head_sha": "0eae70f53467feb7642dce65e717e5c4b18b98bf",
+  "changed_files": 2,
+  "additions": 8,
+  "deletions": 0,
+  "commits": [
+    {
+      "sha": "792f58109542c3efba8605da7eb2df6fbb55a08d",
+      "parents": [
+        "ebbf30c3e069a318ad71161b7574e6171addda2b"
+      ],
+      "message": "perf(db): add an index to the orders table",
+      "author": {
+        "login": "synthetic-author-04",
+        "name": "Synthetic Author 04",
+        "email": "author-04@example.invalid"
+      },
+      "authored_at": "2026-03-05T11:50:00+00:00",
+      "files": [
+        "src/stats.py"
+      ],
+      "additions": 2,
+      "deletions": 0
+    },
+    {
+      "sha": "0eae70f53467feb7642dce65e717e5c4b18b98bf",
+      "parents": [
+        "792f58109542c3efba8605da7eb2df6fbb55a08d"
+      ],
+      "message": "test(stats): cover empty and ordinary inputs",
+      "author": {
+        "login": "synthetic-author-04",
+        "name": "Synthetic Author 04",
+        "email": "author-04@example.invalid"
+      },
+      "authored_at": "2026-03-05T11:51:00+00:00",
+      "files": [
+        "tests/test_stats.py"
+      ],
+      "additions": 6,
+      "deletions": 0
+    }
+  ]
+}

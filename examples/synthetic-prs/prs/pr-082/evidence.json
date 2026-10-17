@@ -1,0 +1,19 @@
+{
+  "repository": "synthetic/pr-quality-demo",
+  "number": 82,
+  "base_sha": "694f179946c7f7c85ae1f6b3b8d486713db91525",
+  "head_sha": "02d8c8ebd09c349df60acfd3792bc1ec3d762662",
+  "title": "fix(cli): correct the output option in help text",
+  "body": " \n\t\n",
+  "files_complete": true,
+  "files": [
+    {
+      "path": "cli/help.js",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "patch": "diff --git a/cli/help.js b/cli/help.js\n--- a/cli/help.js\n+++ b/cli/help.js\n@@ -1 +1 @@\n-export const help = 'Usage: demo --ouput FILE';\n+export const help = 'Usage: demo --output FILE';\n",
+      "patch_truncated": false
+    }
+  ]
+}

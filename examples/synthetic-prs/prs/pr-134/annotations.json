@@ -1,0 +1,210 @@
+{
+  "schema_version": 3,
+  "case_id": "pr-134",
+  "label_status": "provisional",
+  "label_origin": "synthetic_author_intent",
+  "family_id": "receipt-column-migration",
+  "scenario": "complete_account",
+  "variant": "complete_account",
+  "review_variant": "complete",
+  "complexity": "non_trivial",
+  "has_breaking_change": true,
+  "expected_quality": "good",
+  "tags": [
+    "independently_authored",
+    "complete_account"
+  ],
+  "criteria": {
+    "title_format": {
+      "status": "passed",
+      "explanation": "The title has a Conventional Commits type, optional scope, and subject.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "title_meaningful": {
+      "status": "passed",
+      "explanation": "The subject names an intelligible edit and its affected area.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "title_diff_consistency": {
+      "status": "passed",
+      "explanation": "The migration, renamed supported column, and revised consumer migration guide are all described.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "description_present": {
+      "status": "passed",
+      "explanation": "The body contains substantive prose about this change.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "rationale": {
+      "status": "passed",
+      "explanation": "The body links the terminology change to confused joins against the wrong conceptual entity.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "changes_described": {
+      "status": "passed",
+      "explanation": "The migration, renamed supported column, and revised consumer migration guide are all described.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "description_title_consistency": {
+      "status": "passed",
+      "explanation": "The body and title describe the same change.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "description_commit_consistency": {
+      "status": "passed",
+      "explanation": "The body covers the changes named in each accompanying commit message.",
+      "sources": [
+        "evidence.json#/body",
+        "metadata.json#/commits"
+      ]
+    },
+    "description_diff_consistency": {
+      "status": "passed",
+      "explanation": "The migration, renamed supported column, and revised consumer migration guide are all described.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "limitations": {
+      "status": "passed",
+      "explanation": "The body names external consumers, absent rollback, and unproven database-engine coverage.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "breaking_changes": {
+      "status": "passed",
+      "explanation": "The body explicitly says the old name has no alias and requires a coordinated migration to account_ref.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "testing": {
+      "status": "passed",
+      "explanation": "The plan covers seeded-data preservation, new and old name queries, and a guide-based consumer query.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "summary-section": {
+      "status": "passed",
+      "explanation": "A populated level-two Summary section is present.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "review-coverage": {
+      "status": "passed",
+      "explanation": "The review individually addresses the migration and updated guide, including consumer breakage.",
+      "sources": [
+        "review.md",
+        "evidence.json#/files"
+      ]
+    },
+    "change_triviality": {
+      "type": "ordinal",
+      "score": 4,
+      "level": "incompatible",
+      "is_trivial": false,
+      "explanation": "The added ALTER TABLE renames customer_ref to account_ref, and the existing documentation explicitly identifies customer_ref as supported. The old name has no alias, so previously valid external SQL queries require migration: incompatible level 4.",
+      "sources": [
+        "evidence.json#/files"
+      ]
+    },
+    "title-format": {
+      "status": "passed",
+      "explanation": "The title has a Conventional Commits type, optional scope, and subject.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "change-rationale": {
+      "status": "passed",
+      "explanation": "The body links the terminology change to confused joins against the wrong conceptual entity.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "description-coverage": {
+      "status": "passed",
+      "explanation": "The migration, renamed supported column, and revised consumer migration guide are all described.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "testing-explanation": {
+      "status": "passed",
+      "explanation": "The plan covers seeded-data preservation, new and old name queries, and a guide-based consumer query.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "change-triviality": {
+      "type": "ordinal",
+      "score": 4,
+      "level": "incompatible",
+      "is_trivial": false,
+      "explanation": "The added ALTER TABLE renames customer_ref to account_ref, and the existing documentation explicitly identifies customer_ref as supported. The old name has no alias, so previously valid external SQL queries require migration: incompatible level 4.",
+      "sources": [
+        "evidence.json#/files"
+      ]
+    }
+  },
+  "diagnostics": {
+    "text_diff_triviality": {
+      "diff_score": 4,
+      "title_score": 4,
+      "body_score": 4,
+      "text_score": 4,
+      "assessment": "agreed",
+      "relationship": "aligned",
+      "score_delta": 0,
+      "potential_confounder": false,
+      "title_explanation": "The breaking marker and supported-column rename state an incompatible database interface change.",
+      "body_explanation": "The body explicitly removes the old supported column name and requires consumer-query migration.",
+      "sources": [
+        "evidence.json#/title",
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    }
+  },
+  "reference_change": {
+    "summary": "Add a migration renaming the documented customer_ref receipt column to account_ref and require consumers to update their queries.",
+    "rationale": "The intended terminology is account reference rather than customer reference.",
+    "limitations": "The old SQL name is removed without an alias; out-of-repository consumers must coordinate updates. Rollback and database-specific compatibility are not demonstrated.",
+    "breaking_changes": "Existing queries using event_receipts.customer_ref stop resolving after migration 008; update them to account_ref as part of the deployment."
+  },
+  "authorship": {
+    "author_id": "independent-author-a",
+    "method": "independent_agent_authored"
+  },
+  "contested_criteria": []
+}

@@ -1,0 +1,27 @@
+{
+  "repository": "synthetic/pr-quality-demo",
+  "number": 124,
+  "base_sha": "73cdcf0198d63e877d58e8bc51a7d35e35b99bc1",
+  "head_sha": "3d8ca82c79e40e8ba13a8a0d1866620c8490337e",
+  "title": "chore(client): add a timeout argument to fetch",
+  "body": "## Summary\nAdd a timeout parameter to fetch() in src/client.py, defaulting to 30, and pass it to _get(); add tests/test_client.py covering fetch('u') and fetch('u', 5).\n\n## Rationale\nCallers need to choose a timeout for slow endpoints instead of always waiting 30 seconds.\n\n## Testing\nValidation plan: run tests/test_client.py, which expects ('u', 30) from fetch('u') and ('u', 5) from fetch('u', 5).\n\n## Limitations\nOnly fetch() is changed; the timeout value is not validated.\n",
+  "files_complete": true,
+  "files": [
+    {
+      "path": "src/client.py",
+      "status": "modified",
+      "additions": 2,
+      "deletions": 2,
+      "patch": "diff --git a/src/client.py b/src/client.py\n--- a/src/client.py\n+++ b/src/client.py\n@@ -2,5 +2,5 @@\n     return (url, timeout)\n \n \n-def fetch(url):\n-    return _get(url, 30)\n+def fetch(url, timeout=30):\n+    return _get(url, timeout)\n",
+      "patch_truncated": false
+    },
+    {
+      "path": "tests/test_client.py",
+      "status": "added",
+      "additions": 6,
+      "deletions": 0,
+      "patch": "diff --git a/tests/test_client.py b/tests/test_client.py\n--- /dev/null\n+++ b/tests/test_client.py\n@@ -0,0 +1,6 @@\n+from src.client import fetch\n+\n+\n+def test_fetch():\n+    assert fetch('u') == ('u', 30)\n+    assert fetch('u', 5) == ('u', 5)\n",
+      "patch_truncated": false
+    }
+  ]
+}

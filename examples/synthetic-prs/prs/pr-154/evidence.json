@@ -1,0 +1,27 @@
+{
+  "repository": "synthetic/pr-quality-demo",
+  "number": 154,
+  "base_sha": "70fee1ee15baae3e05148c3241f6f5fa9168ecb4",
+  "head_sha": "7f9503fb7c811e0868f1b332590961881c2f56d0",
+  "title": "chore(names): strip whitespace in clean",
+  "body": "## Summary\nReturn name.strip() from clean() in src/names.py and add tests/test_names.py asserting that '  Ada ' becomes 'Ada'.\n\n## Rationale\nNames copied from forms often carry stray surrounding whitespace that prevents exact matches.\n\n## Testing\nValidation plan: run tests/test_names.py for the padded-name case.\n\n## Limitations\nOnly leading and trailing whitespace is handled; internal whitespace and non-string input are not addressed.\n",
+  "files_complete": true,
+  "files": [
+    {
+      "path": "src/names.py",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "patch": "diff --git a/src/names.py b/src/names.py\n--- a/src/names.py\n+++ b/src/names.py\n@@ -1,2 +1,2 @@\n def clean(name):\n-    return name\n+    return name.strip()\n",
+      "patch_truncated": false
+    },
+    {
+      "path": "tests/test_names.py",
+      "status": "added",
+      "additions": 5,
+      "deletions": 0,
+      "patch": "diff --git a/tests/test_names.py b/tests/test_names.py\n--- /dev/null\n+++ b/tests/test_names.py\n@@ -0,0 +1,5 @@\n+from src.names import clean\n+\n+\n+def test_clean():\n+    assert clean('  Ada ') == 'Ada'\n",
+      "patch_truncated": false
+    }
+  ]
+}

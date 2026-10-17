@@ -1,0 +1,27 @@
+{
+  "repository": "synthetic/pr-quality-demo",
+  "number": 133,
+  "base_sha": "92922a0efda20605437eecc402e0a8793fc8daa0",
+  "head_sha": "82e54435a8cb2ffd650321fb3bbcbe555d8a5acd",
+  "title": "ci(security): reduce check workflow token privileges",
+  "body": "The compromise impact of a check job should be as small as practical. A step that only needs source access should not receive broad authority by habit.\n\n## Open questions\n\nWe still need to inspect `scripts/check.sh`; it is not included here, so its downstream write needs remain unknown.\n",
+  "files_complete": true,
+  "files": [
+    {
+      "path": ".github/workflows/check.yml",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 2,
+      "patch": "diff --git a/.github/workflows/check.yml b/.github/workflows/check.yml\n--- a/.github/workflows/check.yml\n+++ b/.github/workflows/check.yml\n@@ -1,8 +1,7 @@\n name: checks\n on: [push, pull_request]\n permissions:\n-  contents: write\n-  issues: write\n+  contents: read\n jobs:\n   unit:\n     runs-on: ubuntu-latest\n",
+      "patch_truncated": false
+    },
+    {
+      "path": "docs/check-workflow.md",
+      "status": "modified",
+      "additions": 2,
+      "deletions": 1,
+      "patch": "diff --git a/docs/check-workflow.md b/docs/check-workflow.md\n--- a/docs/check-workflow.md\n+++ b/docs/check-workflow.md\n@@ -1,3 +1,4 @@\n # Check workflow\n \n-The check job receives repository-content and issue write permissions.\n+The check job receives repository-content read permission.\n+Issue permissions are not requested; the workflow does not post issue comments.\n",
+      "patch_truncated": false
+    }
+  ]
+}

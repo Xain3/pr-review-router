@@ -151,14 +151,24 @@ kind = "script"
 command = ["./ci/check-pr.py"]
 ```
 
-The [synthetic PR corpus](examples/synthetic-prs/README.md) provides 100 fictional
-PRs with metadata, commit lists, complete patches, and provisional annotations
-for title, rationale, description consistency, limitations, compatibility, and
-change triviality on a 0–4 scale, with an offline triviality benchmark scorer.
-Separate diagnostics record differences between the triviality implied by PR
-text and the actual diff for future confounder analysis.
-Use its [index](examples/synthetic-prs/INDEX.md) to browse good cases, individual
-failures, and combined failures.
+The [synthetic PR corpus](examples/synthetic-prs/README.md) provides 149 fictional
+PRs across 30 change families, with metadata, commits, complete patches, supplied
+reviews, and provisional communication and 0–4 triviality labels. Its fixed
+[partitions](examples/synthetic-prs/splits.json) reserve 24 independently authored
+cases from 12 new families for evaluation; the original 125 cases are for
+development. Scorers report confusion by scenario, criterion, reference triviality
+level, and their intersections, with support counts and explicit uncertainty.
+The [index](examples/synthetic-prs/INDEX.md) includes family and author provenance.
+Both partitions have fresh blind review under the same seven-criterion rubric;
+the [review guide](examples/synthetic-prs/README.md#independent-review) explains
+the preserved history, current adjudications, and unresolved cases.
+The benchmark grades the latest adjudicated review by default. Use
+`--reference-revision original` for canonical author labels, or select a registered
+review snapshot with `--reference-revision NAME`; list them with
+`--list-reference-revisions`. Bound predictions can be rescored offline under
+another revision without inference. Unresolved judgments remain uncertain.
+These synthetic AI labels still require human review before quality assessment
+or calibration.
 
 Reports include commit identifiers, coverage issues, the decision-provider
 recommendation and confidence provenance, review stages and results, routing
@@ -195,6 +205,14 @@ paid inference. Replay protects integration behavior; live evaluation and
 human-reviewed labels are needed to assess model quality. Ollaya routing
 confidence remains unavailable until task calibration; reviewer confidence is
 self-reported.
+
+The [synthetic PR benchmark](examples/synthetic-prs/README.md#router-rubric-benchmark)
+defaults to 60 randomly selected cases, exactly two per family across all 30 families. Use
+`uv run python examples/synthetic-prs/benchmark.py --seed 42` to reproduce a sample;
+`--sample-size 30` for a quick run with one case per family; `--split all` runs all
+157 cases. Reports
+record the seed, selected case IDs, and model provenance separately for the decision
+and review roles, including explicit mock-provider labels.
 
 The [six-criterion PR and review rubric](examples/rubric-review/README.md)
 evaluates title format, Summary structure, meaningful rationale, description

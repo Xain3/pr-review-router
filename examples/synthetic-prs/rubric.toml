@@ -1,0 +1,96 @@
+rubric_version = 1
+
+[[criteria]]
+criterion_id = "title-format"
+description = "The title follows Conventional Commits."
+check = "conventional_title"
+suggestion = "Use a title such as fix(average): handle empty input and raise the batch limit."
+
+[[criteria]]
+criterion_id = "summary-section"
+description = "The description includes a populated Summary section."
+check = "body_section"
+section = "Summary"
+suggestion = "Add a populated level-two Summary section."
+
+[[criteria]]
+criterion_id = "change-rationale"
+description = "The description explains why the changes are needed."
+check = "semantic"
+target = "description"
+instructions = "Does the PR description give a meaningful rationale for each substantive change visible in the diff? A rationale says why: the problem, need, or constraint that motivates the change. Text that only says what was done (paraphrasing or listing the edits, even under a Rationale heading), generic statements such as 'make things better', and an empty or placeholder description give no rationale and fail. A reason given for one substantive change does not cover another substantive change that has none."
+suggestion = "Explain the problem each substantive change solves and why this approach was chosen."
+
+[[criteria]]
+criterion_id = "description-coverage"
+description = "The description accurately covers all substantive changes in the diff."
+check = "semantic"
+target = "description"
+instructions = "Does the description accurately identify every substantive change visible in all supplied file patches, including behavior and configuration changes and the tests and documentation edits that accompany them? Compare meaning with the diff, not just the presence of a Summary heading. Do not judge whether the code itself is correct. Choose failed when the description makes concrete claims about what changed but omits a changed file's substance (for example, it describes the code change but never mentions the added tests or updated documentation) or misstates the diff. Choose uncertain, not passed, when the description makes no concrete claim about what changed (empty, whitespace-only, placeholder, headings only, or motivation and generic scope statements without any account of the edits), because there is nothing to compare with the diff. Choose passed only when every changed file's substance is accurately described."
+suggestion = "Describe every substantive change visible in the supplied patches."
+
+[[criteria]]
+criterion_id = "review-coverage"
+description = "The supplied review addresses all substantive changes in the PR."
+check = "semantic"
+target = "review"
+instructions = "Does the separately supplied review text address each substantive change visible in every supplied patch, including added or changed tests and documentation, and its implications or relevant edge cases? Choose passed only when every changed file is individually addressed; open questions, requested changes, or raised concerns do not reduce coverage. Choose failed when a review is present but is a generic approval, repeats the PR title, addresses only some of the changed files (for example, the code but never the added tests), or discusses changes that are not in the patches. Choose uncertain when no review is supplied, or when the review refers only to unseen discussion or unspecified items (for example 'the second change' or 'as discussed') that cannot be tied to specific changes in the patches. Assess coverage, not whether the review proves the code correct."
+suggestion = "Extend the review to address each changed behavior and relevant edge cases."
+
+[[criteria]]
+criterion_id = "testing-explanation"
+description = "The description records relevant validation for the changes."
+check = "semantic"
+target = "description"
+instructions = "Does the PR description explain relevant testing or a specific reason testing is not applicable for the substantive changes in the diff? A Testing heading, 'tests pass', or 'not discussed' alone is insufficient. Assess the explanation; do not invent or claim verification of test execution."
+suggestion = "Describe validation for empty input, ordinary averages, and the changed batch-size boundary."
+
+[[criteria]]
+criterion_id = "change-triviality"
+description = "The supplied patches establish the actual change-triviality level."
+check = "semantic"
+target = "description"
+instructions = "Classify the actual supplied diff using the configured scale. Judge behavior and interface impact, not the title, description, commit messages, or line count. Choose uncertain when the supplied patches do not provide enough evidence for a classification. At adjacent levels: edits to comment, documentation, or link-target prose are editorial, while any edit to code, including a rename or a user-visible string, is at least mechanical. An edit is mechanical only when the patch shows behavior is preserved (for example a literal replaced by a named constant of the same value, or a local variable renamed everywhere it is used); changing a value, default, condition, or return that can alter the output for some input is bounded_behavior. Adding a public function or parameter, or changing security-sensitive behavior such as authentication, escaping, or permissions, is substantive. If previously valid callers or configurations would stop working (a removed or renamed public name, a new required parameter, a removed configuration entrypoint), choose incompatible even when the patch updates in-repo callers; backward-compatible additions are substantive."
+question_type = "choice"
+suggestion = "Provide enough change evidence to support a triviality classification."
+# A status records whether the change was classified; enforcement rules match the native label.
+choices = [
+    { label = "editorial", description = "Prose or link correction with no runtime or interface change.", status = "passed" },
+    { label = "mechanical", description = "Local mechanical or presentation change that preserves behavior and public interfaces.", status = "passed" },
+    { label = "bounded_behavior", description = "A local behavior or configuration change requiring edge-case review.", status = "passed" },
+    { label = "substantive", description = "A new capability or security-sensitive behavior requiring broader review.", status = "passed" },
+    { label = "incompatible", description = "Removal of, or incompatible change to, a supported interface or configuration that requires migration.", status = "passed" },
+    { label = "uncertain", description = "The available patch evidence is insufficient to classify the change.", status = "uncertain" },
+]
+
+[[enforcement_rules]]
+when = { change-triviality = ["editorial", "mechanical"] }
+enforce = [
+    "title-format",
+    { any_of = [
+        "summary-section",
+        "description-coverage",
+    ] },
+]
+soft_enforce = ["change-rationale", "review-coverage", "testing-explanation"]
+
+[[enforcement_rules]]
+when = { change-triviality = ["bounded_behavior"] }
+enforce = [
+    "title-format",
+    "summary-section",
+    "change-rationale",
+    "description-coverage",
+]
+soft_enforce = ["review-coverage", "testing-explanation"]
+
+[[enforcement_rules]]
+when = { change-triviality = ["substantive", "incompatible"] }
+enforce = [
+    "title-format",
+    "summary-section",
+    "change-rationale",
+    "description-coverage",
+    "review-coverage",
+]
+soft_enforce = ["testing-explanation"]

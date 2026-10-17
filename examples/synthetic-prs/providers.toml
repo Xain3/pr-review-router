@@ -1,0 +1,14 @@
+# Provider selection for the synthetic-PR rubric benchmark.
+shadow_skips = true
+
+[decision]
+backend = "ollaya"
+endpoint = "http://localhost:11435"
+model = "winnow:e4b"
+timeout_seconds = 120.0
+# The change-triviality scale asks six labels; winnow:e4b accepted six in a direct probe.
+max_choice_options = 6
+
+[review]
+# Deterministic reviewer: the benchmark measures the rubric decision, not code review.
+backend = "mock"

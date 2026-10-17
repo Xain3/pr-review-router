@@ -1,0 +1,19 @@
+{
+  "repository": "synthetic/pr-quality-demo",
+  "number": 140,
+  "base_sha": "75597cfcbb31c1162ee8a1c6fbb2cf1febcde494",
+  "head_sha": "7dadb825da836f630855682b9e36e1a2532f6ef8",
+  "title": "docs(time): correct the positive-offset UTC example",
+  "body": "## Summary\n\nCorrect `docs/operations/timezones.md`: +02:00 is ahead of UTC, so 09:00 at that offset maps to 07:00Z, not 11:00Z.\n\nThe old explanation reverses the offset direction and can mislead an operator reading logs.\n\nValidation plan: subtract two hours from the local clock and check that both corrected sentences agree. No executable test run is proposed because only guide prose changes. Named zones and daylight-saving transitions remain outside this fixed-offset example.\n",
+  "files_complete": true,
+  "files": [
+    {
+      "path": "docs/operations/timezones.md",
+      "status": "modified",
+      "additions": 2,
+      "deletions": 2,
+      "patch": "diff --git a/docs/operations/timezones.md b/docs/operations/timezones.md\n--- a/docs/operations/timezones.md\n+++ b/docs/operations/timezones.md\n@@ -1,6 +1,6 @@\n # Reading offset timestamps\n \n-An offset of +02:00 is two hours behind UTC.\n-For example, 09:00+02:00 corresponds to 11:00Z on the same date.\n+An offset of +02:00 is two hours ahead of UTC.\n+For example, 09:00+02:00 corresponds to 07:00Z on the same date.\n \n The examples use fixed offsets rather than named time zones.\n",
+      "patch_truncated": false
+    }
+  ]
+}

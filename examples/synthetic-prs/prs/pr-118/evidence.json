@@ -1,0 +1,19 @@
+{
+  "repository": "synthetic/pr-quality-demo",
+  "number": 118,
+  "base_sha": "3ba6ae55f52ef4d957936e282a35b796de83c31b",
+  "head_sha": "f57727b86383525abb8732dee88c7a192337c5c0",
+  "title": "chore(totals): fix a repeated word in a comment",
+  "body": "## Summary\nRemove the repeated word 'the' from the comment in total() in src/totals.py.\n\n## Rationale\nThe duplicated word is a typo that makes the comment read incorrectly.\n\n## Testing\nValidation plan: inspect the edited comment in src/totals.py; no test is added for a comment.\n\n## Limitations\nOnly this comment is edited; other comments in src/totals.py have not been reviewed.\n",
+  "files_complete": true,
+  "files": [
+    {
+      "path": "src/totals.py",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "patch": "diff --git a/src/totals.py b/src/totals.py\n--- a/src/totals.py\n+++ b/src/totals.py\n@@ -1,5 +1,5 @@\n def total(prices):\n-    # Add up the the prices.\n+    # Add up the prices.\n     t = 0\n     for price in prices:\n         t += price\n",
+      "patch_truncated": false
+    }
+  ]
+}

@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "synthetic": true,
+  "case_id": "pr-126",
+  "url": "https://example.invalid/synthetic/pr-quality-demo/pull/126",
+  "state": "open",
+  "draft": false,
+  "author": {
+    "login": "independent-author-a",
+    "name": "independent-author-a",
+    "email": "independent-author-a@example.invalid"
+  },
+  "created_at": "2026-05-06T12:00:00+00:00",
+  "updated_at": "2026-05-06T13:00:00+00:00",
+  "base_ref": "main",
+  "head_ref": "synthetic/pr-126",
+  "base_sha": "b1385896f5c471f0bf9d4949fdd9a410ab1a1940",
+  "head_sha": "e270b84b05f013fa8451ac44e88c39f05d7d77b8",
+  "changed_files": 2,
+  "additions": 3,
+  "deletions": 3,
+  "commits": [
+    {
+      "sha": "3d7ca4a1aba33744129249b762a5d68ef6ae4ec7",
+      "parents": [
+        "b1385896f5c471f0bf9d4949fdd9a410ab1a1940"
+      ],
+      "message": "docs(locale): restore French and Spanish accents",
+      "author": {
+        "login": "independent-author-a",
+        "name": "independent-author-a",
+        "email": "independent-author-a@example.invalid"
+      },
+      "authored_at": "2026-05-06T11:50:00+00:00",
+      "files": [
+        "docs/locale-guide.md"
+      ],
+      "additions": 2,
+      "deletions": 2
+    },
+    {
+      "sha": "e270b84b05f013fa8451ac44e88c39f05d7d77b8",
+      "parents": [
+        "3d7ca4a1aba33744129249b762a5d68ef6ae4ec7"
+      ],
+      "message": "docs(ja): end the setup sentence with a Japanese full stop",
+      "author": {
+        "login": "independent-author-a",
+        "name": "independent-author-a",
+        "email": "independent-author-a@example.invalid"
+      },
+      "authored_at": "2026-05-06T11:51:00+00:00",
+      "files": [
+        "docs/ja/overview.md"
+      ],
+      "additions": 1,
+      "deletions": 1
+    }
+  ]
+}

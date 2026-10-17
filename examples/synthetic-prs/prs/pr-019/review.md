@@ -1,0 +1,2 @@
+- src/users.py: user_response returns full_name instead of name, so clients reading name lose the field. No alias or migration period is provided, which makes this a breaking API change.
+- docs/api.md: the response example now shows full_name, matching the code.

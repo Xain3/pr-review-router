@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "synthetic": true,
+  "case_id": "pr-136",
+  "url": "https://example.invalid/synthetic/pr-quality-demo/pull/136",
+  "state": "open",
+  "draft": false,
+  "author": {
+    "login": "independent-author-a",
+    "name": "independent-author-a",
+    "email": "independent-author-a@example.invalid"
+  },
+  "created_at": "2026-05-16T12:00:00+00:00",
+  "updated_at": "2026-05-16T13:00:00+00:00",
+  "base_ref": "main",
+  "head_ref": "synthetic/pr-136",
+  "base_sha": "420c9b0de1295494132ef328e02ebf29ba617a7a",
+  "head_sha": "cfcede22c36e2087bd43f63f18e0a424d638428c",
+  "changed_files": 3,
+  "additions": 3,
+  "deletions": 3,
+  "commits": [
+    {
+      "sha": "ce256f006ff3d64831883550b5050fea552d4323",
+      "parents": [
+        "420c9b0de1295494132ef328e02ebf29ba617a7a"
+      ],
+      "message": "fix(delivery): permit a third send attempt",
+      "author": {
+        "login": "independent-author-a",
+        "name": "independent-author-a",
+        "email": "independent-author-a@example.invalid"
+      },
+      "authored_at": "2026-05-16T11:50:00+00:00",
+      "files": [
+        "delivery/ReceiptSender.java"
+      ],
+      "additions": 1,
+      "deletions": 1
+    },
+    {
+      "sha": "43538ad4b02f04cb3ddccb784c3f418ff43740ca",
+      "parents": [
+        "ce256f006ff3d64831883550b5050fea552d4323"
+      ],
+      "message": "test(delivery): expect three exhausted attempts",
+      "author": {
+        "login": "independent-author-a",
+        "name": "independent-author-a",
+        "email": "independent-author-a@example.invalid"
+      },
+      "authored_at": "2026-05-16T11:51:00+00:00",
+      "files": [
+        "delivery/ReceiptSenderTest.java"
+      ],
+      "additions": 1,
+      "deletions": 1
+    },
+    {
+      "sha": "cfcede22c36e2087bd43f63f18e0a424d638428c",
+      "parents": [
+        "43538ad4b02f04cb3ddccb784c3f418ff43740ca"
+      ],
+      "message": "docs(delivery): state the three-attempt retry ceiling",
+      "author": {
+        "login": "independent-author-a",
+        "name": "independent-author-a",
+        "email": "independent-author-a@example.invalid"
+      },
+      "authored_at": "2026-05-16T11:52:00+00:00",
+      "files": [
+        "operations/retry.md"
+      ],
+      "additions": 1,
+      "deletions": 1
+    }
+  ]
+}

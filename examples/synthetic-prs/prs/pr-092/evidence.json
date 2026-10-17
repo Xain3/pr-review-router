@@ -1,0 +1,19 @@
+{
+  "repository": "synthetic/pr-quality-demo",
+  "number": 92,
+  "base_sha": "694f179946c7f7c85ae1f6b3b8d486713db91525",
+  "head_sha": "2ce7e5eb59189e4fc35924c7bfc6c3554db54324",
+  "title": "asdf qwer zxcv 123",
+  "body": "",
+  "files_complete": true,
+  "files": [
+    {
+      "path": "cli/help.js",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "patch": "diff --git a/cli/help.js b/cli/help.js\n--- a/cli/help.js\n+++ b/cli/help.js\n@@ -1 +1 @@\n-export const help = 'Usage: demo --ouput FILE';\n+export const help = 'Usage: demo --output FILE';\n",
+      "patch_truncated": false
+    }
+  ]
+}

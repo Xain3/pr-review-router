@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "synthetic": true,
+  "case_id": "pr-026",
+  "url": "https://example.invalid/synthetic/pr-quality-demo/pull/26",
+  "state": "open",
+  "draft": false,
+  "author": {
+    "login": "synthetic-author-06",
+    "name": "Synthetic Author 06",
+    "email": "author-06@example.invalid"
+  },
+  "created_at": "2026-01-26T12:00:00+00:00",
+  "updated_at": "2026-01-26T13:00:00+00:00",
+  "base_ref": "main",
+  "head_ref": "synthetic/pr-026",
+  "base_sha": "666bcffd244693b9b4af1f8a2eef18258317baa6",
+  "head_sha": "f807e043c9267333f31bf03ebd3856ebf6e623a1",
+  "changed_files": 2,
+  "additions": 7,
+  "deletions": 1,
+  "commits": [
+    {
+      "sha": "33b0a0d2500d734025eaa2fdd8e2c6a48b2cd97e",
+      "parents": [
+        "666bcffd244693b9b4af1f8a2eef18258317baa6"
+      ],
+      "message": "feat(batch): raise the batch limit to 100",
+      "author": {
+        "login": "synthetic-author-06",
+        "name": "Synthetic Author 06",
+        "email": "author-06@example.invalid"
+      },
+      "authored_at": "2026-01-26T11:50:00+00:00",
+      "files": [
+        "src/batch.py"
+      ],
+      "additions": 1,
+      "deletions": 1
+    },
+    {
+      "sha": "f807e043c9267333f31bf03ebd3856ebf6e623a1",
+      "parents": [
+        "33b0a0d2500d734025eaa2fdd8e2c6a48b2cd97e"
+      ],
+      "message": "test(batch): cover batch-size boundaries",
+      "author": {
+        "login": "synthetic-author-06",
+        "name": "Synthetic Author 06",
+        "email": "author-06@example.invalid"
+      },
+      "authored_at": "2026-01-26T11:51:00+00:00",
+      "files": [
+        "tests/test_batch.py"
+      ],
+      "additions": 6,
+      "deletions": 0
+    }
+  ]
+}

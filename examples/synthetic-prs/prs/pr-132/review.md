@@ -1,0 +1,1 @@
+`.github/workflows/check.yml` now grants contents-read and drops issues-write while keeping the visible steps. `docs/check-workflow.md` accurately records that reduced scope and lack of issue posting. Both files are addressed. The shell script is not provided; before merging, inspect its children for publishing or issue API calls and demonstrate a run with the narrower token.

@@ -1,0 +1,210 @@
+{
+  "schema_version": 3,
+  "case_id": "pr-140",
+  "label_status": "provisional",
+  "label_origin": "synthetic_author_intent",
+  "family_id": "fixed-offset-guide",
+  "scenario": "documentation_with_scope",
+  "variant": "documentation_with_scope",
+  "review_variant": "complete",
+  "complexity": "trivial",
+  "has_breaking_change": false,
+  "expected_quality": "good",
+  "tags": [
+    "independently_authored",
+    "documentation_with_scope"
+  ],
+  "criteria": {
+    "title_format": {
+      "status": "passed",
+      "explanation": "The title uses a Conventional Commits type, scope, and subject.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "title_meaningful": {
+      "status": "passed",
+      "explanation": "The title identifies the fixed-offset guide correction change.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "title_diff_consistency": {
+      "status": "passed",
+      "explanation": "The title agrees with the supplied fixed-offset guide correction patch.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "description_present": {
+      "status": "passed",
+      "explanation": "The description contains substantive prose about this patch.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "rationale": {
+      "status": "passed",
+      "explanation": "The body names the concrete problem motivating the change.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "changes_described": {
+      "status": "passed",
+      "explanation": "The body makes specific claims about the edits.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "description_title_consistency": {
+      "status": "passed",
+      "explanation": "The title and body describe the same change.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "description_commit_consistency": {
+      "status": "passed",
+      "explanation": "The body accounts for every supplied commit message.",
+      "sources": [
+        "evidence.json#/body",
+        "metadata.json#/commits"
+      ]
+    },
+    "description_diff_consistency": {
+      "status": "passed",
+      "explanation": "The body accurately covers the substantive edits in every changed file.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "limitations": {
+      "status": "passed",
+      "explanation": "The body states relevant scope boundaries for this patch.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "breaking_changes": {
+      "status": "not_applicable",
+      "explanation": "The supplied patch removes no supported interface or configuration.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "testing": {
+      "status": "passed",
+      "explanation": "The body proposes checking the arithmetic and explains why an executable test run is unnecessary for this prose-only edit.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "summary-section": {
+      "status": "passed",
+      "explanation": "A populated level-two Summary section is present.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "review-coverage": {
+      "status": "passed",
+      "explanation": "The supplied review addresses every changed file and relevant implications.",
+      "sources": [
+        "review.md",
+        "evidence.json#/files"
+      ]
+    },
+    "change_triviality": {
+      "type": "ordinal",
+      "score": 0,
+      "level": "editorial",
+      "is_trivial": true,
+      "explanation": "Only documentation prose and its worked timestamp example change. No executable code, default, configuration, or interface is edited, so the patch is editorial.",
+      "sources": [
+        "evidence.json#/files"
+      ]
+    },
+    "title-format": {
+      "status": "passed",
+      "explanation": "The title uses a Conventional Commits type, scope, and subject.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "change-rationale": {
+      "status": "passed",
+      "explanation": "The body names the concrete problem motivating the change.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "description-coverage": {
+      "status": "passed",
+      "explanation": "The body accurately covers the substantive edits in every changed file.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "testing-explanation": {
+      "status": "passed",
+      "explanation": "The body proposes checking the arithmetic and explains why an executable test run is unnecessary for this prose-only edit.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "change-triviality": {
+      "type": "ordinal",
+      "score": 0,
+      "level": "editorial",
+      "is_trivial": true,
+      "explanation": "Only documentation prose and its worked timestamp example change. No executable code, default, configuration, or interface is edited, so the patch is editorial.",
+      "sources": [
+        "evidence.json#/files"
+      ]
+    }
+  },
+  "diagnostics": {
+    "text_diff_triviality": {
+      "diff_score": 0,
+      "title_score": 0,
+      "body_score": 0,
+      "text_score": 0,
+      "assessment": "agreed",
+      "relationship": "aligned",
+      "score_delta": 0,
+      "potential_confounder": false,
+      "title_explanation": "The title identifies a documentation example correction.",
+      "body_explanation": "The body explicitly limits the edit to two guide sentences.",
+      "sources": [
+        "evidence.json#/title",
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    }
+  },
+  "reference_change": {
+    "summary": "Correct the direction of a positive UTC offset and the associated numeric example in the operations guide.",
+    "rationale": "The guide reverses the sign relationship and gives the corresponding wrong UTC clock time.",
+    "limitations": "Only guide prose is changed; named zones, daylight-saving transitions, and runtime parsing are outside this patch.",
+    "breaking_changes": "None; no executable code or supported interface changes."
+  },
+  "authorship": {
+    "author_id": "independent-author-b",
+    "method": "independent_agent_authored"
+  },
+  "contested_criteria": []
+}

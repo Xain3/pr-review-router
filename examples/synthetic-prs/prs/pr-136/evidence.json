@@ -1,0 +1,35 @@
+{
+  "repository": "synthetic/pr-quality-demo",
+  "number": 136,
+  "base_sha": "420c9b0de1295494132ef328e02ebf29ba617a7a",
+  "head_sha": "cfcede22c36e2087bd43f63f18e0a424d638428c",
+  "title": "fix(delivery): try once more after two receipt send failures",
+  "body": "## Summary\n\n`ReceiptSender.deliver` may call the sender a third time when the first two calls return false. Change the exhaustion assertion from 2 to 3, retain the first-success assertion, and update the operations guide’s ceiling from two invocations to three.\n\nA second transient failure currently ends delivery even if the next call would recover. One extra attempt trades a little more synchronous work for that recovery chance.\n\n## Operational limits\n\nThere is still no backoff, cancellation, or idempotency safeguard. A sender that reports false after actually delivering can produce a duplicate; this patch does not solve that problem. Method arguments and return shape are unchanged.\n\n## Test plan\n\nRun the focused failure-exhaustion and first-success tests. Also drive the sender with false, false, true and assert three invocations; drive it with false, true and assert two, then an always-false sequence and assert it stops at three. Read the operations ceiling beside those cases.\n",
+  "files_complete": true,
+  "files": [
+    {
+      "path": "delivery/ReceiptSender.java",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "patch": "diff --git a/delivery/ReceiptSender.java b/delivery/ReceiptSender.java\n--- a/delivery/ReceiptSender.java\n+++ b/delivery/ReceiptSender.java\n@@ -8,7 +8,7 @@\n         do {\n             attempts++;\n             if (send.getAsBoolean()) return attempts;\n-        } while (attempts < 2);\n+        } while (attempts < 3);\n         return attempts;\n     }\n }\n",
+      "patch_truncated": false
+    },
+    {
+      "path": "delivery/ReceiptSenderTest.java",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "patch": "diff --git a/delivery/ReceiptSenderTest.java b/delivery/ReceiptSenderTest.java\n--- a/delivery/ReceiptSenderTest.java\n+++ b/delivery/ReceiptSenderTest.java\n@@ -5,7 +5,7 @@\n \n class ReceiptSenderTest {\n     @Test void countsFailedAttempts() {\n-        assertEquals(2, new ReceiptSender().deliver(() -> false));\n+        assertEquals(3, new ReceiptSender().deliver(() -> false));\n     }\n     @Test void returnsAfterFirstSuccess() {\n         assertEquals(1, new ReceiptSender().deliver(() -> true));\n",
+      "patch_truncated": false
+    },
+    {
+      "path": "operations/retry.md",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "patch": "diff --git a/operations/retry.md b/operations/retry.md\n--- a/operations/retry.md\n+++ b/operations/retry.md\n@@ -1,4 +1,4 @@\n # Receipt delivery\n \n-A failed receipt delivery invokes the sender at most twice.\n+A failed receipt delivery invokes the sender at most three times.\n A successful invocation ends the loop immediately.\n",
+      "patch_truncated": false
+    }
+  ]
+}

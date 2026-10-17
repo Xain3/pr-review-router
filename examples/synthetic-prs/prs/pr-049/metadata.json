@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "synthetic": true,
+  "case_id": "pr-049",
+  "url": "https://example.invalid/synthetic/pr-quality-demo/pull/49",
+  "state": "open",
+  "draft": false,
+  "author": {
+    "login": "synthetic-author-09",
+    "name": "Synthetic Author 09",
+    "email": "author-09@example.invalid"
+  },
+  "created_at": "2026-02-18T12:00:00+00:00",
+  "updated_at": "2026-02-18T13:00:00+00:00",
+  "base_ref": "main",
+  "head_ref": "synthetic/pr-049",
+  "base_sha": "e9cb7192f7acf6924f96838f6c7580c9a09d0317",
+  "head_sha": "507530bcb18ea74a9ab7efc843ef0d34e2d4e77d",
+  "changed_files": 2,
+  "additions": 2,
+  "deletions": 2,
+  "commits": [
+    {
+      "sha": "42b90556e50ac9b2b281d1f779bd86749f066821",
+      "parents": [
+        "e9cb7192f7acf6924f96838f6c7580c9a09d0317"
+      ],
+      "message": "feat(api)!: rename the response field to full_name",
+      "author": {
+        "login": "synthetic-author-09",
+        "name": "Synthetic Author 09",
+        "email": "author-09@example.invalid"
+      },
+      "authored_at": "2026-02-18T11:50:00+00:00",
+      "files": [
+        "src/users.py"
+      ],
+      "additions": 1,
+      "deletions": 1
+    },
+    {
+      "sha": "507530bcb18ea74a9ab7efc843ef0d34e2d4e77d",
+      "parents": [
+        "42b90556e50ac9b2b281d1f779bd86749f066821"
+      ],
+      "message": "docs(api): update the user response example",
+      "author": {
+        "login": "synthetic-author-09",
+        "name": "Synthetic Author 09",
+        "email": "author-09@example.invalid"
+      },
+      "authored_at": "2026-02-18T11:51:00+00:00",
+      "files": [
+        "docs/api.md"
+      ],
+      "additions": 1,
+      "deletions": 1
+    }
+  ]
+}

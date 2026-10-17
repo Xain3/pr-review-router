@@ -1,0 +1,19 @@
+{
+  "repository": "synthetic/pr-quality-demo",
+  "number": 141,
+  "base_sha": "75597cfcbb31c1162ee8a1c6fbb2cf1febcde494",
+  "head_sha": "a9922ee28d6b51afd531e1934d7c8898a59e2868",
+  "title": "Correct the positive-offset example in the operations guide",
+  "body": "",
+  "files_complete": true,
+  "files": [
+    {
+      "path": "docs/operations/timezones.md",
+      "status": "modified",
+      "additions": 2,
+      "deletions": 2,
+      "patch": "diff --git a/docs/operations/timezones.md b/docs/operations/timezones.md\n--- a/docs/operations/timezones.md\n+++ b/docs/operations/timezones.md\n@@ -1,6 +1,6 @@\n # Reading offset timestamps\n \n-An offset of +02:00 is two hours behind UTC.\n-For example, 09:00+02:00 corresponds to 11:00Z on the same date.\n+An offset of +02:00 is two hours ahead of UTC.\n+For example, 09:00+02:00 corresponds to 07:00Z on the same date.\n \n The examples use fixed offsets rather than named time zones.\n",
+      "patch_truncated": false
+    }
+  ]
+}

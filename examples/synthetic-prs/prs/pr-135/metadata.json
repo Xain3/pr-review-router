@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "synthetic": true,
+  "case_id": "pr-135",
+  "url": "https://example.invalid/synthetic/pr-quality-demo/pull/135",
+  "state": "open",
+  "draft": false,
+  "author": {
+    "login": "independent-author-a",
+    "name": "independent-author-a",
+    "email": "independent-author-a@example.invalid"
+  },
+  "created_at": "2026-05-15T12:00:00+00:00",
+  "updated_at": "2026-05-15T13:00:00+00:00",
+  "base_ref": "main",
+  "head_ref": "synthetic/pr-135",
+  "base_sha": "c6866b7d802af5fd7f99b6ad35463b622020944c",
+  "head_sha": "222c97ee120b1b87ec6b685b0096638f24911ac9",
+  "changed_files": 2,
+  "additions": 5,
+  "deletions": 1,
+  "commits": [
+    {
+      "sha": "d6da5d199cd2f32ba547c497910b1c6003a4102e",
+      "parents": [
+        "c6866b7d802af5fd7f99b6ad35463b622020944c"
+      ],
+      "message": "feat(storage)!: rename the supported receipt reference column",
+      "author": {
+        "login": "independent-author-a",
+        "name": "independent-author-a",
+        "email": "independent-author-a@example.invalid"
+      },
+      "authored_at": "2026-05-15T11:50:00+00:00",
+      "files": [
+        "migrations/008_receipt_account_ref.sql"
+      ],
+      "additions": 1,
+      "deletions": 0
+    },
+    {
+      "sha": "222c97ee120b1b87ec6b685b0096638f24911ac9",
+      "parents": [
+        "d6da5d199cd2f32ba547c497910b1c6003a4102e"
+      ],
+      "message": "docs(storage): document receipt query migration without an alias",
+      "author": {
+        "login": "independent-author-a",
+        "name": "independent-author-a",
+        "email": "independent-author-a@example.invalid"
+      },
+      "authored_at": "2026-05-15T11:51:00+00:00",
+      "files": [
+        "docs/receipt-schema.md"
+      ],
+      "additions": 4,
+      "deletions": 1
+    }
+  ]
+}

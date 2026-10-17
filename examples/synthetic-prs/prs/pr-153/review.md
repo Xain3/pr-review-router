@@ -1,0 +1,2 @@
+- src/pager.py: _PAGE_SIZE changes from 100 to 50, so page() now returns at most 50 rows instead of 100. Callers that expected 100-row pages receive fewer rows.
+- tests/test_pager.py: the new test asserts that a 200-item input yields 50 rows, pinning the new page length.

@@ -1,0 +1,19 @@
+{
+  "repository": "synthetic/pr-quality-demo",
+  "number": 3,
+  "base_sha": "934513e1420e8d449c33f405e7a7081d676b546f",
+  "head_sha": "92d753a8f54beb805f6e0b9efef0041bb520381c",
+  "title": "docs: correct the getting started link",
+  "body": "## Summary\nFix the README link target from docs/geting-started.md to docs/getting-started.md without changing its label.\n\n## Rationale\nThe misspelled path leads new users to a missing documentation page.\n\n## Testing\nValidation plan: resolve the relative README link to the existing guide.\n\n## Limitations\nOther README links and the guide's contents are outside scope.\n\n## Breaking changes\nNone; no public API or command changes.\n",
+  "files_complete": true,
+  "files": [
+    {
+      "path": "README.md",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "patch": "diff --git a/README.md b/README.md\n--- a/README.md\n+++ b/README.md\n@@ -1,3 +1,3 @@\n # Demo\n \n-[Getting started](docs/geting-started.md)\n+[Getting started](docs/getting-started.md)\n",
+      "patch_truncated": false
+    }
+  ]
+}

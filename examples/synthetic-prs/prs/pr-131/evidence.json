@@ -1,0 +1,19 @@
+{
+  "repository": "synthetic/pr-quality-demo",
+  "number": 131,
+  "base_sha": "298e82487b300ad2230a571e5279861699a79ccc",
+  "head_sha": "3bd094aa74a60e9036cfa08e9af31010cf891201",
+  "title": "build(lint): select the 1.4.1 lint runner release",
+  "body": "## Context\n\nThe onboarding lint baseline has moved ahead of this isolated fixture. Contributor machines need predictable formatting output. Comparing diagnostics from different tool installations costs reviewers time and obscures actual source problems.\n",
+  "files_complete": true,
+  "files": [
+    {
+      "path": "tools/lint/package.json",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "patch": "diff --git a/tools/lint/package.json b/tools/lint/package.json\n--- a/tools/lint/package.json\n+++ b/tools/lint/package.json\n@@ -2,6 +2,6 @@\n   \"name\": \"fixture-lint-tools\",\n   \"private\": true,\n   \"devDependencies\": {\n-    \"@harbor/lint\": \"1.4.0\"\n+    \"@harbor/lint\": \"1.4.1\"\n   }\n }\n",
+      "patch_truncated": false
+    }
+  ]
+}

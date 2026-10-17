@@ -21,6 +21,7 @@ depths, not separate provider roles. See the
 | [`rubric/`](rubric/README.md) | Weighted title/body criteria, hard and soft blockers, and the resulting aggregate score and routing behavior. | [Rubric examples](rubric/README.md) |
 | [`local-models/`](local-models/README.md) | Independent local adapters, shadow skips, provisional evaluation labels, and explicitly synthetic offline HTTP replay. | [Local models and replay](local-models/README.md) |
 | [`rubric-review/`](rubric-review/README.md) | Assessment-rubric examples combining deterministic title/section checks with semantic questions about rationale, diff coverage, review coverage, and testing. Includes offline replay. | [PR and review rubric](rubric-review/README.md) |
+| [`synthetic-prs/`](synthetic-prs/README.md) | 149 fictional PRs across 30 families, including 24 independently authored held-out cases, supplied reviews, provisional labels, and scenario/criterion/triviality confusion reports. | [Corpus guide](synthetic-prs/README.md) and [index](synthetic-prs/INDEX.md) |
 
 ## Run the examples
 

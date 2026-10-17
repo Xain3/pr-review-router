@@ -1,0 +1,27 @@
+{
+  "repository": "synthetic/pr-quality-demo",
+  "number": 123,
+  "base_sha": "1c1c9ed5dd7b15e8cd56bca445ebcd7e5ea5755d",
+  "head_sha": "87108ae6a0b02861997b28f24eaa6576d15d3bff",
+  "title": "chore(render): escape cell text",
+  "body": "## Summary\nReturn html.escape(text) from cell() in src/render.py and add tests/test_render.py asserting that '<b>' becomes '&lt;b&gt;'.\n\n## Rationale\nCell text is inserted into HTML tables, where unescaped angle brackets alter the markup.\n\n## Testing\nValidation plan: run tests/test_render.py for the angle-bracket case.\n\n## Limitations\nOnly cell() is changed; other renderers and already-escaped input are not addressed.\n",
+  "files_complete": true,
+  "files": [
+    {
+      "path": "src/render.py",
+      "status": "modified",
+      "additions": 4,
+      "deletions": 1,
+      "patch": "diff --git a/src/render.py b/src/render.py\n--- a/src/render.py\n+++ b/src/render.py\n@@ -1,2 +1,5 @@\n+import html\n+\n+\n def cell(text):\n-    return text\n+    return html.escape(text)\n",
+      "patch_truncated": false
+    },
+    {
+      "path": "tests/test_render.py",
+      "status": "added",
+      "additions": 5,
+      "deletions": 0,
+      "patch": "diff --git a/tests/test_render.py b/tests/test_render.py\n--- /dev/null\n+++ b/tests/test_render.py\n@@ -0,0 +1,5 @@\n+from src.render import cell\n+\n+\n+def test_cell():\n+    assert cell('<b>') == '&lt;b&gt;'\n",
+      "patch_truncated": false
+    }
+  ]
+}
