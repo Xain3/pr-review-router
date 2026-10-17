@@ -1,0 +1,19 @@
+{
+  "repository": "synthetic/pr-quality-demo",
+  "number": 142,
+  "base_sha": "65a14d3702f11098bca030c7a4db24b47b3e47e2",
+  "head_sha": "1e88313ff90ab1efb8492883581297762589eae9",
+  "title": "refactor(cart): name the existing Spanish empty label",
+  "body": "## Change\n\nIn `web/src/emptyState.ts`, lift the existing Spanish label into `EMPTY_CART_LABEL` and return that private constant from `emptyCartLabel()`. The literal and public function stay unchanged.\n\n## Motivation and boundary\n\nA local name makes the current label easier to identify before any later catalog work. This patch adds no locale selection, fallback, or translations.\n\n## Checks to perform\n\nCall `emptyCartLabel()` before and after and compare the exact Unicode string, including the accent. Also run the TypeScript compiler to check the unchanged export. No checks are claimed as executed.\n",
+  "files_complete": true,
+  "files": [
+    {
+      "path": "web/src/emptyState.ts",
+      "status": "modified",
+      "additions": 3,
+      "deletions": 1,
+      "patch": "diff --git a/web/src/emptyState.ts b/web/src/emptyState.ts\n--- a/web/src/emptyState.ts\n+++ b/web/src/emptyState.ts\n@@ -1,3 +1,5 @@\n+const EMPTY_CART_LABEL = \"No hay artículos\";\n+\n export function emptyCartLabel(): string {\n-  return \"No hay artículos\";\n+  return EMPTY_CART_LABEL;\n }\n",
+      "patch_truncated": false
+    }
+  ]
+}

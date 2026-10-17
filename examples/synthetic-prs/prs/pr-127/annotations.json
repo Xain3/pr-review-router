@@ -1,0 +1,210 @@
+{
+  "schema_version": 3,
+  "case_id": "pr-127",
+  "label_status": "provisional",
+  "label_origin": "synthetic_author_intent",
+  "family_id": "unicode-prose-repair",
+  "scenario": "partial_account",
+  "variant": "partial_account",
+  "review_variant": "partial",
+  "complexity": "trivial",
+  "has_breaking_change": false,
+  "expected_quality": "needs_revision",
+  "tags": [
+    "independently_authored",
+    "partial_account"
+  ],
+  "criteria": {
+    "title_format": {
+      "status": "passed",
+      "explanation": "The title has a Conventional Commits type, optional scope, and subject.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "title_meaningful": {
+      "status": "passed",
+      "explanation": "The subject names an intelligible edit and its affected area.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "title_diff_consistency": {
+      "status": "passed",
+      "explanation": "The body concretely describes restoring the three accented words.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "description_present": {
+      "status": "passed",
+      "explanation": "The body contains substantive prose about this change.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "rationale": {
+      "status": "failed",
+      "explanation": "The readability rationale explains the accented words but never explains the separate Japanese punctuation change.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "changes_described": {
+      "status": "passed",
+      "explanation": "The body concretely describes restoring the three accented words.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "description_title_consistency": {
+      "status": "passed",
+      "explanation": "The body and title describe the same change.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "description_commit_consistency": {
+      "status": "failed",
+      "explanation": "The body does not describe the Japanese full-stop change named by the second commit.",
+      "sources": [
+        "evidence.json#/body",
+        "metadata.json#/commits"
+      ]
+    },
+    "description_diff_consistency": {
+      "status": "failed",
+      "explanation": "A rendering check mentions Japanese pages but never describes the actual comma-to-full-stop edit in docs/ja/overview.md.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "limitations": {
+      "status": "passed",
+      "explanation": "The body limits the edit to prose and explicitly excludes loading and filename behavior.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "breaking_changes": {
+      "status": "not_applicable",
+      "explanation": "No supported public name or configuration entrypoint is removed by these patches.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "testing": {
+      "status": "passed",
+      "explanation": "The plan checks both rendered Markdown pages, accented glyphs, and the Japanese full stop.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "summary-section": {
+      "status": "passed",
+      "explanation": "A populated level-two Summary section is present.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "review-coverage": {
+      "status": "failed",
+      "explanation": "The review covers the locale guide but never addresses the separate Japanese punctuation patch.",
+      "sources": [
+        "review.md",
+        "evidence.json#/files"
+      ]
+    },
+    "change_triviality": {
+      "type": "ordinal",
+      "score": 0,
+      "level": "editorial",
+      "is_trivial": true,
+      "explanation": "Only explanatory Markdown words and punctuation change in two locale pages; no executable text or interface changes.",
+      "sources": [
+        "evidence.json#/files"
+      ]
+    },
+    "title-format": {
+      "status": "passed",
+      "explanation": "The title has a Conventional Commits type, optional scope, and subject.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "change-rationale": {
+      "status": "failed",
+      "explanation": "The readability rationale explains the accented words but never explains the separate Japanese punctuation change.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "description-coverage": {
+      "status": "failed",
+      "explanation": "A rendering check mentions Japanese pages but never describes the actual comma-to-full-stop edit in docs/ja/overview.md.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "testing-explanation": {
+      "status": "passed",
+      "explanation": "The plan checks both rendered Markdown pages, accented glyphs, and the Japanese full stop.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "change-triviality": {
+      "type": "ordinal",
+      "score": 0,
+      "level": "editorial",
+      "is_trivial": true,
+      "explanation": "Only explanatory Markdown words and punctuation change in two locale pages; no executable text or interface changes.",
+      "sources": [
+        "evidence.json#/files"
+      ]
+    }
+  },
+  "diagnostics": {
+    "text_diff_triviality": {
+      "diff_score": 0,
+      "title_score": 0,
+      "body_score": 0,
+      "text_score": 0,
+      "assessment": "agreed",
+      "relationship": "aligned",
+      "score_delta": 0,
+      "potential_confounder": false,
+      "title_explanation": "Restoring accents in notes is editorial.",
+      "body_explanation": "The stated changes are accent repairs; rendering plans introduce no runtime change claim.",
+      "sources": [
+        "evidence.json#/title",
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    }
+  },
+  "reference_change": {
+    "summary": "Restore accents in the French and Spanish prose examples and correct the Japanese sentence terminator.",
+    "rationale": "Readers should see the intended words and punctuation rather than ASCII approximations and a stray comma.",
+    "limitations": "Only explanatory Markdown prose changes; translation loading, filenames, and encoding behavior are outside the patch.",
+    "breaking_changes": null
+  },
+  "authorship": {
+    "author_id": "independent-author-a",
+    "method": "independent_agent_authored"
+  },
+  "contested_criteria": []
+}

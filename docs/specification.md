@@ -441,6 +441,32 @@ recommendations. Reference-label edits alone do not require fresh inference.
 See the [nine-case, six-criterion examples](../examples/rubric-review/README.md).
 Labels remain provisional and offline tapes explicitly synthetic.
 
+The separate [synthetic PR benchmark](../examples/synthetic-prs/README.md) contains
+149 sanitized fictional PRs across 30 families. Its fixed `splits.json` assigns
+the original 125 cases (18 families) to development and 24 independently authored
+cases (12 new families) to evaluation. Matching description/review variants of a
+family stay together. Validation rejects overlapping families, identical patch
+sets across partitions, stale partition corpora, and missing author provenance.
+Independent authoring and blind AI label review do not confer human-reviewed
+ground truth; contested judgments retain their dissent and provisional labels.
+
+The benchmark runners default to evaluation; `--split development` and
+`--split all` are explicit alternatives. Scoring requires exactly one result for
+each selected case and compares embedded references with pinned local labels.
+Reports include support and expected-to-actual confusion per criterion,
+scenario, reference triviality level, family, split, author, and scenario-by-level
+intersection. Native ordinal triviality confusion is separate from its mapped
+criterion status; all classified native labels map to `passed`. Missing answers
+and explicit uncertainty stay separate and remain in accuracy denominators.
+Reports count false passes, missed blocking recommendations, non-trivial changes
+classified as trivial, and unsafe approval recommendations in every stratum.
+The standalone triviality scorer also accepts `null` as an explicit abstention;
+missing cases are errors. Input fingerprints include the split definition and
+selected evidence, commit metadata, and supplied review contents. Scoring existing
+summaries or predictions is offline and does not run inference. Agreement with
+copied reference labels tests accounting only, and public family holdouts do not
+establish external validity or authorize automated acceptance.
+
 ## Mock behavior
 
 Added-line `MOCK_DECISION_ACCEPT` / `MOCK_DECISION_REJECT` markers return synthetic

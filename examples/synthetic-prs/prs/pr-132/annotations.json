@@ -1,0 +1,210 @@
+{
+  "schema_version": 3,
+  "case_id": "pr-132",
+  "label_status": "provisional",
+  "label_origin": "synthetic_author_intent",
+  "family_id": "ci-token-least-privilege",
+  "scenario": "complete_account",
+  "variant": "complete_account",
+  "review_variant": "complete",
+  "complexity": "non_trivial",
+  "has_breaking_change": false,
+  "expected_quality": "good",
+  "tags": [
+    "independently_authored",
+    "complete_account"
+  ],
+  "criteria": {
+    "title_format": {
+      "status": "passed",
+      "explanation": "The title has a Conventional Commits type, optional scope, and subject.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "title_meaningful": {
+      "status": "passed",
+      "explanation": "The subject names an intelligible edit and its affected area.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "title_diff_consistency": {
+      "status": "passed",
+      "explanation": "The body accounts for both token-grant changes and the revised workflow note.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "description_present": {
+      "status": "passed",
+      "explanation": "The body contains substantive prose about this change.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "rationale": {
+      "status": "passed",
+      "explanation": "The body explains the compromise impact of unused write grants and the visible source-reading need.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "changes_described": {
+      "status": "passed",
+      "explanation": "The body accounts for both token-grant changes and the revised workflow note.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "description_title_consistency": {
+      "status": "passed",
+      "explanation": "The body and title describe the same change.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "description_commit_consistency": {
+      "status": "passed",
+      "explanation": "The body covers the changes named in each accompanying commit message.",
+      "sources": [
+        "evidence.json#/body",
+        "metadata.json#/commits"
+      ]
+    },
+    "description_diff_consistency": {
+      "status": "passed",
+      "explanation": "The body accounts for both token-grant changes and the revised workflow note.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "limitations": {
+      "status": "passed",
+      "explanation": "The body explicitly identifies the unseen shell script and its possible hidden write dependencies.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "breaking_changes": {
+      "status": "not_applicable",
+      "explanation": "No supported public name or configuration entrypoint is removed by these patches.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "testing": {
+      "status": "passed",
+      "explanation": "The plan names resolved-permission inspection and an isolated check-job run that watches for denied writes.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "summary-section": {
+      "status": "passed",
+      "explanation": "A populated level-two Summary section is present.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "review-coverage": {
+      "status": "passed",
+      "explanation": "The review names both changed files and the security implication; requesting unseen-script inspection still covers the supplied changes.",
+      "sources": [
+        "review.md",
+        "evidence.json#/files"
+      ]
+    },
+    "change_triviality": {
+      "type": "ordinal",
+      "score": 3,
+      "level": "substantive",
+      "is_trivial": false,
+      "explanation": "Changing GitHub Actions token grants from contents-write/issues-write to contents-read changes security-sensitive permissions. That is substantive even though the YAML diff is short; no supported consumer configuration entrypoint is removed.",
+      "sources": [
+        "evidence.json#/files"
+      ]
+    },
+    "title-format": {
+      "status": "passed",
+      "explanation": "The title has a Conventional Commits type, optional scope, and subject.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "change-rationale": {
+      "status": "passed",
+      "explanation": "The body explains the compromise impact of unused write grants and the visible source-reading need.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "description-coverage": {
+      "status": "passed",
+      "explanation": "The body accounts for both token-grant changes and the revised workflow note.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "testing-explanation": {
+      "status": "passed",
+      "explanation": "The plan names resolved-permission inspection and an isolated check-job run that watches for denied writes.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "change-triviality": {
+      "type": "ordinal",
+      "score": 3,
+      "level": "substantive",
+      "is_trivial": false,
+      "explanation": "Changing GitHub Actions token grants from contents-write/issues-write to contents-read changes security-sensitive permissions. That is substantive even though the YAML diff is short; no supported consumer configuration entrypoint is removed.",
+      "sources": [
+        "evidence.json#/files"
+      ]
+    }
+  },
+  "diagnostics": {
+    "text_diff_triviality": {
+      "diff_score": 3,
+      "title_score": 3,
+      "body_score": 3,
+      "text_score": 3,
+      "assessment": "agreed",
+      "relationship": "aligned",
+      "score_delta": 0,
+      "potential_confounder": false,
+      "title_explanation": "Reduced workflow-token privileges imply security-sensitive behavior.",
+      "body_explanation": "The body explicitly changes token grants and discusses the authorization consequences.",
+      "sources": [
+        "evidence.json#/title",
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    }
+  },
+  "reference_change": {
+    "summary": "Reduce the check workflow token from contents-write plus issues-write to contents-read and update the workflow documentation.",
+    "rationale": "The check job only reads source and runs checks, so the write grants unnecessarily increase the damage possible from a compromised step.",
+    "limitations": "The scripts are not supplied; their hidden write dependencies cannot be ruled out from these two files. No event trigger or runner changes.",
+    "breaking_changes": null
+  },
+  "authorship": {
+    "author_id": "independent-author-a",
+    "method": "independent_agent_authored"
+  },
+  "contested_criteria": []
+}

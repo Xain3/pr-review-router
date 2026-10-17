@@ -1,0 +1,212 @@
+{
+  "schema_version": 3,
+  "case_id": "pr-143",
+  "label_status": "provisional",
+  "label_origin": "synthetic_author_intent",
+  "family_id": "spanish-label-constant",
+  "scenario": "claimed_locale_capability_absent",
+  "variant": "claimed_locale_capability_absent",
+  "review_variant": "off_target",
+  "complexity": "trivial",
+  "has_breaking_change": false,
+  "expected_quality": "needs_revision",
+  "tags": [
+    "independently_authored",
+    "claimed_locale_capability_absent"
+  ],
+  "criteria": {
+    "title_format": {
+      "status": "passed",
+      "explanation": "The title uses a Conventional Commits type, scope, and subject.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "title_meaningful": {
+      "status": "passed",
+      "explanation": "The title identifies the claimed locale selection change.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "title_diff_consistency": {
+      "status": "failed",
+      "explanation": "The patch names one unchanged literal; it adds no locale selection.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "description_present": {
+      "status": "passed",
+      "explanation": "The description contains substantive prose about this patch.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "rationale": {
+      "status": "failed",
+      "explanation": "The stated English-language need motivates a capability absent from the actual extraction, with no reason given for that extraction.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "changes_described": {
+      "status": "passed",
+      "explanation": "The body makes specific claims about the edits.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "description_title_consistency": {
+      "status": "passed",
+      "explanation": "The title and body describe the same change.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "description_commit_consistency": {
+      "status": "failed",
+      "explanation": "The sole commit names the existing label, while the body claims a new locale selector and fallback.",
+      "sources": [
+        "evidence.json#/body",
+        "metadata.json#/commits"
+      ]
+    },
+    "description_diff_consistency": {
+      "status": "failed",
+      "explanation": "No English translation, locale lookup, or fallback exists in the supplied TypeScript edit.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "limitations": {
+      "status": "failed",
+      "explanation": "The claimed two-language boundary is false for the supplied one-string implementation.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "breaking_changes": {
+      "status": "not_applicable",
+      "explanation": "The supplied patch removes no supported interface or configuration.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "testing": {
+      "status": "failed",
+      "explanation": "The proposed locale and fallback checks concern features not present in the actual patch and omit validation of the extraction.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "summary-section": {
+      "status": "passed",
+      "explanation": "A populated level-two Summary section is present.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "review-coverage": {
+      "status": "failed",
+      "explanation": "The review discusses a nonexistent locale selector and does not address the constant extraction.",
+      "sources": [
+        "review.md",
+        "evidence.json#/files"
+      ]
+    },
+    "change_triviality": {
+      "type": "ordinal",
+      "score": 1,
+      "level": "mechanical",
+      "is_trivial": true,
+      "explanation": "The TypeScript function returns the exact same literal through a module-private constant. Its exported name, arguments, and output remain unchanged, demonstrating a mechanical extraction.",
+      "sources": [
+        "evidence.json#/files"
+      ]
+    },
+    "title-format": {
+      "status": "passed",
+      "explanation": "The title uses a Conventional Commits type, scope, and subject.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "change-rationale": {
+      "status": "failed",
+      "explanation": "The stated English-language need motivates a capability absent from the actual extraction, with no reason given for that extraction.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "description-coverage": {
+      "status": "failed",
+      "explanation": "No English translation, locale lookup, or fallback exists in the supplied TypeScript edit.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "testing-explanation": {
+      "status": "failed",
+      "explanation": "The proposed locale and fallback checks concern features not present in the actual patch and omit validation of the extraction.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "change-triviality": {
+      "type": "ordinal",
+      "score": 1,
+      "level": "mechanical",
+      "is_trivial": true,
+      "explanation": "The TypeScript function returns the exact same literal through a module-private constant. Its exported name, arguments, and output remain unchanged, demonstrating a mechanical extraction.",
+      "sources": [
+        "evidence.json#/files"
+      ]
+    }
+  },
+  "diagnostics": {
+    "text_diff_triviality": {
+      "diff_score": 1,
+      "title_score": 3,
+      "body_score": 3,
+      "text_score": 3,
+      "assessment": "agreed",
+      "relationship": "text_overstates",
+      "score_delta": 2,
+      "potential_confounder": true,
+      "title_explanation": "The title claims a new locale-selection capability.",
+      "body_explanation": "The body claims a new two-language selector and fallback, both public-facing capability additions.",
+      "sources": [
+        "evidence.json#/title",
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    }
+  },
+  "reference_change": {
+    "summary": "Extract the unchanged Spanish empty-cart string into a module-private constant.",
+    "rationale": "Give the existing label a local name ahead of a possible later catalog migration; no catalog is introduced here.",
+    "limitations": "Only the current Spanish string is present; there is no locale lookup, fallback, or additional translation.",
+    "breaking_changes": "None; the export, signature, and returned string stay the same."
+  },
+  "authorship": {
+    "author_id": "independent-author-b",
+    "method": "independent_agent_authored"
+  },
+  "contested_criteria": [
+    "testing-explanation"
+  ]
+}

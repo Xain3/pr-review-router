@@ -1,0 +1,27 @@
+{
+  "repository": "synthetic/pr-quality-demo",
+  "number": 128,
+  "base_sha": "64b18ea16f0668543c06a991147be4ffc962165d",
+  "head_sha": "8d8dd5d60c3d95ac6cc778e38a484a4b7471427c",
+  "title": "fix(a11y): correct the report button label spelling",
+  "body": "## Summary\n\nThe report button has an arrow for sighted users and an explicit accessible name. Fix its misspelled “Downlaod report” label to “Download report”; update the DOM test that currently enshrines the typo.\n\nThe transposed letters are pronounced poorly by speech output. This is a label correction: click behavior, tab order, and focus styles are unchanged.\n\nValidation plan: run the report-button DOM test and inspect the accessibility tree for the exact name “Download report”. A screen-reader spot check should confirm that the existing button still exposes the same action.\n",
+  "files_complete": true,
+  "files": [
+    {
+      "path": "web/report-button.ts",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "patch": "diff --git a/web/report-button.ts b/web/report-button.ts\n--- a/web/report-button.ts\n+++ b/web/report-button.ts\n@@ -1,6 +1,6 @@\n export function reportButton(): HTMLButtonElement {\n   const button = document.createElement(\"button\");\n-  button.setAttribute(\"aria-label\", \"Downlaod report\");\n+  button.setAttribute(\"aria-label\", \"Download report\");\n   button.textContent = \"↓\";\n   return button;\n }\n",
+      "patch_truncated": false
+    },
+    {
+      "path": "web/report-button.test.ts",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "patch": "diff --git a/web/report-button.test.ts b/web/report-button.test.ts\n--- a/web/report-button.test.ts\n+++ b/web/report-button.test.ts\n@@ -2,5 +2,5 @@\n import { reportButton } from \"./report-button\";\n \n test(\"report button has an accessible name\", () => {\n-  expect(reportButton().getAttribute(\"aria-label\")).toBe(\"Downlaod report\");\n+  expect(reportButton().getAttribute(\"aria-label\")).toBe(\"Download report\");\n });\n",
+      "patch_truncated": false
+    }
+  ]
+}

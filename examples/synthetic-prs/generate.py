@@ -1965,6 +1965,125 @@ def case_plan() -> list[tuple[str, int, int, Family]]:
     return plan
 
 
+def authored_case(spec: dict, author_id: str) -> tuple[dict, dict, dict, str | None]:
+    """Package independently written source cases without applying scenario templates.
+
+    :param spec: Complete authored text, file versions, and provisional reference judgments.
+    :param author_id: Authoring agent provenance, separate from label-review provenance.
+    :returns: CLI evidence, commit metadata, annotations, and optional supplied review.
+    """
+    case_id = spec["case_id"]
+    number = int(case_id.removeprefix("pr-"))
+    files = [changed_file(Edit(**edit)) for edit in spec["edits"]]
+    author = {"login": author_id, "name": author_id, "email": f"{author_id}@example.invalid"}
+    created = datetime(2026, 1, 1, 12, tzinfo=UTC) + timedelta(days=number - 1)
+    base_sha = parent = digest(f"fictional-base:{spec['family_id']}")
+    commits = []
+    for position, (edit, file) in enumerate(zip(spec["edits"], files, strict=True)):
+        sha = digest(case_id + parent + edit["message"] + file["patch"])
+        commits.append(
+            {
+                "sha": sha,
+                "parents": [parent],
+                "message": edit["message"],
+                "author": author,
+                "authored_at": (created - timedelta(minutes=10 - position)).isoformat(),
+                "files": [file["path"]],
+                "additions": file["additions"],
+                "deletions": file["deletions"],
+            }
+        )
+        parent = sha
+    evidence = {
+        "repository": "synthetic/pr-quality-demo",
+        "number": number,
+        "base_sha": base_sha,
+        "head_sha": parent,
+        "title": spec["title"],
+        "body": spec["body"],
+        "files_complete": True,
+        "files": files,
+    }
+    metadata = {
+        "schema_version": 1,
+        "synthetic": True,
+        "case_id": case_id,
+        "url": f"https://example.invalid/synthetic/pr-quality-demo/pull/{number}",
+        "state": "open",
+        "draft": False,
+        "author": author,
+        "created_at": created.isoformat(),
+        "updated_at": (created + timedelta(hours=1)).isoformat(),
+        "base_ref": "main",
+        "head_ref": f"synthetic/{case_id}",
+        "base_sha": base_sha,
+        "head_sha": parent,
+        "changed_files": len(files),
+        "additions": sum(file["additions"] for file in files),
+        "deletions": sum(file["deletions"] for file in files),
+        "commits": commits,
+    }
+    criteria = {key: dict(value) for key, value in spec["criteria"].items()}
+    for key, value in criteria.items():
+        value["sources"] = (
+            (["review.md", "evidence.json#/files"] if spec["review"] else [])
+            if key == "review-coverage"
+            else (
+                ["evidence.json#/title"]
+                if key in {"title_format", "title_meaningful"}
+                else ["evidence.json#/body", "metadata.json#/commits"]
+                if key == "description_commit_consistency"
+                else ["evidence.json#/body", "evidence.json#/files"]
+            )
+        )
+    score = spec["triviality"]["score"]
+    criteria["change_triviality"] = {
+        "type": "ordinal",
+        "score": score,
+        "level": TRIVIALITY_LEVELS[score]["label"],
+        "is_trivial": score <= 1,
+        "explanation": spec["triviality"]["explanation"],
+        "sources": ["evidence.json#/files"],
+    }
+    for mirror, canonical in RUBRIC_LABEL_MIRRORS.items():
+        criteria[mirror] = criteria[canonical].copy()
+    text = spec["text_signals"]
+    annotation = {
+        "schema_version": 3,
+        "case_id": case_id,
+        "label_status": "provisional",
+        "label_origin": "synthetic_author_intent",
+        "family_id": spec["family_id"],
+        "scenario": spec["scenario"],
+        "variant": spec["scenario"],
+        "review_variant": spec["review_variant"],
+        "complexity": "trivial" if score <= 1 else "non_trivial",
+        "has_breaking_change": criteria["breaking_changes"]["status"] != "not_applicable",
+        "expected_quality": "needs_revision"
+        if any(
+            item.get("status") == "failed"
+            for key, item in criteria.items()
+            if key != "review-coverage"
+        )
+        else "good",
+        "tags": ["independently_authored", spec["scenario"]],
+        "criteria": criteria,
+        "diagnostics": {
+            "text_diff_triviality": text_triviality_diagnostic(
+                score,
+                text["title_score"],
+                text["body_score"],
+                text["title_explanation"],
+                text["body_explanation"],
+            )
+        },
+        "reference_change": spec["reference_change"],
+        "authorship": {"author_id": author_id, "method": "independent_agent_authored"},
+        "contested_criteria": spec["contested"],
+    }
+    return evidence, metadata, annotation, spec["review"]
+
+
 def main(output_root: Path = ROOT) -> None:
     """Regenerate the corpus, supplied reviews, and both indexes without network access.
 
@@ -1973,28 +2092,42 @@ def main(output_root: Path = ROOT) -> None:
     cases = []
     rubric = load_assessment_rubric(ROOT / "rubric.toml")
     router_cases = []
+    packaged = []
     for number, (profile, profile_index, family_index, family) in enumerate(case_plan(), 1):
         evidence, metadata, annotation = make_case(
             number, family, profile, family_index, profile_index
         )
-        directory = f"prs/pr-{number:03d}"
+        _, review, _ = review_for(family, evidence["title"], family_index, profile_index)
+        packaged.append((evidence, metadata, annotation, review))
+    for source in sorted((ROOT / "authored").glob("author-*.json")):
+        payload = json.loads(source.read_text(encoding="utf-8"))
+        write_json(output_root / "authored" / source.name, payload)
+        packaged.extend(authored_case(spec, payload["author_id"]) for spec in payload["cases"])
+    for evidence, metadata, annotation, review in packaged:
+        case_id = annotation["case_id"]
+        directory = f"prs/{case_id}"
         for name, value in (
             ("evidence", evidence),
             ("metadata", metadata),
             ("annotations", annotation),
         ):
             write_json(output_root / directory / f"{name}.json", value)
-        _, review, _ = review_for(family, evidence["title"], family_index, profile_index)
         if review:
             (output_root / directory / "review.md").write_text(review, encoding="utf-8")
+        else:
+            (output_root / directory / "review.md").unlink(missing_ok=True)
         router_cases.append(rubric_case(rubric, annotation))
         cases.append(
             {
                 "case_id": annotation["case_id"],
-                "family_id": family.identifier,
-                "scenario": profile,
+                "family_id": annotation["family_id"],
+                "scenario": annotation["scenario"],
+                "split": "evaluation" if "authorship" in annotation else "development",
+                "author_id": annotation.get("authorship", {}).get(
+                    "author_id", "template_generator"
+                ),
                 "variant": annotation["variant"],
-                "complexity": family.complexity,
+                "complexity": annotation["complexity"],
                 "triviality_score": annotation["criteria"]["change_triviality"]["score"],
                 "triviality_level": annotation["criteria"]["change_triviality"]["level"],
                 "is_trivial": annotation["criteria"]["change_triviality"]["is_trivial"],
@@ -2032,6 +2165,33 @@ def main(output_root: Path = ROOT) -> None:
             "label_status": "provisional",
             "assessment_rubric": "rubric.toml",
             "cases": router_cases,
+        },
+    )
+    partitions = {}
+    for split in ("development", "evaluation"):
+        selected = [case for case in cases if case["split"] == split]
+        selected_ids = {case["case_id"] for case in selected}
+        partitions[split] = {
+            "family_ids": sorted({case["family_id"] for case in selected}),
+            "case_ids": [case["case_id"] for case in selected],
+        }
+        write_json(
+            output_root / f"corpus-{split}.json",
+            {
+                "corpus_version": 1,
+                "label_status": "provisional",
+                "assessment_rubric": "rubric.toml",
+                "cases": [case for case in router_cases if case["case_id"] in selected_ids],
+            },
+        )
+    write_json(
+        output_root / "splits.json",
+        {
+            "schema_version": 1,
+            "unit": "family_id",
+            "protocol": "Original 125 cases for development; independently authored families held out for evaluation. "
+            "Freeze this assignment before running models; evaluation is public and is not a sealed test set.",
+            "partitions": partitions,
         },
     )
     write_json(
@@ -2081,8 +2241,11 @@ def main(output_root: Path = ROOT) -> None:
         "Review: the variant of the supplied `review.md` and its review-coverage label. "
         "It describes the review, not the PR text, so it never changes Quality or Failed criteria.",
         "",
-        "| PR | Family | Triviality (0–4) | Trivial? | Text score / relationship | Scenario / variant | Quality | Failed criteria | Review | Companions |",
-        "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
+        "Development contains the original 125 cases (18 families). Evaluation holds out "
+        "24 independently authored cases (12 new families). See [splits.json](splits.json).",
+        "",
+        "| PR | Family | Triviality (0–4) | Trivial? | Text score / relationship | Scenario / variant | Quality | Failed criteria | Review | Companions | Partition / author |",
+        "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
     ]
     for case in cases:
         failures = ", ".join(case["failed_criteria"]) or "None"
@@ -2102,7 +2265,8 @@ def main(output_root: Path = ROOT) -> None:
             f"{case['text_diff_triviality_relationship']} | "
             f"{variant} | {case['expected_quality']} | {failures} | "
             f"{review_link} ({case['review_coverage']}) | "
-            f"[commits]({case['metadata']}) / [labels]({case['annotations']}) |"
+            f"[commits]({case['metadata']}) / [labels]({case['annotations']}) | "
+            f"{case['split']} / {case['author_id']} |"
         )
     (output_root / "INDEX.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
     print(f"Generated {len(cases)} fictional PRs under {output_root}.")

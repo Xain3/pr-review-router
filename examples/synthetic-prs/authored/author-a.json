@@ -1,0 +1,1199 @@
+{
+  "schema_version": 1,
+  "author_id": "independent-author-a",
+  "protocol": "An independently delegated AI author created these new patches, prose, supplied reviews, and provisional synthetic_author_intent labels from the corpus README and rubric contracts. The author did not read generate.py families, existing case oracle annotations, or provider predictions. These are fictional fixtures, not external human labels, execution claims, consensus labels, or inference results.",
+  "cases": [
+    {
+      "case_id": "pr-126",
+      "family_id": "unicode-prose-repair",
+      "scenario": "complete_account",
+      "title": "docs(locale): restore accents and Japanese punctuation",
+      "body": "The locale notes currently teach misspelled words. The Japanese page also ends a sentence with an English comma.\n\n## Summary\n\n- Restore the accents in “résumé”, “niño”, and “mañana” in the locale guide.\n- Replace the final comma with “。” in the Japanese setup sentence.\n\n## Scope and check plan\n\nThis edits explanatory prose only; translation loading and filenames are outside this PR. Preview both Markdown pages, look for missing-glyph boxes in the accented examples, and check that the Japanese full stop renders after ます.\n",
+      "edits": [
+        {
+          "path": "docs/locale-guide.md",
+          "before": "# Localization notes\n\nThe resume page keeps the names supplied by translators.\nThe Spanish example reads: El nino vuelve manana.\n",
+          "after": "# Localization notes\n\nThe résumé page keeps the names supplied by translators.\nThe Spanish example reads: El niño vuelve mañana.\n",
+          "message": "docs(locale): restore French and Spanish accents"
+        },
+        {
+          "path": "docs/ja/overview.md",
+          "before": "# 翻訳ノート\n\n設定を保存したら、次へ進みます,\n",
+          "after": "# 翻訳ノート\n\n設定を保存したら、次へ進みます。\n",
+          "message": "docs(ja): end the setup sentence with a Japanese full stop"
+        }
+      ],
+      "review": "`docs/locale-guide.md`: the restored accents make the supplied French and Spanish examples readable, with no executable samples altered. `docs/ja/overview.md`: the final full stop now matches the Japanese sentence; check the renderer does not substitute an empty glyph. Both changed pages are covered.\n",
+      "review_variant": "complete",
+      "criteria": {
+        "title_format": {
+          "status": "passed",
+          "explanation": "The title has a Conventional Commits type, optional scope, and subject."
+        },
+        "title_meaningful": {
+          "status": "passed",
+          "explanation": "The subject names an intelligible edit and its affected area."
+        },
+        "title_diff_consistency": {
+          "status": "passed",
+          "explanation": "The account identifies both the accented prose repairs and the Japanese punctuation edit."
+        },
+        "description_present": {
+          "status": "passed",
+          "explanation": "The body contains substantive prose about this change."
+        },
+        "rationale": {
+          "status": "passed",
+          "explanation": "The author links the accent and punctuation repairs to readable, correct localized examples."
+        },
+        "changes_described": {
+          "status": "passed",
+          "explanation": "The account identifies both the accented prose repairs and the Japanese punctuation edit."
+        },
+        "description_title_consistency": {
+          "status": "passed",
+          "explanation": "The body and title describe the same change."
+        },
+        "description_commit_consistency": {
+          "status": "passed",
+          "explanation": "The body covers the changes named in each accompanying commit message."
+        },
+        "description_diff_consistency": {
+          "status": "passed",
+          "explanation": "The account identifies both the accented prose repairs and the Japanese punctuation edit."
+        },
+        "limitations": {
+          "status": "passed",
+          "explanation": "The body limits the edit to prose and explicitly excludes loading and filename behavior."
+        },
+        "breaking_changes": {
+          "status": "not_applicable",
+          "explanation": "No supported public name or configuration entrypoint is removed by these patches."
+        },
+        "testing": {
+          "status": "passed",
+          "explanation": "The plan checks both rendered Markdown pages, accented glyphs, and the Japanese full stop."
+        },
+        "summary-section": {
+          "status": "passed",
+          "explanation": "A populated level-two Summary section is present."
+        },
+        "review-coverage": {
+          "status": "passed",
+          "explanation": "The review separately addresses both Markdown pages and the rendering implication."
+        }
+      },
+      "triviality": {
+        "score": 0,
+        "explanation": "Only explanatory Markdown words and punctuation change in two locale pages; no executable text or interface changes."
+      },
+      "text_signals": {
+        "title_score": 0,
+        "body_score": 0,
+        "title_explanation": "Accents and punctuation in locale prose imply an editorial change.",
+        "body_explanation": "The body states only prose corrections and a rendering check."
+      },
+      "reference_change": {
+        "summary": "Restore accents in the French and Spanish prose examples and correct the Japanese sentence terminator.",
+        "rationale": "Readers should see the intended words and punctuation rather than ASCII approximations and a stray comma.",
+        "limitations": "Only explanatory Markdown prose changes; translation loading, filenames, and encoding behavior are outside the patch.",
+        "breaking_changes": null
+      },
+      "contested": []
+    },
+    {
+      "case_id": "pr-127",
+      "family_id": "unicode-prose-repair",
+      "scenario": "partial_account",
+      "title": "docs(locale): restore accents in the language notes",
+      "body": "## Summary\n\nRestore “résumé”, “niño”, and “mañana” in the language guide. The ASCII spellings made the examples awkward for readers who use those languages.\n\n## Boundaries\n\nThis concerns explanatory text; no translation loader or filename rules change.\n\n## How I would check it\n\nPreview the Latin and Japanese pages with the project renderer and inspect accented glyphs and punctuation for missing-glyph boxes.\n",
+      "edits": [
+        {
+          "path": "docs/locale-guide.md",
+          "before": "# Localization notes\n\nThe resume page keeps the names supplied by translators.\nThe Spanish example reads: El nino vuelve manana.\n",
+          "after": "# Localization notes\n\nThe résumé page keeps the names supplied by translators.\nThe Spanish example reads: El niño vuelve mañana.\n",
+          "message": "docs(locale): restore French and Spanish accents"
+        },
+        {
+          "path": "docs/ja/overview.md",
+          "before": "# 翻訳ノート\n\n設定を保存したら、次へ進みます,\n",
+          "after": "# 翻訳ノート\n\n設定を保存したら、次へ進みます。\n",
+          "message": "docs(ja): end the setup sentence with a Japanese full stop"
+        }
+      ],
+      "review": "I checked `docs/locale-guide.md`: the French and Spanish accents are restored and no code example is changed. Read the examples in the rendered page to catch missing glyphs.\n",
+      "review_variant": "partial",
+      "criteria": {
+        "title_format": {
+          "status": "passed",
+          "explanation": "The title has a Conventional Commits type, optional scope, and subject."
+        },
+        "title_meaningful": {
+          "status": "passed",
+          "explanation": "The subject names an intelligible edit and its affected area."
+        },
+        "title_diff_consistency": {
+          "status": "passed",
+          "explanation": "The body concretely describes restoring the three accented words."
+        },
+        "description_present": {
+          "status": "passed",
+          "explanation": "The body contains substantive prose about this change."
+        },
+        "rationale": {
+          "status": "failed",
+          "explanation": "The readability rationale explains the accented words but never explains the separate Japanese punctuation change."
+        },
+        "changes_described": {
+          "status": "passed",
+          "explanation": "The body concretely describes restoring the three accented words."
+        },
+        "description_title_consistency": {
+          "status": "passed",
+          "explanation": "The body and title describe the same change."
+        },
+        "description_commit_consistency": {
+          "status": "failed",
+          "explanation": "The body does not describe the Japanese full-stop change named by the second commit."
+        },
+        "description_diff_consistency": {
+          "status": "failed",
+          "explanation": "A rendering check mentions Japanese pages but never describes the actual comma-to-full-stop edit in docs/ja/overview.md."
+        },
+        "limitations": {
+          "status": "passed",
+          "explanation": "The body limits the edit to prose and explicitly excludes loading and filename behavior."
+        },
+        "breaking_changes": {
+          "status": "not_applicable",
+          "explanation": "No supported public name or configuration entrypoint is removed by these patches."
+        },
+        "testing": {
+          "status": "passed",
+          "explanation": "The plan checks both rendered Markdown pages, accented glyphs, and the Japanese full stop."
+        },
+        "summary-section": {
+          "status": "passed",
+          "explanation": "A populated level-two Summary section is present."
+        },
+        "review-coverage": {
+          "status": "failed",
+          "explanation": "The review covers the locale guide but never addresses the separate Japanese punctuation patch."
+        }
+      },
+      "triviality": {
+        "score": 0,
+        "explanation": "Only explanatory Markdown words and punctuation change in two locale pages; no executable text or interface changes."
+      },
+      "text_signals": {
+        "title_score": 0,
+        "body_score": 0,
+        "title_explanation": "Restoring accents in notes is editorial.",
+        "body_explanation": "The stated changes are accent repairs; rendering plans introduce no runtime change claim."
+      },
+      "reference_change": {
+        "summary": "Restore accents in the French and Spanish prose examples and correct the Japanese sentence terminator.",
+        "rationale": "Readers should see the intended words and punctuation rather than ASCII approximations and a stray comma.",
+        "limitations": "Only explanatory Markdown prose changes; translation loading, filenames, and encoding behavior are outside the patch.",
+        "breaking_changes": null
+      },
+      "contested": []
+    },
+    {
+      "case_id": "pr-128",
+      "family_id": "accessible-label-spelling",
+      "scenario": "complete_account",
+      "title": "fix(a11y): correct the report button label spelling",
+      "body": "## Summary\n\nThe report button has an arrow for sighted users and an explicit accessible name. Fix its misspelled “Downlaod report” label to “Download report”; update the DOM test that currently enshrines the typo.\n\nThe transposed letters are pronounced poorly by speech output. This is a label correction: click behavior, tab order, and focus styles are unchanged.\n\nValidation plan: run the report-button DOM test and inspect the accessibility tree for the exact name “Download report”. A screen-reader spot check should confirm that the existing button still exposes the same action.\n",
+      "edits": [
+        {
+          "path": "web/report-button.ts",
+          "before": "export function reportButton(): HTMLButtonElement {\n  const button = document.createElement(\"button\");\n  button.setAttribute(\"aria-label\", \"Downlaod report\");\n  button.textContent = \"↓\";\n  return button;\n}\n",
+          "after": "export function reportButton(): HTMLButtonElement {\n  const button = document.createElement(\"button\");\n  button.setAttribute(\"aria-label\", \"Download report\");\n  button.textContent = \"↓\";\n  return button;\n}\n",
+          "message": "fix(a11y): correct the report button accessible name"
+        },
+        {
+          "path": "web/report-button.test.ts",
+          "before": "import { expect, test } from \"vitest\";\nimport { reportButton } from \"./report-button\";\n\ntest(\"report button has an accessible name\", () => {\n  expect(reportButton().getAttribute(\"aria-label\")).toBe(\"Downlaod report\");\n});\n",
+          "after": "import { expect, test } from \"vitest\";\nimport { reportButton } from \"./report-button\";\n\ntest(\"report button has an accessible name\", () => {\n  expect(reportButton().getAttribute(\"aria-label\")).toBe(\"Download report\");\n});\n",
+          "message": "test(a11y): expect the corrected accessible name"
+        }
+      ],
+      "review": "The aria-label correction in `web/report-button.ts` leaves the arrow and button element intact. `web/report-button.test.ts` now asserts the corrected full label rather than the misspelling. Both changes are addressed; before merging, can the author check that the intended locale is English and that an untranslated label is acceptable here?\n",
+      "review_variant": "open_concern",
+      "criteria": {
+        "title_format": {
+          "status": "passed",
+          "explanation": "The title has a Conventional Commits type, optional scope, and subject."
+        },
+        "title_meaningful": {
+          "status": "passed",
+          "explanation": "The subject names an intelligible edit and its affected area."
+        },
+        "title_diff_consistency": {
+          "status": "passed",
+          "explanation": "Both the aria-label string correction and the updated DOM assertion are accurately described."
+        },
+        "description_present": {
+          "status": "passed",
+          "explanation": "The body contains substantive prose about this change."
+        },
+        "rationale": {
+          "status": "passed",
+          "explanation": "The body explains that the misspelling affects pronunciation for speech-output users."
+        },
+        "changes_described": {
+          "status": "passed",
+          "explanation": "Both the aria-label string correction and the updated DOM assertion are accurately described."
+        },
+        "description_title_consistency": {
+          "status": "passed",
+          "explanation": "The body and title describe the same change."
+        },
+        "description_commit_consistency": {
+          "status": "passed",
+          "explanation": "The body covers the changes named in each accompanying commit message."
+        },
+        "description_diff_consistency": {
+          "status": "passed",
+          "explanation": "Both the aria-label string correction and the updated DOM assertion are accurately described."
+        },
+        "limitations": {
+          "status": "passed",
+          "explanation": "The body scopes the change to the label and excludes click, focus, and tab-order changes."
+        },
+        "breaking_changes": {
+          "status": "not_applicable",
+          "explanation": "No supported public name or configuration entrypoint is removed by these patches."
+        },
+        "testing": {
+          "status": "passed",
+          "explanation": "The plan names the focused DOM test, exact accessible name, and accessibility-tree/screen-reader checks."
+        },
+        "summary-section": {
+          "status": "passed",
+          "explanation": "A populated level-two Summary section is present."
+        },
+        "review-coverage": {
+          "status": "passed",
+          "explanation": "The review addresses the implementation and test; its unresolved localization question does not reduce coverage."
+        }
+      },
+      "triviality": {
+        "score": 1,
+        "explanation": "The existing aria-label string is corrected and its matching assertion updated; button construction and activation are preserved. Under the rubric, a user-visible code-string correction is mechanical rather than editorial."
+      },
+      "text_signals": {
+        "title_score": 1,
+        "body_score": 1,
+        "title_explanation": "Correcting an existing accessible label is a presentation change in code.",
+        "body_explanation": "The body describes a string correction and corresponding assertion, with button behavior preserved."
+      },
+      "reference_change": {
+        "summary": "Correct the report button aria-label typo and update its exact-name assertion.",
+        "rationale": "Screen-reader users should hear the correctly spelled action rather than the transposed letters.",
+        "limitations": "The patch changes an existing label only, without changing button activation, focus order, or adding accessibility infrastructure.",
+        "breaking_changes": null
+      },
+      "contested": []
+    },
+    {
+      "case_id": "pr-129",
+      "family_id": "accessible-label-spelling",
+      "scenario": "partial_account",
+      "title": "fix(a11y): correct the report button label spelling",
+      "body": "## Summary\n\nChange the report button’s aria-label from “Downlaod report” to “Download report”. The current transposition sounds wrong through speech output.\n\n## Testing\n\nTests pass.\n",
+      "edits": [
+        {
+          "path": "web/report-button.ts",
+          "before": "export function reportButton(): HTMLButtonElement {\n  const button = document.createElement(\"button\");\n  button.setAttribute(\"aria-label\", \"Downlaod report\");\n  button.textContent = \"↓\";\n  return button;\n}\n",
+          "after": "export function reportButton(): HTMLButtonElement {\n  const button = document.createElement(\"button\");\n  button.setAttribute(\"aria-label\", \"Download report\");\n  button.textContent = \"↓\";\n  return button;\n}\n",
+          "message": "fix(a11y): correct the report button accessible name"
+        },
+        {
+          "path": "web/report-button.test.ts",
+          "before": "import { expect, test } from \"vitest\";\nimport { reportButton } from \"./report-button\";\n\ntest(\"report button has an accessible name\", () => {\n  expect(reportButton().getAttribute(\"aria-label\")).toBe(\"Downlaod report\");\n});\n",
+          "after": "import { expect, test } from \"vitest\";\nimport { reportButton } from \"./report-button\";\n\ntest(\"report button has an accessible name\", () => {\n  expect(reportButton().getAttribute(\"aria-label\")).toBe(\"Download report\");\n});\n",
+          "message": "test(a11y): expect the corrected accessible name"
+        }
+      ],
+      "review": "Looks good to me. Approved.\n",
+      "review_variant": "generic",
+      "criteria": {
+        "title_format": {
+          "status": "passed",
+          "explanation": "The title has a Conventional Commits type, optional scope, and subject."
+        },
+        "title_meaningful": {
+          "status": "passed",
+          "explanation": "The subject names an intelligible edit and its affected area."
+        },
+        "title_diff_consistency": {
+          "status": "passed",
+          "explanation": "The body concretely identifies the aria-label correction."
+        },
+        "description_present": {
+          "status": "passed",
+          "explanation": "The body contains substantive prose about this change."
+        },
+        "rationale": {
+          "status": "passed",
+          "explanation": "The speech-output problem explains the label correction."
+        },
+        "changes_described": {
+          "status": "passed",
+          "explanation": "The body concretely identifies the aria-label correction."
+        },
+        "description_title_consistency": {
+          "status": "passed",
+          "explanation": "The body and title describe the same change."
+        },
+        "description_commit_consistency": {
+          "status": "failed",
+          "explanation": "The test-update commit is not covered in the body."
+        },
+        "description_diff_consistency": {
+          "status": "failed",
+          "explanation": "The body omits the substantive update to the accessible-name assertion in web/report-button.test.ts."
+        },
+        "limitations": {
+          "status": "failed",
+          "explanation": "The body gives no boundary or unsupported cases for the label-only change."
+        },
+        "breaking_changes": {
+          "status": "not_applicable",
+          "explanation": "No supported public name or configuration entrypoint is removed by these patches."
+        },
+        "testing": {
+          "status": "failed",
+          "explanation": "Tests pass alone is expressly insufficient under the rubric."
+        },
+        "summary-section": {
+          "status": "passed",
+          "explanation": "A populated level-two Summary section is present."
+        },
+        "review-coverage": {
+          "status": "failed",
+          "explanation": "A generic approval names neither the implementation nor the test change."
+        }
+      },
+      "triviality": {
+        "score": 1,
+        "explanation": "The existing aria-label string is corrected and its matching assertion updated; button construction and activation are preserved. Under the rubric, a user-visible code-string correction is mechanical rather than editorial."
+      },
+      "text_signals": {
+        "title_score": 1,
+        "body_score": 1,
+        "title_explanation": "The title names correction of an existing accessible name.",
+        "body_explanation": "The body claims only an existing-label spelling correction."
+      },
+      "reference_change": {
+        "summary": "Correct the report button aria-label typo and update its exact-name assertion.",
+        "rationale": "Screen-reader users should hear the correctly spelled action rather than the transposed letters.",
+        "limitations": "The patch changes an existing label only, without changing button activation, focus order, or adding accessibility infrastructure.",
+        "breaking_changes": null
+      },
+      "contested": []
+    },
+    {
+      "case_id": "pr-130",
+      "family_id": "development-dependency-pin",
+      "scenario": "complete_account",
+      "title": "build(lint): select the 1.4.1 lint runner release",
+      "body": "## Summary\n\nSelect exact version 1.4.1 of the fictional `@harbor/lint` development tool instead of 1.4.0 in `tools/lint/package.json`. This manifest is the complete input for the isolated lint-tool fixture; it has no lockfile.\n\nThe onboarding team chose 1.4.1 as its lint baseline, while this fixture still requests 1.4.0. Aligning the manifest avoids contributors comparing diagnostics from those different tool installations. This PR only changes the requested version. Release notes and package code are not supplied, so it does not claim a particular bug fix or that diagnostics are unchanged. The application’s runtime dependencies are outside this edit.\n\nPlanned check: install this isolated tool manifest in a disposable directory, inspect the installed runner version, then compare lint output on the same valid and invalid sample source. No installation or package behavior is demonstrated by the patch itself.\n",
+      "edits": [
+        {
+          "path": "tools/lint/package.json",
+          "before": "{\n  \"name\": \"fixture-lint-tools\",\n  \"private\": true,\n  \"devDependencies\": {\n    \"@harbor/lint\": \"1.4.0\"\n  }\n}\n",
+          "after": "{\n  \"name\": \"fixture-lint-tools\",\n  \"private\": true,\n  \"devDependencies\": {\n    \"@harbor/lint\": \"1.4.1\"\n  }\n}\n",
+          "message": "build(lint): select the exact 1.4.1 lint runner version"
+        }
+      ],
+      "review": null,
+      "review_variant": "none",
+      "criteria": {
+        "title_format": {
+          "status": "passed",
+          "explanation": "The title has a Conventional Commits type, optional scope, and subject."
+        },
+        "title_meaningful": {
+          "status": "passed",
+          "explanation": "The subject names an intelligible edit and its affected area."
+        },
+        "title_diff_consistency": {
+          "status": "passed",
+          "explanation": "The body accurately names the single exact dependency-version change."
+        },
+        "description_present": {
+          "status": "passed",
+          "explanation": "The body contains substantive prose about this change."
+        },
+        "rationale": {
+          "status": "passed",
+          "explanation": "The selected onboarding baseline is 1.4.1 while the manifest still selects 1.4.0, explaining the concrete version update."
+        },
+        "changes_described": {
+          "status": "passed",
+          "explanation": "The body accurately names the single exact dependency-version change."
+        },
+        "description_title_consistency": {
+          "status": "passed",
+          "explanation": "The body and title describe the same change."
+        },
+        "description_commit_consistency": {
+          "status": "passed",
+          "explanation": "The body covers the changes named in each accompanying commit message."
+        },
+        "description_diff_consistency": {
+          "status": "passed",
+          "explanation": "The body accurately names the single exact dependency-version change."
+        },
+        "limitations": {
+          "status": "passed",
+          "explanation": "The body distinguishes requested version from unverified package behavior and excludes runtime dependencies."
+        },
+        "breaking_changes": {
+          "status": "not_applicable",
+          "explanation": "No supported public name or configuration entrypoint is removed by these patches."
+        },
+        "testing": {
+          "status": "passed",
+          "explanation": "The plan specifies isolated installation, installed-version inspection, and matched valid/invalid-source lint output checks."
+        },
+        "summary-section": {
+          "status": "passed",
+          "explanation": "A populated level-two Summary section is present."
+        },
+        "review-coverage": {
+          "status": "not_assessable",
+          "explanation": "No separate review text is supplied."
+        }
+      },
+      "triviality": {
+        "score": 2,
+        "explanation": "The dev-dependency selection changes from exact 1.4.0 to exact 1.4.1. That is a bounded tooling configuration change; the package internals and any broader behavioral impact cannot be inferred from this manifest alone."
+      },
+      "text_signals": {
+        "title_score": 2,
+        "body_score": 2,
+        "title_explanation": "Selecting a different tooling release states a configuration change.",
+        "body_explanation": "The body states a changed exact version and explicitly leaves the unseen release behavior unclaimed."
+      },
+      "reference_change": {
+        "summary": "Change the fictional development lint-runner dependency from exact version 1.4.0 to exact version 1.4.1.",
+        "rationale": "The onboarding team chose 1.4.1 as its lint baseline, while the isolated fixture still requests 1.4.0; the version selection should align.",
+        "limitations": "The manifest proves the resolver selection changes, but supplies no package implementation, release notes, installation transcript, or runtime application dependency change.",
+        "breaking_changes": null
+      },
+      "contested": [
+        "change-triviality"
+      ]
+    },
+    {
+      "case_id": "pr-131",
+      "family_id": "development-dependency-pin",
+      "scenario": "rationale_only",
+      "title": "build(lint): select the 1.4.1 lint runner release",
+      "body": "## Context\n\nThe onboarding lint baseline has moved ahead of this isolated fixture. Contributor machines need predictable formatting output. Comparing diagnostics from different tool installations costs reviewers time and obscures actual source problems.\n",
+      "edits": [
+        {
+          "path": "tools/lint/package.json",
+          "before": "{\n  \"name\": \"fixture-lint-tools\",\n  \"private\": true,\n  \"devDependencies\": {\n    \"@harbor/lint\": \"1.4.0\"\n  }\n}\n",
+          "after": "{\n  \"name\": \"fixture-lint-tools\",\n  \"private\": true,\n  \"devDependencies\": {\n    \"@harbor/lint\": \"1.4.1\"\n  }\n}\n",
+          "message": "build(lint): select the exact 1.4.1 lint runner version"
+        }
+      ],
+      "review": "The new SQL index in the migration prevents duplicate customer receipts. Please exercise a duplicate insert before merging.\n",
+      "review_variant": "off_target",
+      "criteria": {
+        "title_format": {
+          "status": "passed",
+          "explanation": "The title has a Conventional Commits type, optional scope, and subject."
+        },
+        "title_meaningful": {
+          "status": "passed",
+          "explanation": "The subject names an intelligible edit and its affected area."
+        },
+        "title_diff_consistency": {
+          "status": "passed",
+          "explanation": "There is no concrete account of an edit in the body."
+        },
+        "description_present": {
+          "status": "passed",
+          "explanation": "The body contains substantive prose about this change."
+        },
+        "rationale": {
+          "status": "passed",
+          "explanation": "The outdated fixture relative to the onboarding baseline explains the tooling update, without concretely describing any edit."
+        },
+        "changes_described": {
+          "status": "failed",
+          "explanation": "The Context paragraph describes a motivation but no edit, version, or changed file."
+        },
+        "description_title_consistency": {
+          "status": "not_assessable",
+          "explanation": "There is no body change claim to compare with the version-selecting title."
+        },
+        "description_commit_consistency": {
+          "status": "not_assessable",
+          "explanation": "There is no stated body edit to compare with the dependency-selection commit."
+        },
+        "description_diff_consistency": {
+          "status": "not_assessable",
+          "explanation": "The motivation-only body gives no concrete change claim that can be compared with the patch."
+        },
+        "limitations": {
+          "status": "failed",
+          "explanation": "The body says nothing about development-only scope or unverified package behavior."
+        },
+        "breaking_changes": {
+          "status": "not_applicable",
+          "explanation": "No supported public name or configuration entrypoint is removed by these patches."
+        },
+        "testing": {
+          "status": "failed",
+          "explanation": "No relevant validation or reason to omit it is supplied."
+        },
+        "summary-section": {
+          "status": "failed",
+          "explanation": "The body has a Context heading but no populated level-two Summary section."
+        },
+        "review-coverage": {
+          "status": "failed",
+          "explanation": "The review discusses a SQL index and duplicate inserts, neither of which appears in the package-manifest patch."
+        }
+      },
+      "triviality": {
+        "score": 2,
+        "explanation": "The dev-dependency selection changes from exact 1.4.0 to exact 1.4.1. That is a bounded tooling configuration change; the package internals and any broader behavioral impact cannot be inferred from this manifest alone."
+      },
+      "text_signals": {
+        "title_score": 2,
+        "body_score": null,
+        "title_explanation": "The title names selecting a different lint-tool version.",
+        "body_explanation": "The body describes a need for predictable diagnostics, without any interpretable edit to project onto the scale."
+      },
+      "reference_change": {
+        "summary": "Change the fictional development lint-runner dependency from exact version 1.4.0 to exact version 1.4.1.",
+        "rationale": "The onboarding team chose 1.4.1 as its lint baseline, while the isolated fixture still requests 1.4.0; the version selection should align.",
+        "limitations": "The manifest proves the resolver selection changes, but supplies no package implementation, release notes, installation transcript, or runtime application dependency change.",
+        "breaking_changes": null
+      },
+      "contested": [
+        "change-triviality"
+      ]
+    },
+    {
+      "case_id": "pr-132",
+      "family_id": "ci-token-least-privilege",
+      "scenario": "complete_account",
+      "title": "ci(security): reduce check workflow token privileges",
+      "body": "## Summary\n\nSet the checks workflow token to `contents: read` and stop requesting `issues: write`. Update the workflow note to name that narrower scope and to say the workflow does not post issue comments.\n\n## Why these grants\n\nCheckout needs source access; the visible job runs checks rather than publishing or managing issues. Write grants increase the damage possible if a step is compromised.\n\n## Evidence still needed\n\nNeither `scripts/check.sh` nor its children are in this patch. The job might have a hidden write dependency, so the visible YAML is not proof it succeeds under the narrower token. Events, runner choice, and steps stay the same.\n\n## Validation plan\n\nInspect the resolved workflow permissions, run the check job in an isolated repository with the read-only token, and watch for denied write attempts. Compare the documentation against the resolved grants. Do not add privileges merely to make an unexplained failure disappear.\n",
+      "edits": [
+        {
+          "path": ".github/workflows/check.yml",
+          "before": "name: checks\non: [push, pull_request]\npermissions:\n  contents: write\n  issues: write\njobs:\n  unit:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: ./scripts/check.sh\n",
+          "after": "name: checks\non: [push, pull_request]\npermissions:\n  contents: read\njobs:\n  unit:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: ./scripts/check.sh\n",
+          "message": "ci(security): restrict check workflow token to repository reads"
+        },
+        {
+          "path": "docs/check-workflow.md",
+          "before": "# Check workflow\n\nThe check job receives repository-content and issue write permissions.\n",
+          "after": "# Check workflow\n\nThe check job receives repository-content read permission.\nIssue permissions are not requested; the workflow does not post issue comments.\n",
+          "message": "docs(ci): explain the reduced check-job token scope"
+        }
+      ],
+      "review": "`.github/workflows/check.yml` now grants contents-read and drops issues-write while keeping the visible steps. `docs/check-workflow.md` accurately records that reduced scope and lack of issue posting. Both files are addressed. The shell script is not provided; before merging, inspect its children for publishing or issue API calls and demonstrate a run with the narrower token.\n",
+      "review_variant": "complete",
+      "criteria": {
+        "title_format": {
+          "status": "passed",
+          "explanation": "The title has a Conventional Commits type, optional scope, and subject."
+        },
+        "title_meaningful": {
+          "status": "passed",
+          "explanation": "The subject names an intelligible edit and its affected area."
+        },
+        "title_diff_consistency": {
+          "status": "passed",
+          "explanation": "The body accounts for both token-grant changes and the revised workflow note."
+        },
+        "description_present": {
+          "status": "passed",
+          "explanation": "The body contains substantive prose about this change."
+        },
+        "rationale": {
+          "status": "passed",
+          "explanation": "The body explains the compromise impact of unused write grants and the visible source-reading need."
+        },
+        "changes_described": {
+          "status": "passed",
+          "explanation": "The body accounts for both token-grant changes and the revised workflow note."
+        },
+        "description_title_consistency": {
+          "status": "passed",
+          "explanation": "The body and title describe the same change."
+        },
+        "description_commit_consistency": {
+          "status": "passed",
+          "explanation": "The body covers the changes named in each accompanying commit message."
+        },
+        "description_diff_consistency": {
+          "status": "passed",
+          "explanation": "The body accounts for both token-grant changes and the revised workflow note."
+        },
+        "limitations": {
+          "status": "passed",
+          "explanation": "The body explicitly identifies the unseen shell script and its possible hidden write dependencies."
+        },
+        "breaking_changes": {
+          "status": "not_applicable",
+          "explanation": "No supported public name or configuration entrypoint is removed by these patches."
+        },
+        "testing": {
+          "status": "passed",
+          "explanation": "The plan names resolved-permission inspection and an isolated check-job run that watches for denied writes."
+        },
+        "summary-section": {
+          "status": "passed",
+          "explanation": "A populated level-two Summary section is present."
+        },
+        "review-coverage": {
+          "status": "passed",
+          "explanation": "The review names both changed files and the security implication; requesting unseen-script inspection still covers the supplied changes."
+        }
+      },
+      "triviality": {
+        "score": 3,
+        "explanation": "Changing GitHub Actions token grants from contents-write/issues-write to contents-read changes security-sensitive permissions. That is substantive even though the YAML diff is short; no supported consumer configuration entrypoint is removed."
+      },
+      "text_signals": {
+        "title_score": 3,
+        "body_score": 3,
+        "title_explanation": "Reduced workflow-token privileges imply security-sensitive behavior.",
+        "body_explanation": "The body explicitly changes token grants and discusses the authorization consequences."
+      },
+      "reference_change": {
+        "summary": "Reduce the check workflow token from contents-write plus issues-write to contents-read and update the workflow documentation.",
+        "rationale": "The check job only reads source and runs checks, so the write grants unnecessarily increase the damage possible from a compromised step.",
+        "limitations": "The scripts are not supplied; their hidden write dependencies cannot be ruled out from these two files. No event trigger or runner changes.",
+        "breaking_changes": null
+      },
+      "contested": []
+    },
+    {
+      "case_id": "pr-133",
+      "family_id": "ci-token-least-privilege",
+      "scenario": "rationale_only",
+      "title": "ci(security): reduce check workflow token privileges",
+      "body": "The compromise impact of a check job should be as small as practical. A step that only needs source access should not receive broad authority by habit.\n\n## Open questions\n\nWe still need to inspect `scripts/check.sh`; it is not included here, so its downstream write needs remain unknown.\n",
+      "edits": [
+        {
+          "path": ".github/workflows/check.yml",
+          "before": "name: checks\non: [push, pull_request]\npermissions:\n  contents: write\n  issues: write\njobs:\n  unit:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: ./scripts/check.sh\n",
+          "after": "name: checks\non: [push, pull_request]\npermissions:\n  contents: read\njobs:\n  unit:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: ./scripts/check.sh\n",
+          "message": "ci(security): restrict check workflow token to repository reads"
+        },
+        {
+          "path": "docs/check-workflow.md",
+          "before": "# Check workflow\n\nThe check job receives repository-content and issue write permissions.\n",
+          "after": "# Check workflow\n\nThe check job receives repository-content read permission.\nIssue permissions are not requested; the workflow does not post issue comments.\n",
+          "message": "docs(ci): explain the reduced check-job token scope"
+        }
+      ],
+      "review": "As discussed, the second change is okay once that concern is resolved.\n",
+      "review_variant": "ambiguous",
+      "criteria": {
+        "title_format": {
+          "status": "passed",
+          "explanation": "The title has a Conventional Commits type, optional scope, and subject."
+        },
+        "title_meaningful": {
+          "status": "passed",
+          "explanation": "The subject names an intelligible edit and its affected area."
+        },
+        "title_diff_consistency": {
+          "status": "passed",
+          "explanation": "The body gives a permission rationale but no actual grant or documentation edit."
+        },
+        "description_present": {
+          "status": "passed",
+          "explanation": "The body contains substantive prose about this change."
+        },
+        "rationale": {
+          "status": "passed",
+          "explanation": "The compromise-impact argument explains why excessive check-job authority is undesirable."
+        },
+        "changes_described": {
+          "status": "failed",
+          "explanation": "No grant change or documentation update is concretely stated."
+        },
+        "description_title_consistency": {
+          "status": "not_assessable",
+          "explanation": "The general least-privilege motivation supplies no concrete body edit to compare with the title."
+        },
+        "description_commit_consistency": {
+          "status": "not_assessable",
+          "explanation": "There is no stated body change account to compare with either commit."
+        },
+        "description_diff_consistency": {
+          "status": "not_assessable",
+          "explanation": "Motivation and an open question do not assert what the patch changes."
+        },
+        "limitations": {
+          "status": "passed",
+          "explanation": "The missing shell script and its unknown write requirements are expressly identified."
+        },
+        "breaking_changes": {
+          "status": "not_applicable",
+          "explanation": "No supported public name or configuration entrypoint is removed by these patches."
+        },
+        "testing": {
+          "status": "failed",
+          "explanation": "Inspecting an omitted script is identified as an open question, without a relevant workflow validation plan or justified omission."
+        },
+        "summary-section": {
+          "status": "failed",
+          "explanation": "There is no level-two Summary section."
+        },
+        "review-coverage": {
+          "status": "not_assessable",
+          "explanation": "The second change and that concern cannot be tied to particular patches or permissions without unseen discussion."
+        }
+      },
+      "triviality": {
+        "score": 3,
+        "explanation": "Changing GitHub Actions token grants from contents-write/issues-write to contents-read changes security-sensitive permissions. That is substantive even though the YAML diff is short; no supported consumer configuration entrypoint is removed."
+      },
+      "text_signals": {
+        "title_score": 3,
+        "body_score": null,
+        "title_explanation": "The title explicitly identifies token-privilege reduction.",
+        "body_explanation": "The body argues for a permission principle and identifies missing evidence, but never says which permissions or files change."
+      },
+      "reference_change": {
+        "summary": "Reduce the check workflow token from contents-write plus issues-write to contents-read and update the workflow documentation.",
+        "rationale": "The check job only reads source and runs checks, so the write grants unnecessarily increase the damage possible from a compromised step.",
+        "limitations": "The scripts are not supplied; their hidden write dependencies cannot be ruled out from these two files. No event trigger or runner changes.",
+        "breaking_changes": null
+      },
+      "contested": [
+        "testing-explanation"
+      ]
+    },
+    {
+      "case_id": "pr-134",
+      "family_id": "receipt-column-migration",
+      "scenario": "complete_account",
+      "title": "feat(storage)!: rename the supported receipt reference column",
+      "body": "## Summary\n\nAdd migration 008, which renames `event_receipts.customer_ref` to `account_ref`. Rewrite the receipt schema guide to use the new name and to tell consumers how to migrate queries; the non-null text contract and primary key are unchanged.\n\nAccount is the name used by the surrounding domain language; the customer spelling has led new consumers to join against the wrong conceptual entity.\n\n## Breaking changes and rollout\n\nThe old column name is not retained as an alias. Apply migration 008 and update SQL queries from `customer_ref` to `account_ref` in a coordinated deployment. External query users need advance notice. This patch supplies no rollback script and does not establish support for every database engine.\n\n## Checks to perform\n\nOn a throwaway database, create the documented old schema, insert a receipt, and apply migration 008. Confirm the value is preserved under `account_ref` and that querying `customer_ref` fails. Update a sample consumer query using the guide and check that its join still returns the seeded receipt.\n",
+      "edits": [
+        {
+          "path": "migrations/008_receipt_account_ref.sql",
+          "before": "",
+          "after": "ALTER TABLE event_receipts RENAME COLUMN customer_ref TO account_ref;\n",
+          "message": "feat(storage)!: rename the supported receipt reference column"
+        },
+        {
+          "path": "docs/receipt-schema.md",
+          "before": "# Receipt schema\n\nConsumers may query event_receipts.customer_ref to join receipts to a customer.\nThe supported column is non-null text; receipt_id remains the primary key.\n",
+          "after": "# Receipt schema\n\nConsumers may query event_receipts.account_ref to join receipts to an account.\nThe supported column is non-null text; receipt_id remains the primary key.\n\nApply migration 008 and update SQL queries from customer_ref to account_ref.\nThe old column name is not retained as an alias.\n",
+          "message": "docs(storage): document receipt query migration without an alias"
+        }
+      ],
+      "review": "`migrations/008_receipt_account_ref.sql` renames a documented supported column rather than adding an alias, so old SQL callers must change. `docs/receipt-schema.md` accurately updates the contract and gives the query migration. The non-null type and receipt primary key are not edited. Exercise a seeded old-schema upgrade and an old-name failure before rollout; database-engine coverage remains an open deployment concern.\n",
+      "review_variant": "complete",
+      "criteria": {
+        "title_format": {
+          "status": "passed",
+          "explanation": "The title has a Conventional Commits type, optional scope, and subject."
+        },
+        "title_meaningful": {
+          "status": "passed",
+          "explanation": "The subject names an intelligible edit and its affected area."
+        },
+        "title_diff_consistency": {
+          "status": "passed",
+          "explanation": "The migration, renamed supported column, and revised consumer migration guide are all described."
+        },
+        "description_present": {
+          "status": "passed",
+          "explanation": "The body contains substantive prose about this change."
+        },
+        "rationale": {
+          "status": "passed",
+          "explanation": "The body links the terminology change to confused joins against the wrong conceptual entity."
+        },
+        "changes_described": {
+          "status": "passed",
+          "explanation": "The migration, renamed supported column, and revised consumer migration guide are all described."
+        },
+        "description_title_consistency": {
+          "status": "passed",
+          "explanation": "The body and title describe the same change."
+        },
+        "description_commit_consistency": {
+          "status": "passed",
+          "explanation": "The body covers the changes named in each accompanying commit message."
+        },
+        "description_diff_consistency": {
+          "status": "passed",
+          "explanation": "The migration, renamed supported column, and revised consumer migration guide are all described."
+        },
+        "limitations": {
+          "status": "passed",
+          "explanation": "The body names external consumers, absent rollback, and unproven database-engine coverage."
+        },
+        "breaking_changes": {
+          "status": "passed",
+          "explanation": "The body explicitly says the old name has no alias and requires a coordinated migration to account_ref."
+        },
+        "testing": {
+          "status": "passed",
+          "explanation": "The plan covers seeded-data preservation, new and old name queries, and a guide-based consumer query."
+        },
+        "summary-section": {
+          "status": "passed",
+          "explanation": "A populated level-two Summary section is present."
+        },
+        "review-coverage": {
+          "status": "passed",
+          "explanation": "The review individually addresses the migration and updated guide, including consumer breakage."
+        }
+      },
+      "triviality": {
+        "score": 4,
+        "explanation": "The added ALTER TABLE renames customer_ref to account_ref, and the existing documentation explicitly identifies customer_ref as supported. The old name has no alias, so previously valid external SQL queries require migration: incompatible level 4."
+      },
+      "text_signals": {
+        "title_score": 4,
+        "body_score": 4,
+        "title_explanation": "The breaking marker and supported-column rename state an incompatible database interface change.",
+        "body_explanation": "The body explicitly removes the old supported column name and requires consumer-query migration."
+      },
+      "reference_change": {
+        "summary": "Add a migration renaming the documented customer_ref receipt column to account_ref and require consumers to update their queries.",
+        "rationale": "The intended terminology is account reference rather than customer reference.",
+        "limitations": "The old SQL name is removed without an alias; out-of-repository consumers must coordinate updates. Rollback and database-specific compatibility are not demonstrated.",
+        "breaking_changes": "Existing queries using event_receipts.customer_ref stop resolving after migration 008; update them to account_ref as part of the deployment."
+      },
+      "contested": []
+    },
+    {
+      "case_id": "pr-135",
+      "family_id": "receipt-column-migration",
+      "scenario": "scope_mismatch",
+      "title": "docs(storage): clarify receipt reference terminology",
+      "body": "## Summary\n\nClarify the receipt guide’s terminology from customer reference to account reference. The accompanying SQL file contains explanatory notes only; the table schema and both existing column spellings stay available.\n\nThe wording should help new readers find the right paragraph. No query migration is needed, and this is limited to documentation.\n\n## Validation\n\nRead the rendered receipt guide for consistent spelling. No database exercise is applicable to a prose-only edit.\n",
+      "edits": [
+        {
+          "path": "migrations/008_receipt_account_ref.sql",
+          "before": "",
+          "after": "ALTER TABLE event_receipts RENAME COLUMN customer_ref TO account_ref;\n",
+          "message": "feat(storage)!: rename the supported receipt reference column"
+        },
+        {
+          "path": "docs/receipt-schema.md",
+          "before": "# Receipt schema\n\nConsumers may query event_receipts.customer_ref to join receipts to a customer.\nThe supported column is non-null text; receipt_id remains the primary key.\n",
+          "after": "# Receipt schema\n\nConsumers may query event_receipts.account_ref to join receipts to an account.\nThe supported column is non-null text; receipt_id remains the primary key.\n\nApply migration 008 and update SQL queries from customer_ref to account_ref.\nThe old column name is not retained as an alias.\n",
+          "message": "docs(storage): document receipt query migration without an alias"
+        }
+      ],
+      "review": "The SQL migration renames `customer_ref` to `account_ref`, so existing readers of the old name will fail. The receipt guide now documents the new name and explicitly says there is no alias. I have addressed both changed files, but I am requesting changes: can the author explain a coordinated rollout for external SQL consumers before this is merged?\n",
+      "review_variant": "open_concern",
+      "criteria": {
+        "title_format": {
+          "status": "passed",
+          "explanation": "The title has a Conventional Commits type, optional scope, and subject."
+        },
+        "title_meaningful": {
+          "status": "passed",
+          "explanation": "The subject names an intelligible edit and its affected area."
+        },
+        "title_diff_consistency": {
+          "status": "failed",
+          "explanation": "The title presents a documentation-only change while the patch also executes a supported-column rename."
+        },
+        "description_present": {
+          "status": "passed",
+          "explanation": "The body contains substantive prose about this change."
+        },
+        "rationale": {
+          "status": "failed",
+          "explanation": "A paragraph-finding benefit explains prose cleanup but supplies no reason for removing the supported SQL column name."
+        },
+        "changes_described": {
+          "status": "passed",
+          "explanation": "The body makes concrete claims about a documentation edit and a comment-only SQL file."
+        },
+        "description_title_consistency": {
+          "status": "passed",
+          "explanation": "The body and title describe the same change."
+        },
+        "description_commit_consistency": {
+          "status": "failed",
+          "explanation": "The comment-only/no-migration account conflicts with the breaking rename and query-migration commit messages."
+        },
+        "description_diff_consistency": {
+          "status": "failed",
+          "explanation": "The executable ALTER TABLE is not explanatory prose, and the guide explicitly says the old column is not retained as an alias."
+        },
+        "limitations": {
+          "status": "failed",
+          "explanation": "The stated prose-only scope denies the actual external-query compatibility impact."
+        },
+        "breaking_changes": {
+          "status": "failed",
+          "explanation": "The body denies any query migration despite removal of the documented old name without an alias."
+        },
+        "testing": {
+          "status": "failed",
+          "explanation": "The body dismisses database validation on a false prose-only premise and checks only rendered prose."
+        },
+        "summary-section": {
+          "status": "passed",
+          "explanation": "A populated level-two Summary section is present."
+        },
+        "review-coverage": {
+          "status": "passed",
+          "explanation": "The review covers the actual SQL rename and guide edit, including the unresolved external-consumer rollout."
+        }
+      },
+      "triviality": {
+        "score": 4,
+        "explanation": "The added ALTER TABLE renames customer_ref to account_ref, and the existing documentation explicitly identifies customer_ref as supported. The old name has no alias, so previously valid external SQL queries require migration: incompatible level 4."
+      },
+      "text_signals": {
+        "title_score": 0,
+        "body_score": 0,
+        "title_explanation": "The docs title claims only a terminology clarification.",
+        "body_explanation": "The body explicitly claims a prose-only edit, comment-only SQL, unchanged schema, and no query migration."
+      },
+      "reference_change": {
+        "summary": "Add a migration renaming the documented customer_ref receipt column to account_ref and require consumers to update their queries.",
+        "rationale": "The intended terminology is account reference rather than customer reference.",
+        "limitations": "The old SQL name is removed without an alias; out-of-repository consumers must coordinate updates. Rollback and database-specific compatibility are not demonstrated.",
+        "breaking_changes": "Existing queries using event_receipts.customer_ref stop resolving after migration 008; update them to account_ref as part of the deployment."
+      },
+      "contested": []
+    },
+    {
+      "case_id": "pr-136",
+      "family_id": "receipt-retry-ceiling",
+      "scenario": "complete_account",
+      "title": "fix(delivery): try once more after two receipt send failures",
+      "body": "## Summary\n\n`ReceiptSender.deliver` may call the sender a third time when the first two calls return false. Change the exhaustion assertion from 2 to 3, retain the first-success assertion, and update the operations guide’s ceiling from two invocations to three.\n\nA second transient failure currently ends delivery even if the next call would recover. One extra attempt trades a little more synchronous work for that recovery chance.\n\n## Operational limits\n\nThere is still no backoff, cancellation, or idempotency safeguard. A sender that reports false after actually delivering can produce a duplicate; this patch does not solve that problem. Method arguments and return shape are unchanged.\n\n## Test plan\n\nRun the focused failure-exhaustion and first-success tests. Also drive the sender with false, false, true and assert three invocations; drive it with false, true and assert two, then an always-false sequence and assert it stops at three. Read the operations ceiling beside those cases.\n",
+      "edits": [
+        {
+          "path": "delivery/ReceiptSender.java",
+          "before": "package delivery;\n\nimport java.util.function.BooleanSupplier;\n\npublic final class ReceiptSender {\n    public int deliver(BooleanSupplier send) {\n        int attempts = 0;\n        do {\n            attempts++;\n            if (send.getAsBoolean()) return attempts;\n        } while (attempts < 2);\n        return attempts;\n    }\n}\n",
+          "after": "package delivery;\n\nimport java.util.function.BooleanSupplier;\n\npublic final class ReceiptSender {\n    public int deliver(BooleanSupplier send) {\n        int attempts = 0;\n        do {\n            attempts++;\n            if (send.getAsBoolean()) return attempts;\n        } while (attempts < 3);\n        return attempts;\n    }\n}\n",
+          "message": "fix(delivery): permit a third send attempt"
+        },
+        {
+          "path": "delivery/ReceiptSenderTest.java",
+          "before": "package delivery;\n\nimport static org.junit.jupiter.api.Assertions.assertEquals;\nimport org.junit.jupiter.api.Test;\n\nclass ReceiptSenderTest {\n    @Test void countsFailedAttempts() {\n        assertEquals(2, new ReceiptSender().deliver(() -> false));\n    }\n    @Test void returnsAfterFirstSuccess() {\n        assertEquals(1, new ReceiptSender().deliver(() -> true));\n    }\n}\n",
+          "after": "package delivery;\n\nimport static org.junit.jupiter.api.Assertions.assertEquals;\nimport org.junit.jupiter.api.Test;\n\nclass ReceiptSenderTest {\n    @Test void countsFailedAttempts() {\n        assertEquals(3, new ReceiptSender().deliver(() -> false));\n    }\n    @Test void returnsAfterFirstSuccess() {\n        assertEquals(1, new ReceiptSender().deliver(() -> true));\n    }\n}\n",
+          "message": "test(delivery): expect three exhausted attempts"
+        },
+        {
+          "path": "operations/retry.md",
+          "before": "# Receipt delivery\n\nA failed receipt delivery invokes the sender at most twice.\nA successful invocation ends the loop immediately.\n",
+          "after": "# Receipt delivery\n\nA failed receipt delivery invokes the sender at most three times.\nA successful invocation ends the loop immediately.\n",
+          "message": "docs(delivery): state the three-attempt retry ceiling"
+        }
+      ],
+      "review": "`delivery/ReceiptSender.java` changes the exhausted-failure ceiling to three while retaining immediate return on success. `delivery/ReceiptSenderTest.java` updates the all-failure result to three and keeps first-success coverage. `operations/retry.md` now states three calls, matching the loop. These cover all three files, but the missing false/false/true assertion and duplicate-side-effect risk should be resolved before merging.\n",
+      "review_variant": "open_concern",
+      "criteria": {
+        "title_format": {
+          "status": "passed",
+          "explanation": "The title has a Conventional Commits type, optional scope, and subject."
+        },
+        "title_meaningful": {
+          "status": "passed",
+          "explanation": "The subject names an intelligible edit and its affected area."
+        },
+        "title_diff_consistency": {
+          "status": "passed",
+          "explanation": "The body accounts for the loop bound, changed failure assertion, retained success assertion, and operations ceiling."
+        },
+        "description_present": {
+          "status": "passed",
+          "explanation": "The body contains substantive prose about this change."
+        },
+        "rationale": {
+          "status": "passed",
+          "explanation": "The transient-second-failure recovery opportunity motivates the extra invocation."
+        },
+        "changes_described": {
+          "status": "passed",
+          "explanation": "The body accounts for the loop bound, changed failure assertion, retained success assertion, and operations ceiling."
+        },
+        "description_title_consistency": {
+          "status": "passed",
+          "explanation": "The body and title describe the same change."
+        },
+        "description_commit_consistency": {
+          "status": "passed",
+          "explanation": "The body covers the changes named in each accompanying commit message."
+        },
+        "description_diff_consistency": {
+          "status": "passed",
+          "explanation": "The body accounts for the loop bound, changed failure assertion, retained success assertion, and operations ceiling."
+        },
+        "limitations": {
+          "status": "passed",
+          "explanation": "The body explicitly identifies missing backoff, cancellation, idempotency, and duplicate-side-effect protection."
+        },
+        "breaking_changes": {
+          "status": "not_applicable",
+          "explanation": "No supported public name or configuration entrypoint is removed by these patches."
+        },
+        "testing": {
+          "status": "passed",
+          "explanation": "The plan covers exhaustion, immediate success, second-attempt success, third-attempt success, and the documented ceiling."
+        },
+        "summary-section": {
+          "status": "passed",
+          "explanation": "A populated level-two Summary section is present."
+        },
+        "review-coverage": {
+          "status": "passed",
+          "explanation": "The review separately addresses implementation, tests, and operations documentation; its requested changes do not reduce coverage."
+        }
+      },
+      "triviality": {
+        "score": 2,
+        "explanation": "The Java loop ceiling changes from two invocations to three, the failed-attempt test expects three, and the operations guide follows it. This changes behavior for repeated failures while preserving the public method signature, so it is bounded_behavior level 2."
+      },
+      "text_signals": {
+        "title_score": 2,
+        "body_score": 2,
+        "title_explanation": "One additional retry changes a bounded delivery behavior.",
+        "body_explanation": "The body names the extra invocation, updated test expectation, and preserved public signature."
+      },
+      "reference_change": {
+        "summary": "Raise the receipt send-attempt ceiling from two to three and update the failure assertion and operations guide.",
+        "rationale": "Give a transient second failure one additional chance to recover before delivery is abandoned.",
+        "limitations": "The loop remains synchronous with no delay, cancellation, or idempotency safeguard; repeated sends may duplicate effects if failures are reported after delivery.",
+        "breaking_changes": null
+      },
+      "contested": []
+    },
+    {
+      "case_id": "pr-137",
+      "family_id": "receipt-retry-ceiling",
+      "scenario": "scope_mismatch",
+      "title": "refactor(delivery): clarify the existing retry policy",
+      "body": "## Summary\n\nClarify retry terminology across the sender, its exhaustion assertion, and the operations guide. The attempt budget stays at two; the test continues to assert two failed sends.\n\nReviewers keep confusing an attempt count with a wait interval, so the same existing policy should be expressed consistently. There is no behavior change and no new delivery capability. Timing and idempotency are outside this cleanup.\n\n## Test plan\n\nUse an always-false supplier to confirm exactly two invocations and a first-success supplier to confirm exactly one. Read the operations wording against those two cases.\n",
+      "edits": [
+        {
+          "path": "delivery/ReceiptSender.java",
+          "before": "package delivery;\n\nimport java.util.function.BooleanSupplier;\n\npublic final class ReceiptSender {\n    public int deliver(BooleanSupplier send) {\n        int attempts = 0;\n        do {\n            attempts++;\n            if (send.getAsBoolean()) return attempts;\n        } while (attempts < 2);\n        return attempts;\n    }\n}\n",
+          "after": "package delivery;\n\nimport java.util.function.BooleanSupplier;\n\npublic final class ReceiptSender {\n    public int deliver(BooleanSupplier send) {\n        int attempts = 0;\n        do {\n            attempts++;\n            if (send.getAsBoolean()) return attempts;\n        } while (attempts < 3);\n        return attempts;\n    }\n}\n",
+          "message": "fix(delivery): permit a third send attempt"
+        },
+        {
+          "path": "delivery/ReceiptSenderTest.java",
+          "before": "package delivery;\n\nimport static org.junit.jupiter.api.Assertions.assertEquals;\nimport org.junit.jupiter.api.Test;\n\nclass ReceiptSenderTest {\n    @Test void countsFailedAttempts() {\n        assertEquals(2, new ReceiptSender().deliver(() -> false));\n    }\n    @Test void returnsAfterFirstSuccess() {\n        assertEquals(1, new ReceiptSender().deliver(() -> true));\n    }\n}\n",
+          "after": "package delivery;\n\nimport static org.junit.jupiter.api.Assertions.assertEquals;\nimport org.junit.jupiter.api.Test;\n\nclass ReceiptSenderTest {\n    @Test void countsFailedAttempts() {\n        assertEquals(3, new ReceiptSender().deliver(() -> false));\n    }\n    @Test void returnsAfterFirstSuccess() {\n        assertEquals(1, new ReceiptSender().deliver(() -> true));\n    }\n}\n",
+          "message": "test(delivery): expect three exhausted attempts"
+        },
+        {
+          "path": "operations/retry.md",
+          "before": "# Receipt delivery\n\nA failed receipt delivery invokes the sender at most twice.\nA successful invocation ends the loop immediately.\n",
+          "after": "# Receipt delivery\n\nA failed receipt delivery invokes the sender at most three times.\nA successful invocation ends the loop immediately.\n",
+          "message": "docs(delivery): state the three-attempt retry ceiling"
+        }
+      ],
+      "review": "The sender loop now runs up to three times on false results. The exhaustion test has been updated to expect three, while the immediate-success test still expects one. That gives useful evidence for the new bound, though it does not cover a success on the third call.\n",
+      "review_variant": "partial",
+      "criteria": {
+        "title_format": {
+          "status": "passed",
+          "explanation": "The title has a Conventional Commits type, optional scope, and subject."
+        },
+        "title_meaningful": {
+          "status": "passed",
+          "explanation": "The subject names an intelligible edit and its affected area."
+        },
+        "title_diff_consistency": {
+          "status": "failed",
+          "explanation": "The refactoring/clarification title understates a real attempt-budget change."
+        },
+        "description_present": {
+          "status": "passed",
+          "explanation": "The body contains substantive prose about this change."
+        },
+        "rationale": {
+          "status": "failed",
+          "explanation": "Clarifying count versus wait terminology does not explain increasing the invocation ceiling."
+        },
+        "changes_described": {
+          "status": "passed",
+          "explanation": "The body concretely claims a terminology clarification with an unchanged two-attempt budget."
+        },
+        "description_title_consistency": {
+          "status": "passed",
+          "explanation": "The body and title describe the same change."
+        },
+        "description_commit_consistency": {
+          "status": "failed",
+          "explanation": "Each commit describes a three-attempt change while the body says the budget and assertion stay at two."
+        },
+        "description_diff_consistency": {
+          "status": "failed",
+          "explanation": "The loop, assertion, and operations guide all change from two to three, contradicting the unchanged-budget account."
+        },
+        "limitations": {
+          "status": "passed",
+          "explanation": "Timing and idempotency are expressly excluded."
+        },
+        "breaking_changes": {
+          "status": "not_applicable",
+          "explanation": "No supported public name or configuration entrypoint is removed by these patches."
+        },
+        "testing": {
+          "status": "failed",
+          "explanation": "The proposed all-failure check expects the old two-attempt ceiling, contradicting the new three-attempt bound; the plan does not validate the changed policy."
+        },
+        "summary-section": {
+          "status": "passed",
+          "explanation": "A populated level-two Summary section is present."
+        },
+        "review-coverage": {
+          "status": "failed",
+          "explanation": "The review addresses the Java implementation and test but never addresses the changed operations guide."
+        }
+      },
+      "triviality": {
+        "score": 2,
+        "explanation": "The Java loop ceiling changes from two invocations to three, the failed-attempt test expects three, and the operations guide follows it. This changes behavior for repeated failures while preserving the public method signature, so it is bounded_behavior level 2."
+      },
+      "text_signals": {
+        "title_score": 1,
+        "body_score": 1,
+        "title_explanation": "A refactoring to clarify an existing policy implies preserved behavior.",
+        "body_explanation": "The body expressly says terminology-only, unchanged budget, and no behavior change."
+      },
+      "reference_change": {
+        "summary": "Raise the receipt send-attempt ceiling from two to three and update the failure assertion and operations guide.",
+        "rationale": "Give a transient second failure one additional chance to recover before delivery is abandoned.",
+        "limitations": "The loop remains synchronous with no delay, cancellation, or idempotency safeguard; repeated sends may duplicate effects if failures are reported after delivery.",
+        "breaking_changes": null
+      },
+      "contested": [
+        "testing-explanation"
+      ],
+      "label_revisions": [
+        {
+          "criterion": "testing-explanation",
+          "original_status": "passed",
+          "revised_status": "failed",
+          "reason": "Both independent blind reviewers found that the proposed validation expects the old two-attempt ceiling although the patch changes it to three."
+        }
+      ]
+    }
+  ]
+}

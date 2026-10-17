@@ -1,7 +1,7 @@
 # Synthetic PR quality corpus
 
-125 fictional, sanitized pull requests for benchmarking PR title and description
-quality, supplied-review coverage, and actual change triviality. Each has metadata, a one- or two-commit
+149 fictional, sanitized pull requests across 30 change families for benchmarking PR title and description
+quality, supplied-review coverage, and actual change triviality. Each has metadata, a one- to three-commit
 list, complete unified file patches, independent criterion annotations, and (for
 most) a supplied review.
 Everything is checked in; loading, regeneration, and validation need no network
@@ -62,7 +62,8 @@ not the routing CLI's separate `evaluate --corpus` schema.
 ## Coverage
 
 Ten factual change families appear in each of ten primary scenario groups
-(PRs 001–100), followed by matched extensions (PRs 101–125):
+(PRs 001–100), followed by matched extensions (PRs 101–125) and independently
+authored held-out families (PRs 126–149):
 
 | PRs | Primary scenario | Count |
 | --- | --- | ---: |
@@ -79,8 +80,10 @@ Ten factual change families appear in each of ten primary scenario groups
 | 101–110 | Rationale present but only restating the edits (what, not why) | 10 |
 | 111–117 | Summary concretely describes only the first of two changed files | 7 |
 | 118–125 | Neutral `chore` text around adjacent triviality boundaries (four matched pairs) | 8 |
+| 126–137 | Independent author A: Unicode prose, accessible label, lint pin, CI permissions, SQL migration, Java retry boundary | 12 |
+| 138–149 | Independent author B: resource cleanup, timezone guide, localization constant, reproducible archives, Ruby loader migration, optional schema field | 12 |
 
-There are 17 good cases and 108 cases needing revision, with 215 commits total.
+There are 28 good cases and 121 cases needing revision, with 263 commits total.
 The invariants for the first 100 cases (ten good, ninety needing revision, and the
 20/10/30/20/20 triviality distribution) are unchanged; the extension adds eight
 new families and reuses ten existing ones.
@@ -95,34 +98,59 @@ explain relevant implications without classifying every behavior change as a
 public-interface removal.
 
 These matched variants are deliberate: the same code change can appear with a
-good description or a specific documentation defect. Split train/test data by
-`family_id` to avoid putting the same diff in both partitions. The set is a small
-controlled benchmark, with repeated language and an artificial class balance;
-it can later be supplemented with sanitized real PRs using the same layout.
+good description or a specific documentation defect. The set remains a small
+controlled benchmark with repeated language and an artificial class balance.
+
+### Independent authoring and family holdouts
+
+Two separate authoring agents wrote PRs 126–149 without reading each other's
+cases or the existing family templates/oracle labels. Their complete authored
+sources and protocols are preserved in [`authored/author-a.json`](authored/author-a.json)
+and [`authored/author-b.json`](authored/author-b.json). The packager only constructs
+unified patches, commit accounting, source pointers, and indexes; it does not
+apply the existing text or review templates to these cases. Each new family has
+two variants sharing identical patches but independently written communication
+and supplied-review contrasts. Authorship is separate from label-review provenance.
+
+[`splits.json`](splits.json) fixes **development: 125 cases / 18 families** and
+**evaluation: 24 cases / 12 new families**. `corpus-development.json` and
+`corpus-evaluation.json` are directly accepted by `evaluate`. The benchmark and
+triviality CLI default to evaluation; choose `--split development` for iteration,
+or `--split all` for an explicit combined diagnostic. Validation rejects family
+overlap, identical patch sets across partitions, missing assignments, or stale
+partition corpora. Every index entry records `split` and `author_id`; these are
+evaluation metadata and must also be withheld from model inputs.
+
+Freeze partitions before model runs and keep all matched variants together.
+These are public family holdouts, not secret test data; do not tune on evaluation
+results and then call them unseen. Both authors and reviewers use the same model
+family, and the rubric remains shared. Independent authoring broadens language
+and domains but does not establish human validity. Genuine boundary disputes
+are retained explicitly rather than turned into high-confidence references.
 
 ### Supplied reviews
 
-Every case after the `none` variant has a `review.md` describing its **actual**
+Every case outside the `none` variant has a `review.md`. The original 125 reviews describe their **actual**
 patches, whatever the PR text claims. The variant rotates by family and scenario
 so each family sees every variant. `review-coverage` labels the review, not the
 PR text, so it never changes `expected_quality` or `failed_criteria`.
 
 | Variant | Review content | `review-coverage` | Cases |
 | --- | --- | --- | ---: |
-| `none` | No review supplied | `not_assessable` | 22 |
-| `complete` | Addresses every changed file and its implications | `passed` | 22 |
-| `open_concern` | Complete, plus an open question that must be answered before merging | `passed` | 21 |
-| `partial` | Addresses only the first of two changed files | `failed` | 15 |
-| `off_target` | Single-file families only: the review is of a different change | `failed` | 5 |
-| `generic` | Repeats the title and approves without a specific comment | `failed` | 20 |
-| `ambiguous` | Refers only to unseen discussion and unspecified items ("the second change", "as discussed") | `not_assessable` | 20 |
+| `none` | No review supplied | `not_assessable` | 24 |
+| `complete` | Addresses every changed file and its implications | `passed` | 30 |
+| `open_concern` | Complete, plus an open question that must be answered before merging | `passed` | 25 |
+| `partial` | Addresses only some changed files | `failed` | 18 |
+| `off_target` | Reviews a different change | `failed` | 7 |
+| `generic` | Approves without a specific comment | `failed` | 22 |
+| `ambiguous` | Refers only to unseen discussion and unspecified items ("the second change", "as discussed") | `not_assessable` | 23 |
 
 An unresolved concern does not reduce coverage; coverage asks whether each
 change was addressed, not whether the review is satisfied. The `ambiguous` and
 `none` variants both map to `uncertain` for the router, since there is nothing to
 tie to the patches. Because every enforcement rule enforces or soft-enforces
-`review-coverage`, the oracle-derived recommendations now include
-`skip_and_approve` (15 cases) and `suggest_changes` (17) as well as `block` and
+`review-coverage`, the oracle-derived recommendations include
+`skip_and_approve` and `suggest_changes` as well as `block` and
 `needs_human_review`.
 
 ### Contrastive PR-text cases
@@ -232,7 +260,7 @@ fail PR communication quality merely because of their triviality score.
 [`independent-review/reviews.json`](independent-review/reviews.json) holds an
 independent AI review of the seven rubric criteria (`title-format`,
 `summary-section`, `change-rationale`, `description-coverage`,
-`review-coverage`, `testing-explanation`, `change-triviality`) for all 125
+`review-coverage`, `testing-explanation`, `change-triviality`) for the original 125
 cases: 875 labels, each with a rationale, evidence pointers, the oracle label,
 both reviewers' labels, a `contested` flag, and the adjudicated label. Its
 `label_status` is `independent_ai_review`. **This is not human review.** The
@@ -290,6 +318,40 @@ Limitations:
 - Human review is still required before using these labels for calibration or
   quality assessment.
 
+### Held-out independent review
+
+[`independent-review/authored-reviews.json`](independent-review/authored-reviews.json)
+preserves two further blind passes over all 24 new cases (168 labels per pass).
+Both saw only opaque input packets and the shared rubric, with no author labels,
+scenario names, author identities, or other reviewer answers. The original
+125-case archive is unchanged and retains its original scope. Input and rubric
+hashes protect both archives against stale reviews.
+
+The coordinator corrected one clear author-label error: `pr-137`'s validation
+plan expected the old two-attempt limit after changing it to three. Both blind
+reviewers failed `testing-explanation`; the original `passed` label and revision
+reason remain recorded. Six triviality adjudications remain **uncertain**:
+accessible-label spelling (`pr-128/129`), dependency release selection without
+release effects (`pr-130/131`), and GNU-tar host support (`pr-144/145`). Their
+provisional author scores remain distinct from the adjudications, and both
+dissenting rationales are retained. There are 17 contested criterion labels;
+agreement is not proof that the underlying judgments are settled.
+
+See the [scenario review findings](independent-review/COVERAGE.md). To reproduce
+full confusion by scenario, criterion, reference level, and their intersections
+without inference:
+
+```sh
+uv run python examples/synthetic-prs/review_report.py
+```
+
+This writes `reports/synthetic-prs-label-review.json` for both reviewers, with
+support counts and a separate `by_reference_confidence` view. Cases containing
+any contested label are separated from `uncontested_ai` cases; neither group
+claims human validation. Recommendation confusion in this report is a policy
+projection of the archived labels, not an observed router run. No new live model
+quality score is claimed.
+
 ## Change triviality scale and benchmark
 
 Higher scores mean less trivial changes. Use the highest applicable level for
@@ -300,15 +362,15 @@ of review scope and impact, not a calibrated safety or defect probability.
 
 | Score | Level | Definition | Corpus examples | Cases |
 | ---: | --- | --- | --- | ---: |
-| 0 | `editorial` | Prose or link correction; no runtime/interface change | Guide typo, README link, comment typo | 23 |
-| 1 | `mechanical` | Local mechanical or presentation change in code preserving functional behavior and public interfaces | CLI help string correction, local rename, named constant | 13 |
-| 2 | `bounded_behavior` | Local behavior/configuration change requiring edge-case review | Empty average, key normalization, batch boundary, page-size value, whitespace stripping | 38 |
-| 3 | `substantive` | New capability or security-sensitive behavior requiring broader review | CSV helper, authentication comparison, HTML escaping, optional parameter | 26 |
-| 4 | `incompatible` | Removal of, or incompatible change to, a supported interface/configuration requiring migration | Response-field rename, deleted legacy config, new required parameter | 25 |
+| 0 | `editorial` | Prose or link correction; no runtime/interface change | Guide typo, README link, comment typo, multilingual prose | 27 |
+| 1 | `mechanical` | Local mechanical or presentation change in code preserving functional behavior and public interfaces | CLI help string, local rename, named constant, accessible label spelling | 17 |
+| 2 | `bounded_behavior` | Local behavior/configuration change requiring edge-case review | Empty average, retry boundary, resource cleanup, dependency pin (contested) | 46 |
+| 3 | `substantive` | New capability or security-sensitive behavior requiring broader review | CSV helper, authentication comparison, CI permissions, optional schema field | 30 |
+| 4 | `incompatible` | Removal of, or incompatible change to, a supported interface/configuration requiring migration | Response-field rename, legacy config, required parameter, SQL column and Ruby loader removal | 29 |
 
 Scores 0–1 are `is_trivial: true`, retaining the existing `complexity: "trivial"`
 classification. Scores 2–4 are `is_trivial: false` and `complexity: "non_trivial"`.
-The full corpus contains 36 trivial and 89 non-trivial changes. Both indexes
+The full corpus contains 44 trivial and 105 non-trivial changes. Both indexes
 expose the score, level, and binary classification; the manifest defines the
 scale and its counts. Every annotation includes a diff-based explanation.
 
@@ -341,15 +403,15 @@ to skip review. Compatibility judgments rely on the supplied API/setup documenta
 not verified downstream usage. Human review is still required before treating these
 references as validated benchmark ground truth or calibration data.
 
-After running your system on the inputs, write all 125 predictions in this form
+After running your system on the selected partition, write one prediction per case in this form
 (this excerpt shows only two of the required records):
 
 ```json
 {
   "schema_version": 1,
   "predictions": [
-    {"case_id": "pr-001", "score": 0},
-    {"case_id": "pr-002", "score": 1}
+    {"case_id": "pr-126", "score": 0},
+    {"case_id": "pr-127", "score": 0}
   ]
 }
 ```
@@ -358,11 +420,15 @@ After running your system on the inputs, write all 125 predictions in this form
 uv run python examples/synthetic-prs/evaluate_triviality.py reports/triviality-predictions.json
 ```
 
-The scorer requires exactly one integer 0–4 prediction for every case; duplicate,
+The scorer requires exactly one integer 0–4 prediction (or `null` for explicit
+uncertainty) for every selected case; duplicate,
 unknown, missing, and out-of-range predictions are rejected. It reports exact
 score accuracy, mean absolute error, binary trivial/non-trivial accuracy, a
-reference-by-prediction confusion matrix, and accuracy by PR communication
-quality. Compare scores for this criterion and statuses for the fourteen
+reference-by-prediction confusion matrix with separate uncertainty counts, and
+accuracy by PR communication quality. It also reports confusion and support
+by scenario, family, author, split, reference level, and scenario-by-level.
+Uncertain predictions stay in accuracy denominators; mean absolute error is
+computed only for classified cases. Compare scores for this criterion and statuses for the fourteen
 status-based criteria. This command scores supplied predictions offline; it performs no
 inference and retains the provisional label status in its output. Withhold
 reference triviality labels from model inputs and split by family as described
@@ -372,8 +438,8 @@ above. Perfect scores from copied reference labels only test the scorer.
 
 Every annotation has `diagnostics.text_diff_triviality` for future confounder
 analysis. This is additive metadata outside `criteria`, with no pass/fail
-status, weight, or effect on PR quality or benchmark scoring. Schema version 2
-and the thirteen existing criteria remain unchanged.
+status, weight, or effect on PR quality or benchmark scoring. The annotation
+schema remains version 3; index split and author fields are additive metadata.
 
 The diagnostic separately records the level implied by the **title** and the
 **body**, using the same 0–4 scale. These are provisional author annotations of
@@ -403,9 +469,9 @@ combined level is forced. `pr-092` has gibberish plus an empty body; its project
 levels stay null instead of being labeled trivial.
 
 The index exposes the combined text score, relationship, potential-confounder
-flag, and relationship counts. The 125 cases contain 112 aligned levels, four
+flag, and relationship counts. The 149 cases contain 132 aligned levels, eight
 directional mismatches, eight conflicting text signals, and one unassessable
-case. Twelve cases have at least one text level differing from the diff.
+case. Sixteen cases have at least one text level differing from the diff.
 Level agreement does not imply factual agreement: claiming a return value of
 1 instead of 0 can remain level 2. Use the existing consistency criteria for
 that distinction. Diagnostic flags identify candidate confounders without
@@ -453,6 +519,11 @@ uv run python examples/synthetic-prs/benchmark.py --record \
 uv run python examples/synthetic-prs/benchmark.py \
   --replay-dir reports/synthetic-prs-benchmark \
   --output-dir reports/synthetic-prs-benchmark-replay
+
+# Rescore the same bound summary offline, including all scenario slices.
+uv run python examples/synthetic-prs/benchmark.py \
+  --summary reports/synthetic-prs-benchmark/summary.json \
+  --output-dir reports/synthetic-prs-benchmark-rescored
 ```
 
 The runner removes `PR_REVIEW_ROUTER_*` environment overrides so the pinned
@@ -462,6 +533,28 @@ hashes of the corpus, rubric, index, policy, and provider files; per-criterion
 expected-to-actual counts; recommendation agreement and unsafe approvals; and
 triviality accuracy from the native scale answers. Outputs stay under ignored
 `reports/`.
+
+Both runners default to the held-out evaluation partition. Use `--split development`
+for development runs and `--split all` only for combined diagnostics. Every metric
+group includes its support. `by_scenario`, `by_triviality_level`, `by_family_id`,
+`by_split`, `by_author_id`, and `by_scenario_and_triviality_level` each retain the
+full criterion confusion. Thus a failed blocking criterion cannot disappear
+inside overall agreement. Reports count false passes on failed/uncertain criteria,
+missed blocks, unsafe approval recommendations, and non-trivial changes predicted
+trivial. `uncertain` and `unanswered` are distinct prediction columns and stay in
+denominators. Status agreement for `change-triviality` alone is insufficient:
+all classified scale choices map to `passed`, so inspect the native ordinal matrix.
+Unobserved intersections are omitted; present groups can have support one and
+should not be interpreted as robust population estimates.
+
+Results must contain each selected case exactly once and match local reference
+labels. Before inference, the runner captures selected evidence, commit metadata,
+review texts, partitions, rubric, configuration, and label-review hashes. It
+checks that inputs did not change during the run, then binds the completed
+summary to `benchmark-inputs.json`. Offline `--summary` requires that sidecar and
+rejects stale, swapped, or unbound results instead of attributing old predictions
+to current files. Older summaries require a fresh benchmark run. Labels always
+retain the pinned corpus's provisional provenance.
 
 On 2026-10-15, a live run on the original 100 cases (no review text and the earlier
 criterion instructions) had no schema or transport failures and no unsafe

@@ -1,0 +1,1 @@
+`docs/locale-guide.md`: the restored accents make the supplied French and Spanish examples readable, with no executable samples altered. `docs/ja/overview.md`: the final full stop now matches the Japanese sentence; check the renderer does not substitute an empty glyph. Both changed pages are covered.

@@ -42,3 +42,5 @@ pythonVersion = "3.12"
 
 [tool.codespell]
 skip = ["uv.lock", "build", "dist", ".venv", ".git", ".pytest_cache", ".ruff_cache"]
+# Intentional before-image spelling in the accessibility corpus fixtures.
+ignore-words-list = "downlaod"

@@ -1,0 +1,27 @@
+{
+  "repository": "synthetic/pr-quality-demo",
+  "number": 138,
+  "base_sha": "c7eb1cfcac574a313003b8d43f6550f96658a3c4",
+  "head_sha": "b7ebb948ae1818aecb6079d17d99b39d37624392",
+  "title": "fix(packet): release the header stream after read errors",
+  "body": "## Summary\n\nWrap the header read in a context manager in `packet/header.py`. Add `tests/test_header.py` with a stream whose read raises, asserting context exit and error propagation.\n\n## Why\n\nA failed read currently skips the explicit close and can keep a file descriptor open. The context manager releases it on both return and exception paths.\n\n## Validation plan\n\nRun the new exception-path test, then read an ordinary eight-byte header and a shorter file to check that returned bytes are unchanged. These are proposed checks, not recorded execution.\n\n## Scope\n\nShort reads remain allowed and `OSError` still reaches the caller. This does not add retries or a header-length rule.\n",
+  "files_complete": true,
+  "files": [
+    {
+      "path": "packet/header.py",
+      "status": "modified",
+      "additions": 2,
+      "deletions": 4,
+      "patch": "diff --git a/packet/header.py b/packet/header.py\n--- a/packet/header.py\n+++ b/packet/header.py\n@@ -1,5 +1,3 @@\n def read_header(path: str) -> bytes:\n-    stream = open(path, \"rb\")\n-    header = stream.read(8)\n-    stream.close()\n-    return header\n+    with open(path, \"rb\") as stream:\n+        return stream.read(8)\n",
+      "patch_truncated": false
+    },
+    {
+      "path": "tests/test_header.py",
+      "status": "added",
+      "additions": 15,
+      "deletions": 0,
+      "patch": "diff --git a/tests/test_header.py b/tests/test_header.py\n--- /dev/null\n+++ b/tests/test_header.py\n@@ -0,0 +1,15 @@\n+from unittest.mock import MagicMock, patch\n+\n+import pytest\n+\n+from packet.header import read_header\n+\n+\n+def test_read_error_exits_stream_context() -> None:\n+    stream = MagicMock()\n+    stream.__enter__.return_value = stream\n+    stream.read.side_effect = OSError(\"unreadable header\")\n+    with patch(\"packet.header.open\", return_value=stream):\n+        with pytest.raises(OSError, match=\"unreadable header\"):\n+            read_header(\"sample.bin\")\n+    stream.__exit__.assert_called_once()\n",
+      "patch_truncated": false
+    }
+  ]
+}

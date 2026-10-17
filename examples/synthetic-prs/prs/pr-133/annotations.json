@@ -1,0 +1,212 @@
+{
+  "schema_version": 3,
+  "case_id": "pr-133",
+  "label_status": "provisional",
+  "label_origin": "synthetic_author_intent",
+  "family_id": "ci-token-least-privilege",
+  "scenario": "rationale_only",
+  "variant": "rationale_only",
+  "review_variant": "ambiguous",
+  "complexity": "non_trivial",
+  "has_breaking_change": false,
+  "expected_quality": "needs_revision",
+  "tags": [
+    "independently_authored",
+    "rationale_only"
+  ],
+  "criteria": {
+    "title_format": {
+      "status": "passed",
+      "explanation": "The title has a Conventional Commits type, optional scope, and subject.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "title_meaningful": {
+      "status": "passed",
+      "explanation": "The subject names an intelligible edit and its affected area.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "title_diff_consistency": {
+      "status": "passed",
+      "explanation": "The body gives a permission rationale but no actual grant or documentation edit.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "description_present": {
+      "status": "passed",
+      "explanation": "The body contains substantive prose about this change.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "rationale": {
+      "status": "passed",
+      "explanation": "The compromise-impact argument explains why excessive check-job authority is undesirable.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "changes_described": {
+      "status": "failed",
+      "explanation": "No grant change or documentation update is concretely stated.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "description_title_consistency": {
+      "status": "not_assessable",
+      "explanation": "The general least-privilege motivation supplies no concrete body edit to compare with the title.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "description_commit_consistency": {
+      "status": "not_assessable",
+      "explanation": "There is no stated body change account to compare with either commit.",
+      "sources": [
+        "evidence.json#/body",
+        "metadata.json#/commits"
+      ]
+    },
+    "description_diff_consistency": {
+      "status": "not_assessable",
+      "explanation": "Motivation and an open question do not assert what the patch changes.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "limitations": {
+      "status": "passed",
+      "explanation": "The missing shell script and its unknown write requirements are expressly identified.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "breaking_changes": {
+      "status": "not_applicable",
+      "explanation": "No supported public name or configuration entrypoint is removed by these patches.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "testing": {
+      "status": "failed",
+      "explanation": "Inspecting an omitted script is identified as an open question, without a relevant workflow validation plan or justified omission.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "summary-section": {
+      "status": "failed",
+      "explanation": "There is no level-two Summary section.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "review-coverage": {
+      "status": "not_assessable",
+      "explanation": "The second change and that concern cannot be tied to particular patches or permissions without unseen discussion.",
+      "sources": [
+        "review.md",
+        "evidence.json#/files"
+      ]
+    },
+    "change_triviality": {
+      "type": "ordinal",
+      "score": 3,
+      "level": "substantive",
+      "is_trivial": false,
+      "explanation": "Changing GitHub Actions token grants from contents-write/issues-write to contents-read changes security-sensitive permissions. That is substantive even though the YAML diff is short; no supported consumer configuration entrypoint is removed.",
+      "sources": [
+        "evidence.json#/files"
+      ]
+    },
+    "title-format": {
+      "status": "passed",
+      "explanation": "The title has a Conventional Commits type, optional scope, and subject.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "change-rationale": {
+      "status": "passed",
+      "explanation": "The compromise-impact argument explains why excessive check-job authority is undesirable.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "description-coverage": {
+      "status": "not_assessable",
+      "explanation": "Motivation and an open question do not assert what the patch changes.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "testing-explanation": {
+      "status": "failed",
+      "explanation": "Inspecting an omitted script is identified as an open question, without a relevant workflow validation plan or justified omission.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "change-triviality": {
+      "type": "ordinal",
+      "score": 3,
+      "level": "substantive",
+      "is_trivial": false,
+      "explanation": "Changing GitHub Actions token grants from contents-write/issues-write to contents-read changes security-sensitive permissions. That is substantive even though the YAML diff is short; no supported consumer configuration entrypoint is removed.",
+      "sources": [
+        "evidence.json#/files"
+      ]
+    }
+  },
+  "diagnostics": {
+    "text_diff_triviality": {
+      "diff_score": 3,
+      "title_score": 3,
+      "body_score": null,
+      "text_score": 3,
+      "assessment": "title_only",
+      "relationship": "aligned",
+      "score_delta": 0,
+      "potential_confounder": false,
+      "title_explanation": "The title explicitly identifies token-privilege reduction.",
+      "body_explanation": "The body argues for a permission principle and identifies missing evidence, but never says which permissions or files change.",
+      "sources": [
+        "evidence.json#/title",
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    }
+  },
+  "reference_change": {
+    "summary": "Reduce the check workflow token from contents-write plus issues-write to contents-read and update the workflow documentation.",
+    "rationale": "The check job only reads source and runs checks, so the write grants unnecessarily increase the damage possible from a compromised step.",
+    "limitations": "The scripts are not supplied; their hidden write dependencies cannot be ruled out from these two files. No event trigger or runner changes.",
+    "breaking_changes": null
+  },
+  "authorship": {
+    "author_id": "independent-author-a",
+    "method": "independent_agent_authored"
+  },
+  "contested_criteria": [
+    "testing-explanation"
+  ]
+}

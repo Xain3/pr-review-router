@@ -1,0 +1,1 @@
+`docs/operations/timezones.md` now uses the right sign for +02:00 and the right 07:00Z worked result. Both edited sentences agree, and the retained fixed-offset note appropriately avoids making a daylight-saving claim.

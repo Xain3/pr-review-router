@@ -1,0 +1,27 @@
+{
+  "repository": "synthetic/pr-quality-demo",
+  "number": 134,
+  "base_sha": "c6866b7d802af5fd7f99b6ad35463b622020944c",
+  "head_sha": "32f764fc1006b7763629586519855377e075b795",
+  "title": "feat(storage)!: rename the supported receipt reference column",
+  "body": "## Summary\n\nAdd migration 008, which renames `event_receipts.customer_ref` to `account_ref`. Rewrite the receipt schema guide to use the new name and to tell consumers how to migrate queries; the non-null text contract and primary key are unchanged.\n\nAccount is the name used by the surrounding domain language; the customer spelling has led new consumers to join against the wrong conceptual entity.\n\n## Breaking changes and rollout\n\nThe old column name is not retained as an alias. Apply migration 008 and update SQL queries from `customer_ref` to `account_ref` in a coordinated deployment. External query users need advance notice. This patch supplies no rollback script and does not establish support for every database engine.\n\n## Checks to perform\n\nOn a throwaway database, create the documented old schema, insert a receipt, and apply migration 008. Confirm the value is preserved under `account_ref` and that querying `customer_ref` fails. Update a sample consumer query using the guide and check that its join still returns the seeded receipt.\n",
+  "files_complete": true,
+  "files": [
+    {
+      "path": "migrations/008_receipt_account_ref.sql",
+      "status": "added",
+      "additions": 1,
+      "deletions": 0,
+      "patch": "diff --git a/migrations/008_receipt_account_ref.sql b/migrations/008_receipt_account_ref.sql\n--- /dev/null\n+++ b/migrations/008_receipt_account_ref.sql\n@@ -0,0 +1 @@\n+ALTER TABLE event_receipts RENAME COLUMN customer_ref TO account_ref;\n",
+      "patch_truncated": false
+    },
+    {
+      "path": "docs/receipt-schema.md",
+      "status": "modified",
+      "additions": 4,
+      "deletions": 1,
+      "patch": "diff --git a/docs/receipt-schema.md b/docs/receipt-schema.md\n--- a/docs/receipt-schema.md\n+++ b/docs/receipt-schema.md\n@@ -1,4 +1,7 @@\n # Receipt schema\n \n-Consumers may query event_receipts.customer_ref to join receipts to a customer.\n+Consumers may query event_receipts.account_ref to join receipts to an account.\n The supported column is non-null text; receipt_id remains the primary key.\n+\n+Apply migration 008 and update SQL queries from customer_ref to account_ref.\n+The old column name is not retained as an alias.\n",
+      "patch_truncated": false
+    }
+  ]
+}

@@ -1,0 +1,210 @@
+{
+  "schema_version": 3,
+  "case_id": "pr-146",
+  "label_status": "provisional",
+  "label_origin": "synthetic_author_intent",
+  "family_id": "ruby-require-alias-removal",
+  "scenario": "explicit_loader_migration",
+  "variant": "explicit_loader_migration",
+  "review_variant": "complete",
+  "complexity": "non_trivial",
+  "has_breaking_change": true,
+  "expected_quality": "good",
+  "tags": [
+    "independently_authored",
+    "explicit_loader_migration"
+  ],
+  "criteria": {
+    "title_format": {
+      "status": "passed",
+      "explanation": "The title uses a Conventional Commits type, scope, and subject.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "title_meaningful": {
+      "status": "passed",
+      "explanation": "The title identifies the Ruby require-path removal change.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "title_diff_consistency": {
+      "status": "passed",
+      "explanation": "The title agrees with the supplied Ruby require-path removal patch.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "description_present": {
+      "status": "passed",
+      "explanation": "The description contains substantive prose about this patch.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "rationale": {
+      "status": "passed",
+      "explanation": "The body names the concrete problem motivating the change.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "changes_described": {
+      "status": "passed",
+      "explanation": "The body makes specific claims about the edits.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "description_title_consistency": {
+      "status": "passed",
+      "explanation": "The title and body describe the same change.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "description_commit_consistency": {
+      "status": "passed",
+      "explanation": "The body accounts for every supplied commit message.",
+      "sources": [
+        "evidence.json#/body",
+        "metadata.json#/commits"
+      ]
+    },
+    "description_diff_consistency": {
+      "status": "passed",
+      "explanation": "The body accurately covers the substantive edits in every changed file.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "limitations": {
+      "status": "passed",
+      "explanation": "The body states relevant scope boundaries for this patch.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "breaking_changes": {
+      "status": "passed",
+      "explanation": "The body names the removed require path and instructs callers to replace it with cratebox/client before the 2.0 upgrade.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "testing": {
+      "status": "passed",
+      "explanation": "The body gives a specific validation plan relevant to the changed behavior.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "summary-section": {
+      "status": "passed",
+      "explanation": "A populated level-two Summary section is present.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "review-coverage": {
+      "status": "passed",
+      "explanation": "The supplied review addresses every changed file and relevant implications.",
+      "sources": [
+        "review.md",
+        "evidence.json#/files"
+      ]
+    },
+    "change_triviality": {
+      "type": "ordinal",
+      "score": 4,
+      "level": "incompatible",
+      "is_trivial": false,
+      "explanation": "The deleted Ruby file was explicitly documented as a supported require alias. Existing callers of cratebox/compat lose that entrypoint, and the documentation requires migration; this is incompatible regardless of the one-line deletion.",
+      "sources": [
+        "evidence.json#/files"
+      ]
+    },
+    "title-format": {
+      "status": "passed",
+      "explanation": "The title uses a Conventional Commits type, scope, and subject.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "change-rationale": {
+      "status": "passed",
+      "explanation": "The body names the concrete problem motivating the change.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "description-coverage": {
+      "status": "passed",
+      "explanation": "The body accurately covers the substantive edits in every changed file.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "testing-explanation": {
+      "status": "passed",
+      "explanation": "The body gives a specific validation plan relevant to the changed behavior.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "change-triviality": {
+      "type": "ordinal",
+      "score": 4,
+      "level": "incompatible",
+      "is_trivial": false,
+      "explanation": "The deleted Ruby file was explicitly documented as a supported require alias. Existing callers of cratebox/compat lose that entrypoint, and the documentation requires migration; this is incompatible regardless of the one-line deletion.",
+      "sources": [
+        "evidence.json#/files"
+      ]
+    }
+  },
+  "diagnostics": {
+    "text_diff_triviality": {
+      "diff_score": 4,
+      "title_score": 4,
+      "body_score": 4,
+      "text_score": 4,
+      "assessment": "agreed",
+      "relationship": "aligned",
+      "score_delta": 0,
+      "potential_confounder": false,
+      "title_explanation": "The title explicitly removes a compatibility require path and marks a breaking change.",
+      "body_explanation": "The body states that existing require calls stop loading and provides migration instructions.",
+      "sources": [
+        "evidence.json#/title",
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    }
+  },
+  "reference_change": {
+    "summary": "Delete the documented cratebox/compat require alias, bump the Ruby gem to 2.0.0, and document migration to cratebox/client.",
+    "rationale": "Retire the duplicate supported loader so the package maintains one canonical entrypoint.",
+    "limitations": "The client class and its methods do not move; downstream require strings cannot be updated by this patch.",
+    "breaking_changes": "Existing require \"cratebox/compat\" callers stop loading; replace it with require \"cratebox/client\" before adopting version 2.0."
+  },
+  "authorship": {
+    "author_id": "independent-author-b",
+    "method": "independent_agent_authored"
+  },
+  "contested_criteria": []
+}
