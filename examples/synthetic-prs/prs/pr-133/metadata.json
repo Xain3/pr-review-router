@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "synthetic": true,
+  "case_id": "pr-133",
+  "url": "https://example.invalid/synthetic/pr-quality-demo/pull/133",
+  "state": "open",
+  "draft": false,
+  "author": {
+    "login": "independent-author-a",
+    "name": "independent-author-a",
+    "email": "independent-author-a@example.invalid"
+  },
+  "created_at": "2026-05-13T12:00:00+00:00",
+  "updated_at": "2026-05-13T13:00:00+00:00",
+  "base_ref": "main",
+  "head_ref": "synthetic/pr-133",
+  "base_sha": "92922a0efda20605437eecc402e0a8793fc8daa0",
+  "head_sha": "82e54435a8cb2ffd650321fb3bbcbe555d8a5acd",
+  "changed_files": 2,
+  "additions": 3,
+  "deletions": 3,
+  "commits": [
+    {
+      "sha": "033d73752c1d96b8cf3cb4b4246f1bb0c5ebe1e2",
+      "parents": [
+        "92922a0efda20605437eecc402e0a8793fc8daa0"
+      ],
+      "message": "ci(security): restrict check workflow token to repository reads",
+      "author": {
+        "login": "independent-author-a",
+        "name": "independent-author-a",
+        "email": "independent-author-a@example.invalid"
+      },
+      "authored_at": "2026-05-13T11:50:00+00:00",
+      "files": [
+        ".github/workflows/check.yml"
+      ],
+      "additions": 1,
+      "deletions": 2
+    },
+    {
+      "sha": "82e54435a8cb2ffd650321fb3bbcbe555d8a5acd",
+      "parents": [
+        "033d73752c1d96b8cf3cb4b4246f1bb0c5ebe1e2"
+      ],
+      "message": "docs(ci): explain the reduced check-job token scope",
+      "author": {
+        "login": "independent-author-a",
+        "name": "independent-author-a",
+        "email": "independent-author-a@example.invalid"
+      },
+      "authored_at": "2026-05-13T11:51:00+00:00",
+      "files": [
+        "docs/check-workflow.md"
+      ],
+      "additions": 2,
+      "deletions": 1
+    }
+  ]
+}

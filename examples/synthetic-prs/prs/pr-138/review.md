@@ -1,0 +1,1 @@
+`packet/header.py` now exits the file context even if `read(8)` raises and still returns short byte sequences unchanged. `tests/test_header.py` supplies a failing stream and checks both propagation and context exit; a normal-read fixture would complement that regression case.

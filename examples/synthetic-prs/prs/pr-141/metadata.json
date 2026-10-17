@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "synthetic": true,
+  "case_id": "pr-141",
+  "url": "https://example.invalid/synthetic/pr-quality-demo/pull/141",
+  "state": "open",
+  "draft": false,
+  "author": {
+    "login": "independent-author-b",
+    "name": "independent-author-b",
+    "email": "independent-author-b@example.invalid"
+  },
+  "created_at": "2026-05-21T12:00:00+00:00",
+  "updated_at": "2026-05-21T13:00:00+00:00",
+  "base_ref": "main",
+  "head_ref": "synthetic/pr-141",
+  "base_sha": "75597cfcbb31c1162ee8a1c6fbb2cf1febcde494",
+  "head_sha": "a9922ee28d6b51afd531e1934d7c8898a59e2868",
+  "changed_files": 1,
+  "additions": 2,
+  "deletions": 2,
+  "commits": [
+    {
+      "sha": "a9922ee28d6b51afd531e1934d7c8898a59e2868",
+      "parents": [
+        "75597cfcbb31c1162ee8a1c6fbb2cf1febcde494"
+      ],
+      "message": "Correct the offset direction and worked UTC conversion in the operations guide",
+      "author": {
+        "login": "independent-author-b",
+        "name": "independent-author-b",
+        "email": "independent-author-b@example.invalid"
+      },
+      "authored_at": "2026-05-21T11:50:00+00:00",
+      "files": [
+        "docs/operations/timezones.md"
+      ],
+      "additions": 2,
+      "deletions": 2
+    }
+  ]
+}

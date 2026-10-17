@@ -1,0 +1,1196 @@
+{
+  "schema_version": 1,
+  "author_id": "independent-author-b",
+  "protocol": "Authored by a separate AI agent from the corpus rubric and documented contracts, without inspecting generate.py, existing per-case oracle annotations, peer-authored cases, or provider outputs. These fictional patches and communication variants were written independently for this extension. Author-intent labels are provisional synthetic_author_intent, not human review or empirical ground truth; no fixture validation plan is a claim of executed code.",
+  "cases": [
+    {
+      "case_id": "pr-138",
+      "family_id": "exception-safe-header",
+      "scenario": "accurate_with_exception_review",
+      "title": "fix(packet): release the header stream after read errors",
+      "body": "## Summary\n\nWrap the header read in a context manager in `packet/header.py`. Add `tests/test_header.py` with a stream whose read raises, asserting context exit and error propagation.\n\n## Why\n\nA failed read currently skips the explicit close and can keep a file descriptor open. The context manager releases it on both return and exception paths.\n\n## Validation plan\n\nRun the new exception-path test, then read an ordinary eight-byte header and a shorter file to check that returned bytes are unchanged. These are proposed checks, not recorded execution.\n\n## Scope\n\nShort reads remain allowed and `OSError` still reaches the caller. This does not add retries or a header-length rule.\n",
+      "edits": [
+        {
+          "path": "packet/header.py",
+          "before": "def read_header(path: str) -> bytes:\n    stream = open(path, \"rb\")\n    header = stream.read(8)\n    stream.close()\n    return header\n",
+          "after": "def read_header(path: str) -> bytes:\n    with open(path, \"rb\") as stream:\n        return stream.read(8)\n",
+          "message": "Close the header stream when reading raises"
+        },
+        {
+          "path": "tests/test_header.py",
+          "before": "",
+          "after": "from unittest.mock import MagicMock, patch\n\nimport pytest\n\nfrom packet.header import read_header\n\n\ndef test_read_error_exits_stream_context() -> None:\n    stream = MagicMock()\n    stream.__enter__.return_value = stream\n    stream.read.side_effect = OSError(\"unreadable header\")\n    with patch(\"packet.header.open\", return_value=stream):\n        with pytest.raises(OSError, match=\"unreadable header\"):\n            read_header(\"sample.bin\")\n    stream.__exit__.assert_called_once()\n",
+          "message": "Add a regression case for header read failures"
+        }
+      ],
+      "review": "`packet/header.py` now exits the file context even if `read(8)` raises and still returns short byte sequences unchanged. `tests/test_header.py` supplies a failing stream and checks both propagation and context exit; a normal-read fixture would complement that regression case.\n",
+      "review_variant": "complete",
+      "criteria": {
+        "title_format": {
+          "status": "passed",
+          "explanation": "The title uses a Conventional Commits type, scope, and subject."
+        },
+        "title_meaningful": {
+          "status": "passed",
+          "explanation": "The title identifies the header resource cleanup change."
+        },
+        "title_diff_consistency": {
+          "status": "passed",
+          "explanation": "The title agrees with the supplied header resource cleanup patch."
+        },
+        "description_present": {
+          "status": "passed",
+          "explanation": "The description contains substantive prose about this patch."
+        },
+        "rationale": {
+          "status": "passed",
+          "explanation": "The body names the concrete problem motivating the change."
+        },
+        "changes_described": {
+          "status": "passed",
+          "explanation": "The body makes specific claims about the edits."
+        },
+        "description_title_consistency": {
+          "status": "passed",
+          "explanation": "The title and body describe the same change."
+        },
+        "description_commit_consistency": {
+          "status": "passed",
+          "explanation": "The body accounts for every supplied commit message."
+        },
+        "description_diff_consistency": {
+          "status": "passed",
+          "explanation": "The body accurately covers the substantive edits in every changed file."
+        },
+        "limitations": {
+          "status": "passed",
+          "explanation": "The body states relevant scope boundaries for this patch."
+        },
+        "breaking_changes": {
+          "status": "not_applicable",
+          "explanation": "The supplied patch removes no supported interface or configuration."
+        },
+        "testing": {
+          "status": "passed",
+          "explanation": "The body gives a specific validation plan relevant to the changed behavior."
+        },
+        "summary-section": {
+          "status": "passed",
+          "explanation": "A populated level-two Summary section is present."
+        },
+        "review-coverage": {
+          "status": "passed",
+          "explanation": "The supplied review addresses every changed file and relevant implications."
+        }
+      },
+      "triviality": {
+        "score": 2,
+        "explanation": "The Python context manager adds cleanup on the read-exception path. It changes local resource behavior without adding or removing a public interface; the added test exercises that path."
+      },
+      "text_signals": {
+        "title_score": 2,
+        "body_score": 2,
+        "title_explanation": "Releasing a stream after read errors implies a local exception-path behavior change.",
+        "body_explanation": "The body explicitly changes cleanup on read failure and preserves the existing interface."
+      },
+      "reference_change": {
+        "summary": "Use a context manager around the eight-byte header read and add an exception-path regression test.",
+        "rationale": "The manual close was skipped if read raised; context exit releases the stream on that path.",
+        "limitations": "The patch preserves short reads and propagates read errors; it does not retry or enforce an eight-byte minimum.",
+        "breaking_changes": "None shown; the function signature and successful return shape are preserved."
+      },
+      "contested": []
+    },
+    {
+      "case_id": "pr-139",
+      "family_id": "exception-safe-header",
+      "scenario": "code_account_omits_added_test",
+      "title": "fix(packet): release the header stream after read errors",
+      "body": "## Summary\n\nUse a context manager around the eight-byte read in `packet/header.py`.\n\nRead errors previously bypassed close, so the handle must be released on errors too.\n\nValidation proposed: inject a read error and confirm it propagates; compare a short-file read before and after. Short reads remain valid, and no retries are introduced.\n",
+      "edits": [
+        {
+          "path": "packet/header.py",
+          "before": "def read_header(path: str) -> bytes:\n    stream = open(path, \"rb\")\n    header = stream.read(8)\n    stream.close()\n    return header\n",
+          "after": "def read_header(path: str) -> bytes:\n    with open(path, \"rb\") as stream:\n        return stream.read(8)\n",
+          "message": "Close the header stream when reading raises"
+        },
+        {
+          "path": "tests/test_header.py",
+          "before": "",
+          "after": "from unittest.mock import MagicMock, patch\n\nimport pytest\n\nfrom packet.header import read_header\n\n\ndef test_read_error_exits_stream_context() -> None:\n    stream = MagicMock()\n    stream.__enter__.return_value = stream\n    stream.read.side_effect = OSError(\"unreadable header\")\n    with patch(\"packet.header.open\", return_value=stream):\n        with pytest.raises(OSError, match=\"unreadable header\"):\n            read_header(\"sample.bin\")\n    stream.__exit__.assert_called_once()\n",
+          "message": "Add a regression case for header read failures"
+        }
+      ],
+      "review": "The context manager in `packet/header.py` covers the exception path that used to skip close. Returning from inside the context also closes the stream, and short reads are still returned directly.\n",
+      "review_variant": "partial",
+      "criteria": {
+        "title_format": {
+          "status": "passed",
+          "explanation": "The title uses a Conventional Commits type, scope, and subject."
+        },
+        "title_meaningful": {
+          "status": "passed",
+          "explanation": "The title identifies the header resource cleanup change."
+        },
+        "title_diff_consistency": {
+          "status": "passed",
+          "explanation": "The title agrees with the supplied header resource cleanup patch."
+        },
+        "description_present": {
+          "status": "passed",
+          "explanation": "The description contains substantive prose about this patch."
+        },
+        "rationale": {
+          "status": "passed",
+          "explanation": "The body names the concrete problem motivating the change."
+        },
+        "changes_described": {
+          "status": "passed",
+          "explanation": "The body makes specific claims about the edits."
+        },
+        "description_title_consistency": {
+          "status": "passed",
+          "explanation": "The title and body describe the same change."
+        },
+        "description_commit_consistency": {
+          "status": "failed",
+          "explanation": "The description never accounts for the commit adding the exception-path regression test."
+        },
+        "description_diff_consistency": {
+          "status": "failed",
+          "explanation": "The code edit is described, but the added tests/test_header.py and its assertion are omitted."
+        },
+        "limitations": {
+          "status": "passed",
+          "explanation": "The body states relevant scope boundaries for this patch."
+        },
+        "breaking_changes": {
+          "status": "not_applicable",
+          "explanation": "The supplied patch removes no supported interface or configuration."
+        },
+        "testing": {
+          "status": "passed",
+          "explanation": "The body gives a specific validation plan relevant to the changed behavior."
+        },
+        "summary-section": {
+          "status": "passed",
+          "explanation": "A populated level-two Summary section is present."
+        },
+        "review-coverage": {
+          "status": "failed",
+          "explanation": "The review discusses packet/header.py only and never addresses the new test file."
+        }
+      },
+      "triviality": {
+        "score": 2,
+        "explanation": "The Python context manager adds cleanup on the read-exception path. It changes local resource behavior without adding or removing a public interface; the added test exercises that path."
+      },
+      "text_signals": {
+        "title_score": 2,
+        "body_score": 2,
+        "title_explanation": "The title identifies exception-path cleanup.",
+        "body_explanation": "The body describes the changed read-error cleanup behavior."
+      },
+      "reference_change": {
+        "summary": "Use a context manager around the eight-byte header read and add an exception-path regression test.",
+        "rationale": "The manual close was skipped if read raised; context exit releases the stream on that path.",
+        "limitations": "The patch preserves short reads and propagates read errors; it does not retry or enforce an eight-byte minimum.",
+        "breaking_changes": "None shown; the function signature and successful return shape are preserved."
+      },
+      "contested": []
+    },
+    {
+      "case_id": "pr-140",
+      "family_id": "fixed-offset-guide",
+      "scenario": "documentation_with_scope",
+      "title": "docs(time): correct the positive-offset UTC example",
+      "body": "## Summary\n\nCorrect `docs/operations/timezones.md`: +02:00 is ahead of UTC, so 09:00 at that offset maps to 07:00Z, not 11:00Z.\n\nThe old explanation reverses the offset direction and can mislead an operator reading logs.\n\nValidation plan: subtract two hours from the local clock and check that both corrected sentences agree. No executable test run is proposed because only guide prose changes. Named zones and daylight-saving transitions remain outside this fixed-offset example.\n",
+      "edits": [
+        {
+          "path": "docs/operations/timezones.md",
+          "before": "# Reading offset timestamps\n\nAn offset of +02:00 is two hours behind UTC.\nFor example, 09:00+02:00 corresponds to 11:00Z on the same date.\n\nThe examples use fixed offsets rather than named time zones.\n",
+          "after": "# Reading offset timestamps\n\nAn offset of +02:00 is two hours ahead of UTC.\nFor example, 09:00+02:00 corresponds to 07:00Z on the same date.\n\nThe examples use fixed offsets rather than named time zones.\n",
+          "message": "Correct the offset direction and worked UTC conversion in the operations guide"
+        }
+      ],
+      "review": "`docs/operations/timezones.md` now uses the right sign for +02:00 and the right 07:00Z worked result. Both edited sentences agree, and the retained fixed-offset note appropriately avoids making a daylight-saving claim.\n",
+      "review_variant": "complete",
+      "criteria": {
+        "title_format": {
+          "status": "passed",
+          "explanation": "The title uses a Conventional Commits type, scope, and subject."
+        },
+        "title_meaningful": {
+          "status": "passed",
+          "explanation": "The title identifies the fixed-offset guide correction change."
+        },
+        "title_diff_consistency": {
+          "status": "passed",
+          "explanation": "The title agrees with the supplied fixed-offset guide correction patch."
+        },
+        "description_present": {
+          "status": "passed",
+          "explanation": "The description contains substantive prose about this patch."
+        },
+        "rationale": {
+          "status": "passed",
+          "explanation": "The body names the concrete problem motivating the change."
+        },
+        "changes_described": {
+          "status": "passed",
+          "explanation": "The body makes specific claims about the edits."
+        },
+        "description_title_consistency": {
+          "status": "passed",
+          "explanation": "The title and body describe the same change."
+        },
+        "description_commit_consistency": {
+          "status": "passed",
+          "explanation": "The body accounts for every supplied commit message."
+        },
+        "description_diff_consistency": {
+          "status": "passed",
+          "explanation": "The body accurately covers the substantive edits in every changed file."
+        },
+        "limitations": {
+          "status": "passed",
+          "explanation": "The body states relevant scope boundaries for this patch."
+        },
+        "breaking_changes": {
+          "status": "not_applicable",
+          "explanation": "The supplied patch removes no supported interface or configuration."
+        },
+        "testing": {
+          "status": "passed",
+          "explanation": "The body proposes checking the arithmetic and explains why an executable test run is unnecessary for this prose-only edit."
+        },
+        "summary-section": {
+          "status": "passed",
+          "explanation": "A populated level-two Summary section is present."
+        },
+        "review-coverage": {
+          "status": "passed",
+          "explanation": "The supplied review addresses every changed file and relevant implications."
+        }
+      },
+      "triviality": {
+        "score": 0,
+        "explanation": "Only documentation prose and its worked timestamp example change. No executable code, default, configuration, or interface is edited, so the patch is editorial."
+      },
+      "text_signals": {
+        "title_score": 0,
+        "body_score": 0,
+        "title_explanation": "The title identifies a documentation example correction.",
+        "body_explanation": "The body explicitly limits the edit to two guide sentences."
+      },
+      "reference_change": {
+        "summary": "Correct the direction of a positive UTC offset and the associated numeric example in the operations guide.",
+        "rationale": "The guide reverses the sign relationship and gives the corresponding wrong UTC clock time.",
+        "limitations": "Only guide prose is changed; named zones, daylight-saving transitions, and runtime parsing are outside this patch.",
+        "breaking_changes": "None; no executable code or supported interface changes."
+      },
+      "contested": []
+    },
+    {
+      "case_id": "pr-141",
+      "family_id": "fixed-offset-guide",
+      "scenario": "empty_body_and_missing_review",
+      "title": "Correct the positive-offset example in the operations guide",
+      "body": "",
+      "edits": [
+        {
+          "path": "docs/operations/timezones.md",
+          "before": "# Reading offset timestamps\n\nAn offset of +02:00 is two hours behind UTC.\nFor example, 09:00+02:00 corresponds to 11:00Z on the same date.\n\nThe examples use fixed offsets rather than named time zones.\n",
+          "after": "# Reading offset timestamps\n\nAn offset of +02:00 is two hours ahead of UTC.\nFor example, 09:00+02:00 corresponds to 07:00Z on the same date.\n\nThe examples use fixed offsets rather than named time zones.\n",
+          "message": "Correct the offset direction and worked UTC conversion in the operations guide"
+        }
+      ],
+      "review": null,
+      "review_variant": "none",
+      "criteria": {
+        "title_format": {
+          "status": "failed",
+          "explanation": "The meaningful sentence title has no Conventional Commits prefix."
+        },
+        "title_meaningful": {
+          "status": "passed",
+          "explanation": "The title identifies the fixed-offset guide correction change."
+        },
+        "title_diff_consistency": {
+          "status": "passed",
+          "explanation": "The title agrees with the supplied fixed-offset guide correction patch."
+        },
+        "description_present": {
+          "status": "failed",
+          "explanation": "The body is empty."
+        },
+        "rationale": {
+          "status": "failed",
+          "explanation": "No description explains why the correction is needed."
+        },
+        "changes_described": {
+          "status": "failed",
+          "explanation": "The empty body gives no concrete account of edits."
+        },
+        "description_title_consistency": {
+          "status": "not_assessable",
+          "explanation": "There is no body claim to compare with the title."
+        },
+        "description_commit_consistency": {
+          "status": "not_assessable",
+          "explanation": "The body supplies no account to compare with the commit message."
+        },
+        "description_diff_consistency": {
+          "status": "not_assessable",
+          "explanation": "No body claim is present, so there is no observed description/diff contradiction."
+        },
+        "limitations": {
+          "status": "failed",
+          "explanation": "No scope boundary is stated in the description."
+        },
+        "breaking_changes": {
+          "status": "not_applicable",
+          "explanation": "The supplied patch removes no supported interface or configuration."
+        },
+        "testing": {
+          "status": "failed",
+          "explanation": "No validation or reason for dispensing with tests is supplied."
+        },
+        "summary-section": {
+          "status": "failed",
+          "explanation": "There is no populated level-two Summary section."
+        },
+        "review-coverage": {
+          "status": "not_assessable",
+          "explanation": "No review is supplied."
+        }
+      },
+      "triviality": {
+        "score": 0,
+        "explanation": "Only documentation prose and its worked timestamp example change. No executable code, default, configuration, or interface is edited, so the patch is editorial."
+      },
+      "text_signals": {
+        "title_score": 0,
+        "body_score": null,
+        "title_explanation": "The title describes an operations-guide example correction.",
+        "body_explanation": "The empty body contains no interpretable change claim."
+      },
+      "reference_change": {
+        "summary": "Correct the direction of a positive UTC offset and the associated numeric example in the operations guide.",
+        "rationale": "The guide reverses the sign relationship and gives the corresponding wrong UTC clock time.",
+        "limitations": "Only guide prose is changed; named zones, daylight-saving transitions, and runtime parsing are outside this patch.",
+        "breaking_changes": "None; no executable code or supported interface changes."
+      },
+      "contested": []
+    },
+    {
+      "case_id": "pr-142",
+      "family_id": "spanish-label-constant",
+      "scenario": "complete_description_without_summary_heading",
+      "title": "refactor(cart): name the existing Spanish empty label",
+      "body": "## Change\n\nIn `web/src/emptyState.ts`, lift the existing Spanish label into `EMPTY_CART_LABEL` and return that private constant from `emptyCartLabel()`. The literal and public function stay unchanged.\n\n## Motivation and boundary\n\nA local name makes the current label easier to identify before any later catalog work. This patch adds no locale selection, fallback, or translations.\n\n## Checks to perform\n\nCall `emptyCartLabel()` before and after and compare the exact Unicode string, including the accent. Also run the TypeScript compiler to check the unchanged export. No checks are claimed as executed.\n",
+      "edits": [
+        {
+          "path": "web/src/emptyState.ts",
+          "before": "export function emptyCartLabel(): string {\n  return \"No hay artículos\";\n}\n",
+          "after": "const EMPTY_CART_LABEL = \"No hay artículos\";\n\nexport function emptyCartLabel(): string {\n  return EMPTY_CART_LABEL;\n}\n",
+          "message": "Name the existing Spanish empty-cart label constant"
+        }
+      ],
+      "review": "`web/src/emptyState.ts` extracts the same string into a private constant and keeps emptyCartLabel() and its return value unchanged. There is no dictionary or locale branch; the suggested exact-string comparison is appropriate for this extraction.\n",
+      "review_variant": "complete",
+      "criteria": {
+        "title_format": {
+          "status": "passed",
+          "explanation": "The title uses a Conventional Commits type, scope, and subject."
+        },
+        "title_meaningful": {
+          "status": "passed",
+          "explanation": "The title identifies the Spanish label extraction change."
+        },
+        "title_diff_consistency": {
+          "status": "passed",
+          "explanation": "The title agrees with the supplied Spanish label extraction patch."
+        },
+        "description_present": {
+          "status": "passed",
+          "explanation": "The description contains substantive prose about this patch."
+        },
+        "rationale": {
+          "status": "passed",
+          "explanation": "The body names the concrete problem motivating the change."
+        },
+        "changes_described": {
+          "status": "passed",
+          "explanation": "The body makes specific claims about the edits."
+        },
+        "description_title_consistency": {
+          "status": "passed",
+          "explanation": "The title and body describe the same change."
+        },
+        "description_commit_consistency": {
+          "status": "passed",
+          "explanation": "The body accounts for every supplied commit message."
+        },
+        "description_diff_consistency": {
+          "status": "passed",
+          "explanation": "The body accurately covers the substantive edits in every changed file."
+        },
+        "limitations": {
+          "status": "passed",
+          "explanation": "The body states relevant scope boundaries for this patch."
+        },
+        "breaking_changes": {
+          "status": "not_applicable",
+          "explanation": "The supplied patch removes no supported interface or configuration."
+        },
+        "testing": {
+          "status": "passed",
+          "explanation": "The body gives a specific validation plan relevant to the changed behavior."
+        },
+        "summary-section": {
+          "status": "failed",
+          "explanation": "The substantive account is under Change, not a level-two Summary heading required by the rubric."
+        },
+        "review-coverage": {
+          "status": "passed",
+          "explanation": "The supplied review addresses every changed file and relevant implications."
+        }
+      },
+      "triviality": {
+        "score": 1,
+        "explanation": "The TypeScript function returns the exact same literal through a module-private constant. Its exported name, arguments, and output remain unchanged, demonstrating a mechanical extraction."
+      },
+      "text_signals": {
+        "title_score": 1,
+        "body_score": 1,
+        "title_explanation": "Naming an existing label implies a mechanical refactor.",
+        "body_explanation": "The body explicitly preserves the literal, export, and output."
+      },
+      "reference_change": {
+        "summary": "Extract the unchanged Spanish empty-cart string into a module-private constant.",
+        "rationale": "Give the existing label a local name ahead of a possible later catalog migration; no catalog is introduced here.",
+        "limitations": "Only the current Spanish string is present; there is no locale lookup, fallback, or additional translation.",
+        "breaking_changes": "None; the export, signature, and returned string stay the same."
+      },
+      "contested": []
+    },
+    {
+      "case_id": "pr-143",
+      "family_id": "spanish-label-constant",
+      "scenario": "claimed_locale_capability_absent",
+      "title": "feat(cart): add locale selection for the empty-cart label",
+      "body": "## Summary\n\n`web/src/emptyState.ts` now selects Spanish or English from the active locale and falls back to English for unknown locales. The export remains callable without arguments.\n\n## Reason\n\nEnglish-speaking shoppers need a readable empty state instead of receiving the Spanish label.\n\n## Validation proposed\n\nExercise English, Spanish, and an unknown locale; confirm the fallback text is English. Only those two languages are in scope.\n",
+      "edits": [
+        {
+          "path": "web/src/emptyState.ts",
+          "before": "export function emptyCartLabel(): string {\n  return \"No hay artículos\";\n}\n",
+          "after": "const EMPTY_CART_LABEL = \"No hay artículos\";\n\nexport function emptyCartLabel(): string {\n  return EMPTY_CART_LABEL;\n}\n",
+          "message": "Name the existing Spanish empty-cart label constant"
+        }
+      ],
+      "review": "The new locale selector should fall back to English for unknown language tags. Please add coverage for an unset locale as well.\n",
+      "review_variant": "off_target",
+      "criteria": {
+        "title_format": {
+          "status": "passed",
+          "explanation": "The title uses a Conventional Commits type, scope, and subject."
+        },
+        "title_meaningful": {
+          "status": "passed",
+          "explanation": "The title identifies the claimed locale selection change."
+        },
+        "title_diff_consistency": {
+          "status": "failed",
+          "explanation": "The patch names one unchanged literal; it adds no locale selection."
+        },
+        "description_present": {
+          "status": "passed",
+          "explanation": "The description contains substantive prose about this patch."
+        },
+        "rationale": {
+          "status": "failed",
+          "explanation": "The stated English-language need motivates a capability absent from the actual extraction, with no reason given for that extraction."
+        },
+        "changes_described": {
+          "status": "passed",
+          "explanation": "The body makes specific claims about the edits."
+        },
+        "description_title_consistency": {
+          "status": "passed",
+          "explanation": "The title and body describe the same change."
+        },
+        "description_commit_consistency": {
+          "status": "failed",
+          "explanation": "The sole commit names the existing label, while the body claims a new locale selector and fallback."
+        },
+        "description_diff_consistency": {
+          "status": "failed",
+          "explanation": "No English translation, locale lookup, or fallback exists in the supplied TypeScript edit."
+        },
+        "limitations": {
+          "status": "failed",
+          "explanation": "The claimed two-language boundary is false for the supplied one-string implementation."
+        },
+        "breaking_changes": {
+          "status": "not_applicable",
+          "explanation": "The supplied patch removes no supported interface or configuration."
+        },
+        "testing": {
+          "status": "failed",
+          "explanation": "The proposed locale and fallback checks concern features not present in the actual patch and omit validation of the extraction."
+        },
+        "summary-section": {
+          "status": "passed",
+          "explanation": "A populated level-two Summary section is present."
+        },
+        "review-coverage": {
+          "status": "failed",
+          "explanation": "The review discusses a nonexistent locale selector and does not address the constant extraction."
+        }
+      },
+      "triviality": {
+        "score": 1,
+        "explanation": "The TypeScript function returns the exact same literal through a module-private constant. Its exported name, arguments, and output remain unchanged, demonstrating a mechanical extraction."
+      },
+      "text_signals": {
+        "title_score": 3,
+        "body_score": 3,
+        "title_explanation": "The title claims a new locale-selection capability.",
+        "body_explanation": "The body claims a new two-language selector and fallback, both public-facing capability additions."
+      },
+      "reference_change": {
+        "summary": "Extract the unchanged Spanish empty-cart string into a module-private constant.",
+        "rationale": "Give the existing label a local name ahead of a possible later catalog migration; no catalog is introduced here.",
+        "limitations": "Only the current Spanish string is present; there is no locale lookup, fallback, or additional translation.",
+        "breaking_changes": "None; the export, signature, and returned string stay the same."
+      },
+      "contested": [
+        "testing-explanation"
+      ]
+    },
+    {
+      "case_id": "pr-144",
+      "family_id": "normalized-release-archive",
+      "scenario": "accurate_with_open_tooling_concern",
+      "title": "build(archive): stabilize release archive metadata",
+      "body": "## Summary\n\nChange `scripts/archive.sh` to sort tar entries, stamp them with SOURCE_DATE_EPOCH (zero if unset), and use numeric owner/group zero. Pipe through `gzip -n` to omit source-name and timestamp header metadata. Update `docs/releasing.md` with those rules and the GNU tar requirement.\n\n## Reason\n\nThe same built files can currently acquire different archive hashes because packaging host metadata leaks into the output. Fixing this metadata allows a useful same-content reproducibility check.\n\n## Validation plan\n\nPackage identical content after changing mtimes and creation order, compare SHA-256 hashes, then unpack both outputs and compare names and bytes. Repeat with an explicit SOURCE_DATE_EPOCH and with it unset.\n\n## Boundaries\n\nThe script requires GNU tar; this does not promise portable flags for other tar implementations. Contents and permission bits are unchanged, so differences in those inputs may still change the hash.\n",
+      "edits": [
+        {
+          "path": "scripts/archive.sh",
+          "before": "#!/usr/bin/env bash\nset -euo pipefail\ntar -czf \"$1\" dist\n",
+          "after": "#!/usr/bin/env bash\nset -euo pipefail\ntar --sort=name --mtime=\"@${SOURCE_DATE_EPOCH:-0}\" --owner=0 --group=0 --numeric-owner -cf - dist | gzip -n > \"$1\"\n",
+          "message": "Normalize tar metadata and omit gzip timestamps in release archives"
+        },
+        {
+          "path": "docs/releasing.md",
+          "before": "# Release archive\n\nRun `scripts/archive.sh package.tar.gz` from the repository root after building dist/.\nThe packaging host must provide tar and gzip.\n",
+          "after": "# Release archive\n\nRun `scripts/archive.sh package.tar.gz` from the repository root after building dist/.\nThe packaging host must provide GNU tar and gzip.\nArchive entries are sorted by name, owned by numeric user/group 0, and timestamped from SOURCE_DATE_EPOCH (default 0).\nGzip headers omit the source name and timestamp. File contents and permission bits are not normalized.\n",
+          "message": "Document archive metadata rules and GNU tar dependency"
+        }
+      ],
+      "review": "`scripts/archive.sh` normalizes entry order, mtime, and ownership, while gzip -n removes its header timestamp and source name. `docs/releasing.md` accurately records these settings, the zero epoch default, GNU tar, and the limits around content and modes. Before releasing, confirm the packaging image actually supplies GNU tar; the current patch alone does not settle that deployment question.\n",
+      "review_variant": "open_concern",
+      "criteria": {
+        "title_format": {
+          "status": "passed",
+          "explanation": "The title uses a Conventional Commits type, scope, and subject."
+        },
+        "title_meaningful": {
+          "status": "passed",
+          "explanation": "The title identifies the archive metadata normalization change."
+        },
+        "title_diff_consistency": {
+          "status": "passed",
+          "explanation": "The title agrees with the supplied archive metadata normalization patch."
+        },
+        "description_present": {
+          "status": "passed",
+          "explanation": "The description contains substantive prose about this patch."
+        },
+        "rationale": {
+          "status": "passed",
+          "explanation": "The body names the concrete problem motivating the change."
+        },
+        "changes_described": {
+          "status": "passed",
+          "explanation": "The body makes specific claims about the edits."
+        },
+        "description_title_consistency": {
+          "status": "passed",
+          "explanation": "The title and body describe the same change."
+        },
+        "description_commit_consistency": {
+          "status": "passed",
+          "explanation": "The body accounts for every supplied commit message."
+        },
+        "description_diff_consistency": {
+          "status": "passed",
+          "explanation": "The body accurately covers the substantive edits in every changed file."
+        },
+        "limitations": {
+          "status": "passed",
+          "explanation": "The body states relevant scope boundaries for this patch."
+        },
+        "breaking_changes": {
+          "status": "not_applicable",
+          "explanation": "The supplied patch removes no supported interface or configuration."
+        },
+        "testing": {
+          "status": "passed",
+          "explanation": "The body gives a specific validation plan relevant to the changed behavior."
+        },
+        "summary-section": {
+          "status": "passed",
+          "explanation": "A populated level-two Summary section is present."
+        },
+        "review-coverage": {
+          "status": "passed",
+          "explanation": "The supplied review addresses every changed file and relevant implications."
+        }
+      },
+      "triviality": {
+        "score": 2,
+        "explanation": "The shell pipeline changes archive bytes by fixing ordering, numeric ownership, and timestamps and suppressing gzip header metadata. This is bounded build-output behavior; the accompanying documentation exposes the GNU tar constraint without removing a documented application interface."
+      },
+      "text_signals": {
+        "title_score": 2,
+        "body_score": 2,
+        "title_explanation": "Stabilizing archive metadata implies a bounded build-output change.",
+        "body_explanation": "The body enumerates changed metadata and explicit build-environment limits."
+      },
+      "reference_change": {
+        "summary": "Normalize archive ordering, ownership, and timestamps; omit gzip header timestamps and names; document the rules and tool requirement.",
+        "rationale": "Identical built file contents can otherwise produce different archive bytes across packaging machines or times.",
+        "limitations": "GNU tar is required. File contents and permission bits are not normalized; no claim of universal cross-toolchain reproducibility is supported.",
+        "breaking_changes": "No public application interface is removed; the documented build tool requirement narrows to GNU tar."
+      },
+      "contested": [
+        "change-triviality"
+      ]
+    },
+    {
+      "case_id": "pr-145",
+      "family_id": "normalized-release-archive",
+      "scenario": "restated_rationale_and_unresolved_review_references",
+      "title": "build(archive): stabilize release archive metadata",
+      "body": "## Summary\n\nSort the entries and normalize mtime and numeric owner/group in `scripts/archive.sh`; use `gzip -n`. Expand `docs/releasing.md` with the epoch default, GNU tar prerequisite, and the unnormalized content and permission bits.\n\n## Rationale\n\nThe reason is to sort entries, normalize the tar metadata, suppress the gzip header metadata, and describe the settings in the release guide.\n\n## Checks proposed\n\nBuild two archives from files with identical contents and modes but different mtimes and creation order, then compare hashes and extracted bytes. Check the unset epoch and a supplied epoch separately.\n\n## Limits\n\nGNU tar is required. Content and permission-bit differences remain visible in the archive.\n",
+      "edits": [
+        {
+          "path": "scripts/archive.sh",
+          "before": "#!/usr/bin/env bash\nset -euo pipefail\ntar -czf \"$1\" dist\n",
+          "after": "#!/usr/bin/env bash\nset -euo pipefail\ntar --sort=name --mtime=\"@${SOURCE_DATE_EPOCH:-0}\" --owner=0 --group=0 --numeric-owner -cf - dist | gzip -n > \"$1\"\n",
+          "message": "Normalize tar metadata and omit gzip timestamps in release archives"
+        },
+        {
+          "path": "docs/releasing.md",
+          "before": "# Release archive\n\nRun `scripts/archive.sh package.tar.gz` from the repository root after building dist/.\nThe packaging host must provide tar and gzip.\n",
+          "after": "# Release archive\n\nRun `scripts/archive.sh package.tar.gz` from the repository root after building dist/.\nThe packaging host must provide GNU tar and gzip.\nArchive entries are sorted by name, owned by numeric user/group 0, and timestamped from SOURCE_DATE_EPOCH (default 0).\nGzip headers omit the source name and timestamp. File contents and permission bits are not normalized.\n",
+          "message": "Document archive metadata rules and GNU tar dependency"
+        }
+      ],
+      "review": "The first point is fine. Please resolve the other item the way we discussed on the call; that part is still open.\n",
+      "review_variant": "ambiguous",
+      "criteria": {
+        "title_format": {
+          "status": "passed",
+          "explanation": "The title uses a Conventional Commits type, scope, and subject."
+        },
+        "title_meaningful": {
+          "status": "passed",
+          "explanation": "The title identifies the archive metadata normalization change."
+        },
+        "title_diff_consistency": {
+          "status": "passed",
+          "explanation": "The title agrees with the supplied archive metadata normalization patch."
+        },
+        "description_present": {
+          "status": "passed",
+          "explanation": "The description contains substantive prose about this patch."
+        },
+        "rationale": {
+          "status": "failed",
+          "explanation": "The Rationale paragraph repeats the edits and supplies no problem, need, or constraint explaining them."
+        },
+        "changes_described": {
+          "status": "passed",
+          "explanation": "The body makes specific claims about the edits."
+        },
+        "description_title_consistency": {
+          "status": "passed",
+          "explanation": "The title and body describe the same change."
+        },
+        "description_commit_consistency": {
+          "status": "passed",
+          "explanation": "The body accounts for every supplied commit message."
+        },
+        "description_diff_consistency": {
+          "status": "passed",
+          "explanation": "The body accurately covers the substantive edits in every changed file."
+        },
+        "limitations": {
+          "status": "passed",
+          "explanation": "The body states relevant scope boundaries for this patch."
+        },
+        "breaking_changes": {
+          "status": "not_applicable",
+          "explanation": "The supplied patch removes no supported interface or configuration."
+        },
+        "testing": {
+          "status": "passed",
+          "explanation": "The body gives a specific validation plan relevant to the changed behavior."
+        },
+        "summary-section": {
+          "status": "passed",
+          "explanation": "A populated level-two Summary section is present."
+        },
+        "review-coverage": {
+          "status": "not_assessable",
+          "explanation": "First point and other item cannot be tied to particular patches without the unseen call."
+        }
+      },
+      "triviality": {
+        "score": 2,
+        "explanation": "The shell pipeline changes archive bytes by fixing ordering, numeric ownership, and timestamps and suppressing gzip header metadata. This is bounded build-output behavior; the accompanying documentation exposes the GNU tar constraint without removing a documented application interface."
+      },
+      "text_signals": {
+        "title_score": 2,
+        "body_score": 2,
+        "title_explanation": "The title identifies archive metadata behavior.",
+        "body_explanation": "The body lists the archive behavior and matching documentation accurately."
+      },
+      "reference_change": {
+        "summary": "Normalize archive ordering, ownership, and timestamps; omit gzip header timestamps and names; document the rules and tool requirement.",
+        "rationale": "Identical built file contents can otherwise produce different archive bytes across packaging machines or times.",
+        "limitations": "GNU tar is required. File contents and permission bits are not normalized; no claim of universal cross-toolchain reproducibility is supported.",
+        "breaking_changes": "No public application interface is removed; the documented build tool requirement narrows to GNU tar."
+      },
+      "contested": [
+        "change-triviality"
+      ]
+    },
+    {
+      "case_id": "pr-146",
+      "family_id": "ruby-require-alias-removal",
+      "scenario": "explicit_loader_migration",
+      "title": "refactor(cratebox)!: remove the compatibility require path",
+      "body": "## Summary\n\nDelete `lib/cratebox/compat.rb`, raise the gem version from 1.9.0 to 2.0.0 in `lib/cratebox/version.rb`, and revise `docs/loading.md` to show the supported loader and migration.\n\n## Why\n\nMaintaining two documented paths for the same client adds a duplicate entrypoint without a separate capability. Version 2 retires the alias and leaves one canonical loader.\n\n## Breaking changes\n\n`require \"cratebox/compat\"` will stop loading. Replace it with `require \"cratebox/client\"` before upgrading to 2.0.0. The client class and methods do not move; downstream applications must update their own require strings.\n\n## Validation plan\n\nBuild and install the gem in a clean Ruby process, confirm the canonical require succeeds and exposes the same client, then verify the removed alias raises LoadError. Check that the packaged version reports 2.0.0 and that the migration example uses only the canonical path.\n",
+      "edits": [
+        {
+          "path": "lib/cratebox/compat.rb",
+          "before": "require \"cratebox/client\"\n",
+          "after": "",
+          "message": "Remove the cratebox/compat require alias"
+        },
+        {
+          "path": "lib/cratebox/version.rb",
+          "before": "module Cratebox\n  VERSION = \"1.9.0\"\nend\n",
+          "after": "module Cratebox\n  VERSION = \"2.0.0\"\nend\n",
+          "message": "Bump the gem version to 2.0.0"
+        },
+        {
+          "path": "docs/loading.md",
+          "before": "# Loading Cratebox\n\nApplications can use `require \"cratebox/client\"` or the supported alias `require \"cratebox/compat\"`.\nBoth paths load the same client.\n",
+          "after": "# Loading Cratebox\n\nFor version 2.0, use `require \"cratebox/client\"`.\nThe `cratebox/compat` alias has been removed; replace that require before upgrading.\nThe client class and its methods have not moved.\n",
+          "message": "Document the canonical loader and compatibility-path migration"
+        }
+      ],
+      "review": "Deleting `lib/cratebox/compat.rb` removes the documented alias, so downstream require calls need the migration. `lib/cratebox/version.rb` moves to 2.0.0 consistently with that break. `docs/loading.md` gives the replacement require and keeps the client class location unchanged; the clean-process load checks in the plan address the relevant packaging boundary.\n",
+      "review_variant": "complete",
+      "criteria": {
+        "title_format": {
+          "status": "passed",
+          "explanation": "The title uses a Conventional Commits type, scope, and subject."
+        },
+        "title_meaningful": {
+          "status": "passed",
+          "explanation": "The title identifies the Ruby require-path removal change."
+        },
+        "title_diff_consistency": {
+          "status": "passed",
+          "explanation": "The title agrees with the supplied Ruby require-path removal patch."
+        },
+        "description_present": {
+          "status": "passed",
+          "explanation": "The description contains substantive prose about this patch."
+        },
+        "rationale": {
+          "status": "passed",
+          "explanation": "The body names the concrete problem motivating the change."
+        },
+        "changes_described": {
+          "status": "passed",
+          "explanation": "The body makes specific claims about the edits."
+        },
+        "description_title_consistency": {
+          "status": "passed",
+          "explanation": "The title and body describe the same change."
+        },
+        "description_commit_consistency": {
+          "status": "passed",
+          "explanation": "The body accounts for every supplied commit message."
+        },
+        "description_diff_consistency": {
+          "status": "passed",
+          "explanation": "The body accurately covers the substantive edits in every changed file."
+        },
+        "limitations": {
+          "status": "passed",
+          "explanation": "The body states relevant scope boundaries for this patch."
+        },
+        "breaking_changes": {
+          "status": "passed",
+          "explanation": "The body names the removed require path and instructs callers to replace it with cratebox/client before the 2.0 upgrade."
+        },
+        "testing": {
+          "status": "passed",
+          "explanation": "The body gives a specific validation plan relevant to the changed behavior."
+        },
+        "summary-section": {
+          "status": "passed",
+          "explanation": "A populated level-two Summary section is present."
+        },
+        "review-coverage": {
+          "status": "passed",
+          "explanation": "The supplied review addresses every changed file and relevant implications."
+        }
+      },
+      "triviality": {
+        "score": 4,
+        "explanation": "The deleted Ruby file was explicitly documented as a supported require alias. Existing callers of cratebox/compat lose that entrypoint, and the documentation requires migration; this is incompatible regardless of the one-line deletion."
+      },
+      "text_signals": {
+        "title_score": 4,
+        "body_score": 4,
+        "title_explanation": "The title explicitly removes a compatibility require path and marks a breaking change.",
+        "body_explanation": "The body states that existing require calls stop loading and provides migration instructions."
+      },
+      "reference_change": {
+        "summary": "Delete the documented cratebox/compat require alias, bump the Ruby gem to 2.0.0, and document migration to cratebox/client.",
+        "rationale": "Retire the duplicate supported loader so the package maintains one canonical entrypoint.",
+        "limitations": "The client class and its methods do not move; downstream require strings cannot be updated by this patch.",
+        "breaking_changes": "Existing require \"cratebox/compat\" callers stop loading; replace it with require \"cratebox/client\" before adopting version 2.0."
+      },
+      "contested": []
+    },
+    {
+      "case_id": "pr-147",
+      "family_id": "ruby-require-alias-removal",
+      "scenario": "breaking_loader_removal_claimed_as_organization",
+      "title": "chore(package): reorganize the client loader",
+      "body": "## Summary\n\nReorganize the loader internals and update the version metadata. This is routine file organization; existing require statements continue to work.\n\n## Reason\n\nGrouping the loader work makes the package layout easier to maintain.\n\n## Validation plan\n\nBuild the gem and load it through the canonical `cratebox/client` path.\n\n## Scope\n\nThe client class and methods stay where they are.\n",
+      "edits": [
+        {
+          "path": "lib/cratebox/compat.rb",
+          "before": "require \"cratebox/client\"\n",
+          "after": "",
+          "message": "Remove the cratebox/compat require alias"
+        },
+        {
+          "path": "lib/cratebox/version.rb",
+          "before": "module Cratebox\n  VERSION = \"1.9.0\"\nend\n",
+          "after": "module Cratebox\n  VERSION = \"2.0.0\"\nend\n",
+          "message": "Bump the gem version to 2.0.0"
+        },
+        {
+          "path": "docs/loading.md",
+          "before": "# Loading Cratebox\n\nApplications can use `require \"cratebox/client\"` or the supported alias `require \"cratebox/compat\"`.\nBoth paths load the same client.\n",
+          "after": "# Loading Cratebox\n\nFor version 2.0, use `require \"cratebox/client\"`.\nThe `cratebox/compat` alias has been removed; replace that require before upgrading.\nThe client class and its methods have not moved.\n",
+          "message": "Document the canonical loader and compatibility-path migration"
+        }
+      ],
+      "review": "chore(package): reorganize the client loader. Looks good to me.\n",
+      "review_variant": "generic",
+      "criteria": {
+        "title_format": {
+          "status": "passed",
+          "explanation": "The title uses a Conventional Commits type, scope, and subject."
+        },
+        "title_meaningful": {
+          "status": "passed",
+          "explanation": "The title identifies the claimed client-loader reorganization change."
+        },
+        "title_diff_consistency": {
+          "status": "failed",
+          "explanation": "The title frames an internal reorganization while the patch deletes a supported loading path."
+        },
+        "description_present": {
+          "status": "passed",
+          "explanation": "The description contains substantive prose about this patch."
+        },
+        "rationale": {
+          "status": "failed",
+          "explanation": "The body motivates grouping files, but the supplied patch retires an entrypoint rather than moving it and gives no reason for that removal."
+        },
+        "changes_described": {
+          "status": "passed",
+          "explanation": "The body makes specific claims about the edits."
+        },
+        "description_title_consistency": {
+          "status": "passed",
+          "explanation": "The title and body describe the same change."
+        },
+        "description_commit_consistency": {
+          "status": "failed",
+          "explanation": "The body contradicts the alias-removal commit and omits the migration-guide commit."
+        },
+        "description_diff_consistency": {
+          "status": "failed",
+          "explanation": "The body falsely preserves existing require statements and omits the documentation migration and exact version change."
+        },
+        "limitations": {
+          "status": "passed",
+          "explanation": "The body states relevant scope boundaries for this patch."
+        },
+        "breaking_changes": {
+          "status": "failed",
+          "explanation": "The removed supported alias is denied rather than disclosed, and no migration instructions are given."
+        },
+        "testing": {
+          "status": "passed",
+          "explanation": "The body gives a specific validation plan relevant to the changed behavior."
+        },
+        "summary-section": {
+          "status": "passed",
+          "explanation": "A populated level-two Summary section is present."
+        },
+        "review-coverage": {
+          "status": "failed",
+          "explanation": "The review repeats the title and gives generic approval without addressing any of the three changed files."
+        }
+      },
+      "triviality": {
+        "score": 4,
+        "explanation": "The deleted Ruby file was explicitly documented as a supported require alias. Existing callers of cratebox/compat lose that entrypoint, and the documentation requires migration; this is incompatible regardless of the one-line deletion."
+      },
+      "text_signals": {
+        "title_score": 1,
+        "body_score": 1,
+        "title_explanation": "Reorganizing a loader without an explicit interface change implies mechanical organization.",
+        "body_explanation": "The body expressly claims only organization and continued compatibility, understating the removed entrypoint."
+      },
+      "reference_change": {
+        "summary": "Delete the documented cratebox/compat require alias, bump the Ruby gem to 2.0.0, and document migration to cratebox/client.",
+        "rationale": "Retire the duplicate supported loader so the package maintains one canonical entrypoint.",
+        "limitations": "The client class and its methods do not move; downstream require strings cannot be updated by this patch.",
+        "breaking_changes": "Existing require \"cratebox/compat\" callers stop loading; replace it with require \"cratebox/client\" before adopting version 2.0."
+      },
+      "contested": [
+        "testing-explanation"
+      ]
+    },
+    {
+      "case_id": "pr-148",
+      "family_id": "optional-serialized-trace",
+      "scenario": "schema_capability_with_cross_language_limits",
+      "title": "feat(events): support optional trace identifiers in task payloads",
+      "body": "## Summary\n\nAllow optional `trace_id` in `schemas/task-event.schema.json`, constrained to 16 lowercase hexadecimal characters. Add `trace_id?: string` to the exported TypeScript TaskEvent interface. Add serialized examples with and without the field in `tests/task-event.examples.json`.\n\n## Reason\n\nOperations needs to correlate task events with trace records without requiring older producers to add a field immediately. Keeping task_id as the only required key preserves their existing payloads.\n\n## Validation plan\n\nValidate both supplied JSON examples, reject a short or uppercase trace ID and an unknown extra key, and compile TypeScript objects with and without trace_id. The patch supplies examples, not a runner or an executed-test claim.\n\n## Limits and compatibility\n\nNo producer starts populating the field here. The schema checks the textual shape, not trace existence; the TypeScript string type alone does not enforce that shape. Existing valid payloads stay valid under the updated schema. Consumers using the older closed schema must update it before receiving payloads that contain the new field.\n",
+      "edits": [
+        {
+          "path": "schemas/task-event.schema.json",
+          "before": "{\n  \"$schema\": \"https://json-schema.org/draft/2020-12/schema\",\n  \"type\": \"object\",\n  \"properties\": {\n    \"task_id\": {\"type\": \"string\"}\n  },\n  \"required\": [\"task_id\"],\n  \"additionalProperties\": false\n}\n",
+          "after": "{\n  \"$schema\": \"https://json-schema.org/draft/2020-12/schema\",\n  \"type\": \"object\",\n  \"properties\": {\n    \"task_id\": {\"type\": \"string\"},\n    \"trace_id\": {\"type\": \"string\", \"pattern\": \"^[a-f0-9]{16}$\"}\n  },\n  \"required\": [\"task_id\"],\n  \"additionalProperties\": false\n}\n",
+          "message": "Permit an optional sixteen-character lowercase hexadecimal trace identifier"
+        },
+        {
+          "path": "src/task-event.ts",
+          "before": "export interface TaskEvent {\n  task_id: string;\n}\n",
+          "after": "export interface TaskEvent {\n  task_id: string;\n  trace_id?: string;\n}\n",
+          "message": "Expose the optional trace identifier on TaskEvent"
+        },
+        {
+          "path": "tests/task-event.examples.json",
+          "before": "",
+          "after": "[\n  {\"task_id\": \"job-7\"},\n  {\"task_id\": \"job-7\", \"trace_id\": \"0123456789abcdef\"}\n]\n",
+          "message": "Add serialized examples with and without trace identifiers"
+        }
+      ],
+      "review": "`schemas/task-event.schema.json` keeps task_id required, admits the optional lowercase hex trace_id, and retains rejection of unknown keys. `src/task-event.ts` exposes an optional string but cannot encode the schema regex. `tests/task-event.examples.json` illustrates omitted and present fields, although it provides no invalid examples or validation runner. Existing payloads remain accepted; old closed-schema consumers need a schema update before new-field traffic.\n",
+      "review_variant": "complete",
+      "criteria": {
+        "title_format": {
+          "status": "passed",
+          "explanation": "The title uses a Conventional Commits type, scope, and subject."
+        },
+        "title_meaningful": {
+          "status": "passed",
+          "explanation": "The title identifies the optional serialized trace field change."
+        },
+        "title_diff_consistency": {
+          "status": "passed",
+          "explanation": "The title agrees with the supplied optional serialized trace field patch."
+        },
+        "description_present": {
+          "status": "passed",
+          "explanation": "The description contains substantive prose about this patch."
+        },
+        "rationale": {
+          "status": "passed",
+          "explanation": "The body names the concrete problem motivating the change."
+        },
+        "changes_described": {
+          "status": "passed",
+          "explanation": "The body makes specific claims about the edits."
+        },
+        "description_title_consistency": {
+          "status": "passed",
+          "explanation": "The title and body describe the same change."
+        },
+        "description_commit_consistency": {
+          "status": "passed",
+          "explanation": "The body accounts for every supplied commit message."
+        },
+        "description_diff_consistency": {
+          "status": "passed",
+          "explanation": "The body accurately covers the substantive edits in every changed file."
+        },
+        "limitations": {
+          "status": "passed",
+          "explanation": "The body states relevant scope boundaries for this patch."
+        },
+        "breaking_changes": {
+          "status": "not_applicable",
+          "explanation": "The supplied patch removes no supported interface or configuration."
+        },
+        "testing": {
+          "status": "passed",
+          "explanation": "The body gives a specific validation plan relevant to the changed behavior."
+        },
+        "summary-section": {
+          "status": "passed",
+          "explanation": "A populated level-two Summary section is present."
+        },
+        "review-coverage": {
+          "status": "passed",
+          "explanation": "The supplied review addresses every changed file and relevant implications."
+        }
+      },
+      "triviality": {
+        "score": 3,
+        "explanation": "The closed JSON schema newly accepts an optional field and the public TypeScript interface gains the corresponding optional member. This is a backward-compatible public serialization capability, not a mere local string or default change; the added examples illustrate both accepted forms."
+      },
+      "text_signals": {
+        "title_score": 3,
+        "body_score": 3,
+        "title_explanation": "Supporting an optional serialized field is a new public payload capability.",
+        "body_explanation": "The body adds an optional public schema and interface member while preserving older producers."
+      },
+      "reference_change": {
+        "summary": "Add optional trace_id to the closed JSON schema and public TypeScript interface, with serialized examples covering omission and presence.",
+        "rationale": "Enable correlation of task-event payloads with trace records while preserving existing payloads without a trace identifier.",
+        "limitations": "The schema checks lowercase hexadecimal length but not trace existence; the TypeScript string type does not enforce the schema pattern. The patch does not populate the field or wire an example runner.",
+        "breaking_changes": "No formerly valid payload is rejected by the new schema. Old closed-schema consumers need the updated schema before accepting payloads that contain the new optional field."
+      },
+      "contested": [
+        "change-triviality"
+      ]
+    },
+    {
+      "case_id": "pr-149",
+      "family_id": "optional-serialized-trace",
+      "scenario": "motivation_only_and_ambiguous_review",
+      "title": "feat(events): support optional trace identifiers in task payloads",
+      "body": "## Context\n\nOperations cannot correlate task-event payloads with the collector's trace records. Older producers also cannot be upgraded all at once. This PR addresses that gap.\n\nSender retry behavior and transport encryption are outside this work.\n\n## Validation pending\n\nA validation plan will be supplied after the schema owner responds.\n",
+      "edits": [
+        {
+          "path": "schemas/task-event.schema.json",
+          "before": "{\n  \"$schema\": \"https://json-schema.org/draft/2020-12/schema\",\n  \"type\": \"object\",\n  \"properties\": {\n    \"task_id\": {\"type\": \"string\"}\n  },\n  \"required\": [\"task_id\"],\n  \"additionalProperties\": false\n}\n",
+          "after": "{\n  \"$schema\": \"https://json-schema.org/draft/2020-12/schema\",\n  \"type\": \"object\",\n  \"properties\": {\n    \"task_id\": {\"type\": \"string\"},\n    \"trace_id\": {\"type\": \"string\", \"pattern\": \"^[a-f0-9]{16}$\"}\n  },\n  \"required\": [\"task_id\"],\n  \"additionalProperties\": false\n}\n",
+          "message": "Permit an optional sixteen-character lowercase hexadecimal trace identifier"
+        },
+        {
+          "path": "src/task-event.ts",
+          "before": "export interface TaskEvent {\n  task_id: string;\n}\n",
+          "after": "export interface TaskEvent {\n  task_id: string;\n  trace_id?: string;\n}\n",
+          "message": "Expose the optional trace identifier on TaskEvent"
+        },
+        {
+          "path": "tests/task-event.examples.json",
+          "before": "",
+          "after": "[\n  {\"task_id\": \"job-7\"},\n  {\"task_id\": \"job-7\", \"trace_id\": \"0123456789abcdef\"}\n]\n",
+          "message": "Add serialized examples with and without trace identifiers"
+        }
+      ],
+      "review": "I looked at that field and the other edit. We should resolve the same concern as last week before moving forward.\n",
+      "review_variant": "ambiguous",
+      "criteria": {
+        "title_format": {
+          "status": "passed",
+          "explanation": "The title uses a Conventional Commits type, scope, and subject."
+        },
+        "title_meaningful": {
+          "status": "passed",
+          "explanation": "The title identifies the optional serialized trace field change."
+        },
+        "title_diff_consistency": {
+          "status": "passed",
+          "explanation": "The title agrees with the supplied optional serialized trace field patch."
+        },
+        "description_present": {
+          "status": "passed",
+          "explanation": "The description contains substantive prose about this patch."
+        },
+        "rationale": {
+          "status": "passed",
+          "explanation": "The description identifies the concrete need for trace correlation and the constraint against simultaneous producer upgrades."
+        },
+        "changes_described": {
+          "status": "failed",
+          "explanation": "The body describes the need but never states an actual schema, interface, or example edit."
+        },
+        "description_title_consistency": {
+          "status": "not_assessable",
+          "explanation": "The body gives motivation only, without a concrete change account to compare with the title."
+        },
+        "description_commit_consistency": {
+          "status": "not_assessable",
+          "explanation": "No concrete account of edits is present to compare with the three commit messages."
+        },
+        "description_diff_consistency": {
+          "status": "not_assessable",
+          "explanation": "Motivation and generic scope without edit claims cannot establish description/diff consistency or a specific contradiction."
+        },
+        "limitations": {
+          "status": "passed",
+          "explanation": "The body specifically excludes sender retries and transport encryption, neither of which the patch changes."
+        },
+        "breaking_changes": {
+          "status": "not_applicable",
+          "explanation": "The supplied patch removes no supported interface or configuration."
+        },
+        "testing": {
+          "status": "failed",
+          "explanation": "Promising a future plan is not relevant validation or a specific explanation that testing does not apply."
+        },
+        "summary-section": {
+          "status": "failed",
+          "explanation": "The body has Context and Validation pending headings but no populated level-two Summary section."
+        },
+        "review-coverage": {
+          "status": "not_assessable",
+          "explanation": "That field and the other edit are unspecified references to unseen discussion and cannot be assigned to all three patches."
+        }
+      },
+      "triviality": {
+        "score": 3,
+        "explanation": "The closed JSON schema newly accepts an optional field and the public TypeScript interface gains the corresponding optional member. This is a backward-compatible public serialization capability, not a mere local string or default change; the added examples illustrate both accepted forms."
+      },
+      "text_signals": {
+        "title_score": 3,
+        "body_score": null,
+        "title_explanation": "The title identifies an optional public serialized-field addition.",
+        "body_explanation": "The body explains a problem and constraints but makes no interpretable claim about the actual edits."
+      },
+      "reference_change": {
+        "summary": "Add optional trace_id to the closed JSON schema and public TypeScript interface, with serialized examples covering omission and presence.",
+        "rationale": "Enable correlation of task-event payloads with trace records while preserving existing payloads without a trace identifier.",
+        "limitations": "The schema checks lowercase hexadecimal length but not trace existence; the TypeScript string type does not enforce the schema pattern. The patch does not populate the field or wire an example runner.",
+        "breaking_changes": "No formerly valid payload is rejected by the new schema. Old closed-schema consumers need the updated schema before accepting payloads that contain the new optional field."
+      },
+      "contested": [
+        "change-rationale",
+        "change-triviality"
+      ]
+    }
+  ]
+}

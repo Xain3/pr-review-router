@@ -2980,6 +2980,580 @@
         }
       },
       "review": "prs/pr-125/review.md"
+    },
+    {
+      "case_id": "pr-126",
+      "category": "rubric",
+      "evidence": "prs/pr-126/evidence.json",
+      "expectations": {
+        "decision_routes": [
+          "skip_review"
+        ],
+        "concerns": [],
+        "rubric": {
+          "recommendation": "skip_and_approve",
+          "criteria": {
+            "title-format": "passed",
+            "summary-section": "passed",
+            "change-rationale": "passed",
+            "description-coverage": "passed",
+            "review-coverage": "passed",
+            "testing-explanation": "passed",
+            "change-triviality": "passed"
+          }
+        }
+      },
+      "review": "prs/pr-126/review.md"
+    },
+    {
+      "case_id": "pr-127",
+      "category": "rubric",
+      "evidence": "prs/pr-127/evidence.json",
+      "expectations": {
+        "decision_routes": [
+          "review"
+        ],
+        "concerns": [],
+        "rubric": {
+          "recommendation": "suggest_changes",
+          "criteria": {
+            "title-format": "passed",
+            "summary-section": "passed",
+            "change-rationale": "failed",
+            "description-coverage": "failed",
+            "review-coverage": "failed",
+            "testing-explanation": "passed",
+            "change-triviality": "passed"
+          }
+        }
+      },
+      "review": "prs/pr-127/review.md"
+    },
+    {
+      "case_id": "pr-128",
+      "category": "rubric",
+      "evidence": "prs/pr-128/evidence.json",
+      "expectations": {
+        "decision_routes": [
+          "skip_review"
+        ],
+        "concerns": [],
+        "rubric": {
+          "recommendation": "skip_and_approve",
+          "criteria": {
+            "title-format": "passed",
+            "summary-section": "passed",
+            "change-rationale": "passed",
+            "description-coverage": "passed",
+            "review-coverage": "passed",
+            "testing-explanation": "passed",
+            "change-triviality": "passed"
+          }
+        }
+      },
+      "review": "prs/pr-128/review.md"
+    },
+    {
+      "case_id": "pr-129",
+      "category": "rubric",
+      "evidence": "prs/pr-129/evidence.json",
+      "expectations": {
+        "decision_routes": [
+          "review"
+        ],
+        "concerns": [],
+        "rubric": {
+          "recommendation": "suggest_changes",
+          "criteria": {
+            "title-format": "passed",
+            "summary-section": "passed",
+            "change-rationale": "passed",
+            "description-coverage": "failed",
+            "review-coverage": "failed",
+            "testing-explanation": "failed",
+            "change-triviality": "passed"
+          }
+        }
+      },
+      "review": "prs/pr-129/review.md"
+    },
+    {
+      "case_id": "pr-130",
+      "category": "rubric",
+      "evidence": "prs/pr-130/evidence.json",
+      "expectations": {
+        "decision_routes": [
+          "needs_human_review"
+        ],
+        "concerns": [],
+        "rubric": {
+          "recommendation": "needs_human_review",
+          "criteria": {
+            "title-format": "passed",
+            "summary-section": "passed",
+            "change-rationale": "passed",
+            "description-coverage": "passed",
+            "review-coverage": "uncertain",
+            "testing-explanation": "passed",
+            "change-triviality": "passed"
+          }
+        }
+      }
+    },
+    {
+      "case_id": "pr-131",
+      "category": "rubric",
+      "evidence": "prs/pr-131/evidence.json",
+      "expectations": {
+        "decision_routes": [
+          "needs_human_review"
+        ],
+        "concerns": [],
+        "rubric": {
+          "recommendation": "block",
+          "criteria": {
+            "title-format": "passed",
+            "summary-section": "failed",
+            "change-rationale": "passed",
+            "description-coverage": "uncertain",
+            "review-coverage": "failed",
+            "testing-explanation": "failed",
+            "change-triviality": "passed"
+          }
+        }
+      },
+      "review": "prs/pr-131/review.md"
+    },
+    {
+      "case_id": "pr-132",
+      "category": "rubric",
+      "evidence": "prs/pr-132/evidence.json",
+      "expectations": {
+        "decision_routes": [
+          "skip_review"
+        ],
+        "concerns": [],
+        "rubric": {
+          "recommendation": "skip_and_approve",
+          "criteria": {
+            "title-format": "passed",
+            "summary-section": "passed",
+            "change-rationale": "passed",
+            "description-coverage": "passed",
+            "review-coverage": "passed",
+            "testing-explanation": "passed",
+            "change-triviality": "passed"
+          }
+        }
+      },
+      "review": "prs/pr-132/review.md"
+    },
+    {
+      "case_id": "pr-133",
+      "category": "rubric",
+      "evidence": "prs/pr-133/evidence.json",
+      "expectations": {
+        "decision_routes": [
+          "needs_human_review"
+        ],
+        "concerns": [],
+        "rubric": {
+          "recommendation": "block",
+          "criteria": {
+            "title-format": "passed",
+            "summary-section": "failed",
+            "change-rationale": "passed",
+            "description-coverage": "uncertain",
+            "review-coverage": "uncertain",
+            "testing-explanation": "failed",
+            "change-triviality": "passed"
+          }
+        }
+      },
+      "review": "prs/pr-133/review.md"
+    },
+    {
+      "case_id": "pr-134",
+      "category": "rubric",
+      "evidence": "prs/pr-134/evidence.json",
+      "expectations": {
+        "decision_routes": [
+          "skip_review"
+        ],
+        "concerns": [],
+        "rubric": {
+          "recommendation": "skip_and_approve",
+          "criteria": {
+            "title-format": "passed",
+            "summary-section": "passed",
+            "change-rationale": "passed",
+            "description-coverage": "passed",
+            "review-coverage": "passed",
+            "testing-explanation": "passed",
+            "change-triviality": "passed"
+          }
+        }
+      },
+      "review": "prs/pr-134/review.md"
+    },
+    {
+      "case_id": "pr-135",
+      "category": "rubric",
+      "evidence": "prs/pr-135/evidence.json",
+      "expectations": {
+        "decision_routes": [
+          "needs_human_review"
+        ],
+        "concerns": [],
+        "rubric": {
+          "recommendation": "block",
+          "criteria": {
+            "title-format": "passed",
+            "summary-section": "passed",
+            "change-rationale": "failed",
+            "description-coverage": "failed",
+            "review-coverage": "passed",
+            "testing-explanation": "failed",
+            "change-triviality": "passed"
+          }
+        }
+      },
+      "review": "prs/pr-135/review.md"
+    },
+    {
+      "case_id": "pr-136",
+      "category": "rubric",
+      "evidence": "prs/pr-136/evidence.json",
+      "expectations": {
+        "decision_routes": [
+          "skip_review"
+        ],
+        "concerns": [],
+        "rubric": {
+          "recommendation": "skip_and_approve",
+          "criteria": {
+            "title-format": "passed",
+            "summary-section": "passed",
+            "change-rationale": "passed",
+            "description-coverage": "passed",
+            "review-coverage": "passed",
+            "testing-explanation": "passed",
+            "change-triviality": "passed"
+          }
+        }
+      },
+      "review": "prs/pr-136/review.md"
+    },
+    {
+      "case_id": "pr-137",
+      "category": "rubric",
+      "evidence": "prs/pr-137/evidence.json",
+      "expectations": {
+        "decision_routes": [
+          "needs_human_review"
+        ],
+        "concerns": [],
+        "rubric": {
+          "recommendation": "block",
+          "criteria": {
+            "title-format": "passed",
+            "summary-section": "passed",
+            "change-rationale": "failed",
+            "description-coverage": "failed",
+            "review-coverage": "failed",
+            "testing-explanation": "failed",
+            "change-triviality": "passed"
+          }
+        }
+      },
+      "review": "prs/pr-137/review.md"
+    },
+    {
+      "case_id": "pr-138",
+      "category": "rubric",
+      "evidence": "prs/pr-138/evidence.json",
+      "expectations": {
+        "decision_routes": [
+          "skip_review"
+        ],
+        "concerns": [],
+        "rubric": {
+          "recommendation": "skip_and_approve",
+          "criteria": {
+            "title-format": "passed",
+            "summary-section": "passed",
+            "change-rationale": "passed",
+            "description-coverage": "passed",
+            "review-coverage": "passed",
+            "testing-explanation": "passed",
+            "change-triviality": "passed"
+          }
+        }
+      },
+      "review": "prs/pr-138/review.md"
+    },
+    {
+      "case_id": "pr-139",
+      "category": "rubric",
+      "evidence": "prs/pr-139/evidence.json",
+      "expectations": {
+        "decision_routes": [
+          "needs_human_review"
+        ],
+        "concerns": [],
+        "rubric": {
+          "recommendation": "block",
+          "criteria": {
+            "title-format": "passed",
+            "summary-section": "passed",
+            "change-rationale": "passed",
+            "description-coverage": "failed",
+            "review-coverage": "failed",
+            "testing-explanation": "passed",
+            "change-triviality": "passed"
+          }
+        }
+      },
+      "review": "prs/pr-139/review.md"
+    },
+    {
+      "case_id": "pr-140",
+      "category": "rubric",
+      "evidence": "prs/pr-140/evidence.json",
+      "expectations": {
+        "decision_routes": [
+          "skip_review"
+        ],
+        "concerns": [],
+        "rubric": {
+          "recommendation": "skip_and_approve",
+          "criteria": {
+            "title-format": "passed",
+            "summary-section": "passed",
+            "change-rationale": "passed",
+            "description-coverage": "passed",
+            "review-coverage": "passed",
+            "testing-explanation": "passed",
+            "change-triviality": "passed"
+          }
+        }
+      },
+      "review": "prs/pr-140/review.md"
+    },
+    {
+      "case_id": "pr-141",
+      "category": "rubric",
+      "evidence": "prs/pr-141/evidence.json",
+      "expectations": {
+        "decision_routes": [
+          "needs_human_review"
+        ],
+        "concerns": [],
+        "rubric": {
+          "recommendation": "block",
+          "criteria": {
+            "title-format": "failed",
+            "summary-section": "failed",
+            "change-rationale": "failed",
+            "description-coverage": "uncertain",
+            "review-coverage": "uncertain",
+            "testing-explanation": "failed",
+            "change-triviality": "passed"
+          }
+        }
+      }
+    },
+    {
+      "case_id": "pr-142",
+      "category": "rubric",
+      "evidence": "prs/pr-142/evidence.json",
+      "expectations": {
+        "decision_routes": [
+          "skip_review"
+        ],
+        "concerns": [],
+        "rubric": {
+          "recommendation": "skip_and_approve",
+          "criteria": {
+            "title-format": "passed",
+            "summary-section": "failed",
+            "change-rationale": "passed",
+            "description-coverage": "passed",
+            "review-coverage": "passed",
+            "testing-explanation": "passed",
+            "change-triviality": "passed"
+          }
+        }
+      },
+      "review": "prs/pr-142/review.md"
+    },
+    {
+      "case_id": "pr-143",
+      "category": "rubric",
+      "evidence": "prs/pr-143/evidence.json",
+      "expectations": {
+        "decision_routes": [
+          "review"
+        ],
+        "concerns": [],
+        "rubric": {
+          "recommendation": "suggest_changes",
+          "criteria": {
+            "title-format": "passed",
+            "summary-section": "passed",
+            "change-rationale": "failed",
+            "description-coverage": "failed",
+            "review-coverage": "failed",
+            "testing-explanation": "failed",
+            "change-triviality": "passed"
+          }
+        }
+      },
+      "review": "prs/pr-143/review.md"
+    },
+    {
+      "case_id": "pr-144",
+      "category": "rubric",
+      "evidence": "prs/pr-144/evidence.json",
+      "expectations": {
+        "decision_routes": [
+          "skip_review"
+        ],
+        "concerns": [],
+        "rubric": {
+          "recommendation": "skip_and_approve",
+          "criteria": {
+            "title-format": "passed",
+            "summary-section": "passed",
+            "change-rationale": "passed",
+            "description-coverage": "passed",
+            "review-coverage": "passed",
+            "testing-explanation": "passed",
+            "change-triviality": "passed"
+          }
+        }
+      },
+      "review": "prs/pr-144/review.md"
+    },
+    {
+      "case_id": "pr-145",
+      "category": "rubric",
+      "evidence": "prs/pr-145/evidence.json",
+      "expectations": {
+        "decision_routes": [
+          "needs_human_review"
+        ],
+        "concerns": [],
+        "rubric": {
+          "recommendation": "block",
+          "criteria": {
+            "title-format": "passed",
+            "summary-section": "passed",
+            "change-rationale": "failed",
+            "description-coverage": "passed",
+            "review-coverage": "uncertain",
+            "testing-explanation": "passed",
+            "change-triviality": "passed"
+          }
+        }
+      },
+      "review": "prs/pr-145/review.md"
+    },
+    {
+      "case_id": "pr-146",
+      "category": "rubric",
+      "evidence": "prs/pr-146/evidence.json",
+      "expectations": {
+        "decision_routes": [
+          "skip_review"
+        ],
+        "concerns": [],
+        "rubric": {
+          "recommendation": "skip_and_approve",
+          "criteria": {
+            "title-format": "passed",
+            "summary-section": "passed",
+            "change-rationale": "passed",
+            "description-coverage": "passed",
+            "review-coverage": "passed",
+            "testing-explanation": "passed",
+            "change-triviality": "passed"
+          }
+        }
+      },
+      "review": "prs/pr-146/review.md"
+    },
+    {
+      "case_id": "pr-147",
+      "category": "rubric",
+      "evidence": "prs/pr-147/evidence.json",
+      "expectations": {
+        "decision_routes": [
+          "needs_human_review"
+        ],
+        "concerns": [],
+        "rubric": {
+          "recommendation": "block",
+          "criteria": {
+            "title-format": "passed",
+            "summary-section": "passed",
+            "change-rationale": "failed",
+            "description-coverage": "failed",
+            "review-coverage": "failed",
+            "testing-explanation": "passed",
+            "change-triviality": "passed"
+          }
+        }
+      },
+      "review": "prs/pr-147/review.md"
+    },
+    {
+      "case_id": "pr-148",
+      "category": "rubric",
+      "evidence": "prs/pr-148/evidence.json",
+      "expectations": {
+        "decision_routes": [
+          "skip_review"
+        ],
+        "concerns": [],
+        "rubric": {
+          "recommendation": "skip_and_approve",
+          "criteria": {
+            "title-format": "passed",
+            "summary-section": "passed",
+            "change-rationale": "passed",
+            "description-coverage": "passed",
+            "review-coverage": "passed",
+            "testing-explanation": "passed",
+            "change-triviality": "passed"
+          }
+        }
+      },
+      "review": "prs/pr-148/review.md"
+    },
+    {
+      "case_id": "pr-149",
+      "category": "rubric",
+      "evidence": "prs/pr-149/evidence.json",
+      "expectations": {
+        "decision_routes": [
+          "needs_human_review"
+        ],
+        "concerns": [],
+        "rubric": {
+          "recommendation": "block",
+          "criteria": {
+            "title-format": "passed",
+            "summary-section": "failed",
+            "change-rationale": "passed",
+            "description-coverage": "uncertain",
+            "review-coverage": "uncertain",
+            "testing-explanation": "failed",
+            "change-triviality": "passed"
+          }
+        }
+      },
+      "review": "prs/pr-149/review.md"
     }
   ]
 }

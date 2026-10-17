@@ -151,23 +151,24 @@ kind = "script"
 command = ["./ci/check-pr.py"]
 ```
 
-The [synthetic PR corpus](examples/synthetic-prs/README.md) provides 125 fictional
-PRs with metadata, commit lists, complete patches, supplied reviews, and provisional annotations
-for title, rationale, description consistency, limitations, compatibility, review coverage, and
-change triviality on a 0–4 scale, with an offline triviality benchmark scorer.
-Separate diagnostics record differences between the triviality implied by PR
-text and the actual diff for future confounder analysis.
-Use its [index](examples/synthetic-prs/INDEX.md) to browse good cases, individual
-failures, and combined failures.
-
-The [synthetic PR corpus](examples/synthetic-prs/README.md) provides 125 fictional
-PRs with metadata, commit lists, complete patches, supplied reviews, and provisional annotations
-for title, rationale, description consistency, limitations, compatibility, review coverage, and
-change triviality on a 0–4 scale, with an offline triviality benchmark scorer.
-Separate diagnostics record differences between the triviality implied by PR
-text and the actual diff for future confounder analysis.
-Use its [index](examples/synthetic-prs/INDEX.md) to browse good cases, individual
-failures, and combined failures.
+The [synthetic PR corpus](examples/synthetic-prs/README.md) provides 149 fictional
+PRs across 30 change families, with metadata, commits, complete patches, supplied
+reviews, and provisional communication and 0–4 triviality labels. Its fixed
+[partitions](examples/synthetic-prs/splits.json) reserve 24 independently authored
+cases from 12 new families for evaluation; the original 125 cases are for
+development. Scorers report confusion by scenario, criterion, reference triviality
+level, and their intersections, with support counts and explicit uncertainty.
+The [index](examples/synthetic-prs/INDEX.md) includes family and author provenance.
+Both partitions have fresh blind review under the same seven-criterion rubric;
+the [review guide](examples/synthetic-prs/README.md#independent-review) explains
+the preserved history, current adjudications, and unresolved cases.
+The benchmark grades the latest adjudicated review by default. Use
+`--reference-revision original` for canonical author labels, or select a registered
+review snapshot with `--reference-revision NAME`; list them with
+`--list-reference-revisions`. Bound predictions can be rescored offline under
+another revision without inference. Unresolved judgments remain uncertain.
+These synthetic AI labels still require human review before quality assessment
+or calibration.
 
 Reports include commit identifiers, coverage issues, the decision-provider
 recommendation and confidence provenance, review stages and results, routing

@@ -1,0 +1,35 @@
+{
+  "repository": "synthetic/pr-quality-demo",
+  "number": 146,
+  "base_sha": "1e37d248058a05b10032f5ba3b6841b0a9916908",
+  "head_sha": "913b4e628795de880f2cdaaef062ab00d7dc4f92",
+  "title": "refactor(cratebox)!: remove the compatibility require path",
+  "body": "## Summary\n\nDelete `lib/cratebox/compat.rb`, raise the gem version from 1.9.0 to 2.0.0 in `lib/cratebox/version.rb`, and revise `docs/loading.md` to show the supported loader and migration.\n\n## Why\n\nMaintaining two documented paths for the same client adds a duplicate entrypoint without a separate capability. Version 2 retires the alias and leaves one canonical loader.\n\n## Breaking changes\n\n`require \"cratebox/compat\"` will stop loading. Replace it with `require \"cratebox/client\"` before upgrading to 2.0.0. The client class and methods do not move; downstream applications must update their own require strings.\n\n## Validation plan\n\nBuild and install the gem in a clean Ruby process, confirm the canonical require succeeds and exposes the same client, then verify the removed alias raises LoadError. Check that the packaged version reports 2.0.0 and that the migration example uses only the canonical path.\n",
+  "files_complete": true,
+  "files": [
+    {
+      "path": "lib/cratebox/compat.rb",
+      "status": "removed",
+      "additions": 0,
+      "deletions": 1,
+      "patch": "diff --git a/lib/cratebox/compat.rb b/lib/cratebox/compat.rb\n--- a/lib/cratebox/compat.rb\n+++ /dev/null\n@@ -1 +0,0 @@\n-require \"cratebox/client\"\n",
+      "patch_truncated": false
+    },
+    {
+      "path": "lib/cratebox/version.rb",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "patch": "diff --git a/lib/cratebox/version.rb b/lib/cratebox/version.rb\n--- a/lib/cratebox/version.rb\n+++ b/lib/cratebox/version.rb\n@@ -1,3 +1,3 @@\n module Cratebox\n-  VERSION = \"1.9.0\"\n+  VERSION = \"2.0.0\"\n end\n",
+      "patch_truncated": false
+    },
+    {
+      "path": "docs/loading.md",
+      "status": "modified",
+      "additions": 3,
+      "deletions": 2,
+      "patch": "diff --git a/docs/loading.md b/docs/loading.md\n--- a/docs/loading.md\n+++ b/docs/loading.md\n@@ -1,4 +1,5 @@\n # Loading Cratebox\n \n-Applications can use `require \"cratebox/client\"` or the supported alias `require \"cratebox/compat\"`.\n-Both paths load the same client.\n+For version 2.0, use `require \"cratebox/client\"`.\n+The `cratebox/compat` alias has been removed; replace that require before upgrading.\n+The client class and its methods have not moved.\n",
+      "patch_truncated": false
+    }
+  ]
+}

@@ -1,0 +1,213 @@
+{
+  "schema_version": 3,
+  "case_id": "pr-149",
+  "label_status": "provisional",
+  "label_origin": "synthetic_author_intent",
+  "family_id": "optional-serialized-trace",
+  "scenario": "motivation_only_and_ambiguous_review",
+  "variant": "motivation_only_and_ambiguous_review",
+  "review_variant": "ambiguous",
+  "complexity": "non_trivial",
+  "has_breaking_change": false,
+  "expected_quality": "needs_revision",
+  "tags": [
+    "independently_authored",
+    "motivation_only_and_ambiguous_review"
+  ],
+  "criteria": {
+    "title_format": {
+      "status": "passed",
+      "explanation": "The title uses a Conventional Commits type, scope, and subject.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "title_meaningful": {
+      "status": "passed",
+      "explanation": "The title identifies the optional serialized trace field change.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "title_diff_consistency": {
+      "status": "passed",
+      "explanation": "The title agrees with the supplied optional serialized trace field patch.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "description_present": {
+      "status": "passed",
+      "explanation": "The description contains substantive prose about this patch.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "rationale": {
+      "status": "passed",
+      "explanation": "The description identifies the concrete need for trace correlation and the constraint against simultaneous producer upgrades.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "changes_described": {
+      "status": "failed",
+      "explanation": "The body describes the need but never states an actual schema, interface, or example edit.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "description_title_consistency": {
+      "status": "not_assessable",
+      "explanation": "The body gives motivation only, without a concrete change account to compare with the title.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "description_commit_consistency": {
+      "status": "not_assessable",
+      "explanation": "No concrete account of edits is present to compare with the three commit messages.",
+      "sources": [
+        "evidence.json#/body",
+        "metadata.json#/commits"
+      ]
+    },
+    "description_diff_consistency": {
+      "status": "not_assessable",
+      "explanation": "Motivation and generic scope without edit claims cannot establish description/diff consistency or a specific contradiction.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "limitations": {
+      "status": "passed",
+      "explanation": "The body specifically excludes sender retries and transport encryption, neither of which the patch changes.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "breaking_changes": {
+      "status": "not_applicable",
+      "explanation": "The supplied patch removes no supported interface or configuration.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "testing": {
+      "status": "failed",
+      "explanation": "Promising a future plan is not relevant validation or a specific explanation that testing does not apply.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "summary-section": {
+      "status": "failed",
+      "explanation": "The body has Context and Validation pending headings but no populated level-two Summary section.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "review-coverage": {
+      "status": "not_assessable",
+      "explanation": "That field and the other edit are unspecified references to unseen discussion and cannot be assigned to all three patches.",
+      "sources": [
+        "review.md",
+        "evidence.json#/files"
+      ]
+    },
+    "change_triviality": {
+      "type": "ordinal",
+      "score": 3,
+      "level": "substantive",
+      "is_trivial": false,
+      "explanation": "The closed JSON schema newly accepts an optional field and the public TypeScript interface gains the corresponding optional member. This is a backward-compatible public serialization capability, not a mere local string or default change; the added examples illustrate both accepted forms.",
+      "sources": [
+        "evidence.json#/files"
+      ]
+    },
+    "title-format": {
+      "status": "passed",
+      "explanation": "The title uses a Conventional Commits type, scope, and subject.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "change-rationale": {
+      "status": "passed",
+      "explanation": "The description identifies the concrete need for trace correlation and the constraint against simultaneous producer upgrades.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "description-coverage": {
+      "status": "not_assessable",
+      "explanation": "Motivation and generic scope without edit claims cannot establish description/diff consistency or a specific contradiction.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "testing-explanation": {
+      "status": "failed",
+      "explanation": "Promising a future plan is not relevant validation or a specific explanation that testing does not apply.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "change-triviality": {
+      "type": "ordinal",
+      "score": 3,
+      "level": "substantive",
+      "is_trivial": false,
+      "explanation": "The closed JSON schema newly accepts an optional field and the public TypeScript interface gains the corresponding optional member. This is a backward-compatible public serialization capability, not a mere local string or default change; the added examples illustrate both accepted forms.",
+      "sources": [
+        "evidence.json#/files"
+      ]
+    }
+  },
+  "diagnostics": {
+    "text_diff_triviality": {
+      "diff_score": 3,
+      "title_score": 3,
+      "body_score": null,
+      "text_score": 3,
+      "assessment": "title_only",
+      "relationship": "aligned",
+      "score_delta": 0,
+      "potential_confounder": false,
+      "title_explanation": "The title identifies an optional public serialized-field addition.",
+      "body_explanation": "The body explains a problem and constraints but makes no interpretable claim about the actual edits.",
+      "sources": [
+        "evidence.json#/title",
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    }
+  },
+  "reference_change": {
+    "summary": "Add optional trace_id to the closed JSON schema and public TypeScript interface, with serialized examples covering omission and presence.",
+    "rationale": "Enable correlation of task-event payloads with trace records while preserving existing payloads without a trace identifier.",
+    "limitations": "The schema checks lowercase hexadecimal length but not trace existence; the TypeScript string type does not enforce the schema pattern. The patch does not populate the field or wire an example runner.",
+    "breaking_changes": "No formerly valid payload is rejected by the new schema. Old closed-schema consumers need the updated schema before accepting payloads that contain the new optional field."
+  },
+  "authorship": {
+    "author_id": "independent-author-b",
+    "method": "independent_agent_authored"
+  },
+  "contested_criteria": [
+    "change-rationale",
+    "change-triviality"
+  ]
+}

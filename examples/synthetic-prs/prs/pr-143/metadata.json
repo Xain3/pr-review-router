@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "synthetic": true,
+  "case_id": "pr-143",
+  "url": "https://example.invalid/synthetic/pr-quality-demo/pull/143",
+  "state": "open",
+  "draft": false,
+  "author": {
+    "login": "independent-author-b",
+    "name": "independent-author-b",
+    "email": "independent-author-b@example.invalid"
+  },
+  "created_at": "2026-05-23T12:00:00+00:00",
+  "updated_at": "2026-05-23T13:00:00+00:00",
+  "base_ref": "main",
+  "head_ref": "synthetic/pr-143",
+  "base_sha": "65a14d3702f11098bca030c7a4db24b47b3e47e2",
+  "head_sha": "493484cdd68fb1aec68a1d3641668f2807d25f60",
+  "changed_files": 1,
+  "additions": 3,
+  "deletions": 1,
+  "commits": [
+    {
+      "sha": "493484cdd68fb1aec68a1d3641668f2807d25f60",
+      "parents": [
+        "65a14d3702f11098bca030c7a4db24b47b3e47e2"
+      ],
+      "message": "Name the existing Spanish empty-cart label constant",
+      "author": {
+        "login": "independent-author-b",
+        "name": "independent-author-b",
+        "email": "independent-author-b@example.invalid"
+      },
+      "authored_at": "2026-05-23T11:50:00+00:00",
+      "files": [
+        "web/src/emptyState.ts"
+      ],
+      "additions": 3,
+      "deletions": 1
+    }
+  ]
+}

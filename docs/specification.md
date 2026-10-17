@@ -441,6 +441,73 @@ recommendations. Reference-label edits alone do not require fresh inference.
 See the [nine-case, six-criterion examples](../examples/rubric-review/README.md).
 Labels remain provisional and offline tapes explicitly synthetic.
 
+The separate [synthetic PR benchmark](../examples/synthetic-prs/README.md) contains
+149 sanitized fictional PRs across 30 families. Its fixed `splits.json` assigns
+the original 125 cases (18 families) to development and 24 independently authored
+cases (12 new families) to evaluation. Matching description/review variants of a
+family stay together. Validation rejects overlapping families, identical patch
+sets across partitions, stale partition corpora, and missing author provenance.
+Independent authoring and blind AI label review do not confer human-reviewed
+ground truth; contested judgments retain their dissent and provisional labels.
+
+The original 125 development cases also receive two fresh blind judgments per
+criterion under the same current seven-criterion rubric and adjudication rules
+as the 24 evaluation cases. `independent-review/legacy-reviews.json` records
+these current judgments; `reviews.json` remains the unchanged historical
+archive. Both raw reviewer assessments, source pointers, input hashes, prior
+adjudications, and any current dissent are retained. A clear factual contradiction
+can overturn author intent; unresolved interpretations receive `uncertain`.
+Patch-based triviality adjudications must be consistent across identical family
+diffs, independently of PR-text variants. The offline review reporter accepts
+`--split development`, `--split evaluation` (default), or `--split all`, and
+includes final adjudications and unresolved disagreements separately from
+confusion against provisional author references. The label-review audit's
+`by_review_confidence` retains full confusion for contested and uncontested cases;
+`review_confidence_support` counts their support. The benchmark's contested-case view uses its
+selected grading revision. No original PR input, author
+annotation, rubric, or partition assignment is rewritten by the re-review.
+
+The benchmark runners default to evaluation; `--split development` and
+`--split all` are explicit alternatives. Scoring requires exactly one result for
+each selected case. Both benchmark scorers default to `--reference-revision
+latest`, resolved through `independent-review/reference-revisions.json` to the
+current adjudications for both partitions. `original` selects preserved canonical
+author-intent annotations, including recorded corrections; named snapshots select
+other registered adjudications. `--list-reference-revisions` lists the benchmark's
+choices without inference. Unknown names and revisions missing any selected case
+fail explicitly; partial historical reviews cannot fill gaps with author labels.
+Expected criterion statuses and advisory recommendations are recomputed from the
+selected native judgments through the rubric's enforcement rules. Unresolved
+triviality remains `uncertain`, maps to an uncertain criterion, and cannot justify
+approval. Every report records the resolved revision, source hashes and selected
+per-case judgments separately from prediction-run references.
+Reports include support and expected-to-actual confusion per criterion,
+scenario, reference triviality level, family, split, author, and scenario-by-level
+intersection. Native ordinal triviality confusion is separate from its mapped
+criterion status; all classified native labels map to `passed`. Missing answers
+and explicit uncertainty stay separate and remain in accuracy denominators for
+known reference levels. Uncertain reference levels have a separate confusion row
+and stratum, never a numeric substitute. Numeric accuracy and error exclude
+uncertain references, report the known-reference support, and are null when no
+reference level is known. Native-label agreement includes all cases; separate
+counts expose classifications and trivial predictions on unresolved references.
+Reports count false passes, missed blocking recommendations, non-trivial changes
+classified as trivial, and unsafe approval recommendations in every stratum.
+The standalone triviality scorer also accepts `null` as an explicit abstention;
+missing cases are errors. Input fingerprints include the split definition and
+selected evidence, commit metadata, and supplied review contents. Execution corpus
+paths, case order, category, and rubric must match the indexed fixed corpus.
+Version-2 prediction bindings preserve original run labels and summary hashes
+separately from grading sources, so review-only revisions permit offline rescoring
+while altered model inputs, rubric or configurations require fresh predictions.
+Version-1 bindings remain usable when their original canonical labels are still
+verifiable; unbound summaries require a fresh run. The raw router summary retains
+its original execution references; `benchmark.json` version 3 is the selected
+revision's grade. The standalone scorer emits version 3 as well. Scoring existing
+summaries or predictions is offline and does not run inference. Agreement with
+copied reference labels tests accounting only, and public family holdouts do not
+establish external validity or authorize automated acceptance.
+
 ## Mock behavior
 
 Added-line `MOCK_DECISION_ACCEPT` / `MOCK_DECISION_REJECT` markers return synthetic

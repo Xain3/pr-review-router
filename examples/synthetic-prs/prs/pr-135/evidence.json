@@ -1,0 +1,27 @@
+{
+  "repository": "synthetic/pr-quality-demo",
+  "number": 135,
+  "base_sha": "c6866b7d802af5fd7f99b6ad35463b622020944c",
+  "head_sha": "222c97ee120b1b87ec6b685b0096638f24911ac9",
+  "title": "docs(storage): clarify receipt reference terminology",
+  "body": "## Summary\n\nClarify the receipt guide’s terminology from customer reference to account reference. The accompanying SQL file contains explanatory notes only; the table schema and both existing column spellings stay available.\n\nThe wording should help new readers find the right paragraph. No query migration is needed, and this is limited to documentation.\n\n## Validation\n\nRead the rendered receipt guide for consistent spelling. No database exercise is applicable to a prose-only edit.\n",
+  "files_complete": true,
+  "files": [
+    {
+      "path": "migrations/008_receipt_account_ref.sql",
+      "status": "added",
+      "additions": 1,
+      "deletions": 0,
+      "patch": "diff --git a/migrations/008_receipt_account_ref.sql b/migrations/008_receipt_account_ref.sql\n--- /dev/null\n+++ b/migrations/008_receipt_account_ref.sql\n@@ -0,0 +1 @@\n+ALTER TABLE event_receipts RENAME COLUMN customer_ref TO account_ref;\n",
+      "patch_truncated": false
+    },
+    {
+      "path": "docs/receipt-schema.md",
+      "status": "modified",
+      "additions": 4,
+      "deletions": 1,
+      "patch": "diff --git a/docs/receipt-schema.md b/docs/receipt-schema.md\n--- a/docs/receipt-schema.md\n+++ b/docs/receipt-schema.md\n@@ -1,4 +1,7 @@\n # Receipt schema\n \n-Consumers may query event_receipts.customer_ref to join receipts to a customer.\n+Consumers may query event_receipts.account_ref to join receipts to an account.\n The supported column is non-null text; receipt_id remains the primary key.\n+\n+Apply migration 008 and update SQL queries from customer_ref to account_ref.\n+The old column name is not retained as an alias.\n",
+      "patch_truncated": false
+    }
+  ]
+}

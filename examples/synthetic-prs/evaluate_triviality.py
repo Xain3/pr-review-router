@@ -2,19 +2,31 @@
 
 import argparse
 import json
-from collections import Counter
+import runpy
 from pathlib import Path
 
+from pr_review_router.corpus_metrics import ordinal_metrics, stratify
 
-def evaluate(root: Path, predictions: dict) -> dict:
+
+def evaluate(
+    root: Path, predictions: dict, split: str = "all", reference_revision: str = "latest"
+) -> dict:
     """Calculate ordinal and binary accuracy without running inference.
 
     :param root: Corpus directory with an index and independently stored annotations.
     :param predictions: Version-1 object containing one integer score per case.
+    :param split: Selected family-disjoint partition; null scores explicitly abstain.
+    :param reference_revision: Latest adjudications by default; original or a named snapshot otherwise.
     :returns: Exact accuracy, mean absolute error, binary accuracy, and confusion counts.
     :raises ValueError: If predictions are incomplete, duplicated, or outside the scale.
     """
     index = json.loads((root / "index.json").read_text(encoding="utf-8"))
+    if split not in {"all", "development", "evaluation"}:
+        raise ValueError("Unknown corpus split")
+    validation = runpy.run_path(str(Path(__file__).with_name("validate.py")))
+    validation["validate_splits"](root.resolve(), index)
+    revision = validation["load_grading_references"](root.resolve(), split, reference_revision)
+    cases = [case for case in index["cases"] if split == "all" or case["split"] == split]
     if (
         set(predictions) != {"schema_version", "predictions"}
         or type(predictions["schema_version"]) is not int
@@ -30,44 +42,53 @@ def evaluate(root: Path, predictions: dict) -> dict:
         case_id, score = item["case_id"], item["score"]
         if not isinstance(case_id, str) or case_id in predicted:
             raise ValueError("Prediction case IDs must be strings and unique")
-        if type(score) is not int or not 0 <= score <= 4:
-            raise ValueError("Prediction scores must be integers from 0 through 4")
+        if score is not None and (type(score) is not int or not 0 <= score <= 4):
+            raise ValueError("Prediction scores must be integers from 0 through 4 or null")
         predicted[case_id] = score
-    if set(predicted) != {case["case_id"] for case in index["cases"]}:
-        raise ValueError("Predictions must cover exactly all corpus case IDs")
-    errors = []
-    matrix = [[0 for _ in range(5)] for _ in range(5)]
-    binary_matches = 0
-    matches_by_quality = Counter()
-    counts_by_quality = Counter()
-    for case in index["cases"]:
-        annotation = json.loads((root / case["annotations"]).read_text(encoding="utf-8"))
-        expected = annotation["criteria"]["change_triviality"]["score"]
+    if set(predicted) != {case["case_id"] for case in cases}:
+        raise ValueError("Predictions must cover exactly all selected corpus case IDs")
+    rows = []
+    for case in cases:
+        reference = revision.cases[case["case_id"]]
+        expected = reference["triviality_score"]
         score = predicted[case["case_id"]]
-        errors.append(abs(score - expected))
-        matrix[expected][score] += 1
-        binary_matches += (score <= 1) == (expected <= 1)
-        quality = annotation["expected_quality"]
-        counts_by_quality[quality] += 1
-        matches_by_quality[quality] += score == expected
-    count = len(errors)
+        rows.append(
+            {
+                **case,
+                "author_triviality_level": case["triviality_level"],
+                "triviality_level": reference["triviality_level"],
+                "reference_confidence": "author_intent"
+                if revision.metadata["kind"] == "author_intent"
+                else "contested"
+                if reference["contested_criteria"]
+                else "uncontested_ai",
+                "reference_score": expected,
+                "reference_label": "uncertain" if expected is None else str(expected),
+                "predicted_score": score,
+                "predicted_label": "uncertain" if score is None else str(score),
+            }
+        )
+    metrics = ordinal_metrics(rows)
     return {
-        "schema_version": 1,
+        "schema_version": 3,
         "label_status": index["label_status"],
-        "case_count": count,
+        "split": split,
+        "case_count": len(rows),
+        "family_count": len({row["family_id"] for row in rows}),
         "criterion": "change_triviality",
-        "exact_score_accuracy": errors.count(0) / count,
-        "mean_absolute_error": sum(errors) / count,
-        "binary_triviality_accuracy": binary_matches / count,
+        "grading_reference": revision.metadata,
+        "grading_references": revision.cases,
+        "exact_score_accuracy": metrics["exact_accuracy"],
+        "mean_absolute_error": metrics["mean_absolute_error_when_classified"],
+        "binary_triviality_accuracy": metrics["binary_accuracy"],
         "exact_score_accuracy_by_pr_quality": {
-            quality: matches_by_quality[quality] / total
-            for quality, total in counts_by_quality.items()
+            quality: ordinal_metrics([row for row in rows if row["expected_quality"] == quality])[
+                "exact_accuracy"
+            ]
+            for quality in sorted({row["expected_quality"] for row in rows})
         },
-        "confusion_matrix": {
-            "reference_scores": list(range(5)),
-            "predicted_scores": list(range(5)),
-            "counts": matrix,
-        },
+        **metrics,
+        **stratify(rows, ordinal_metrics),
     }
 
 
@@ -77,13 +98,25 @@ def main() -> None:
     :raises SystemExit: If the file or prediction schema is invalid.
     """
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("predictions", type=Path, help="JSON predictions covering every PR.")
+    parser.add_argument(
+        "predictions", type=Path, help="JSON predictions covering the selected PRs."
+    )
+    parser.add_argument(
+        "--split", choices=["evaluation", "development", "all"], default="evaluation"
+    )
+    parser.add_argument(
+        "--reference-revision",
+        default="latest",
+        help="Latest adjudications, original author labels, or a registered review snapshot.",
+    )
     args = parser.parse_args()
     try:
         predictions = json.loads(args.predictions.read_text(encoding="utf-8"))
         if not isinstance(predictions, dict):
             raise ValueError("Predictions must be a JSON object")
-        result = evaluate(Path(__file__).resolve().parent, predictions)
+        result = evaluate(
+            Path(__file__).resolve().parent, predictions, args.split, args.reference_revision
+        )
     except (OSError, ValueError) as error:
         parser.error(str(error))
     print(json.dumps(result, indent=2))

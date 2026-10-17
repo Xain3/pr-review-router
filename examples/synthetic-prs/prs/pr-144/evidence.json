@@ -1,0 +1,27 @@
+{
+  "repository": "synthetic/pr-quality-demo",
+  "number": 144,
+  "base_sha": "ffddf10e26a34541569b59c734777a943a0bb576",
+  "head_sha": "176e902e532b226ea8a9f9e995a059efa60f8762",
+  "title": "build(archive): stabilize release archive metadata",
+  "body": "## Summary\n\nChange `scripts/archive.sh` to sort tar entries, stamp them with SOURCE_DATE_EPOCH (zero if unset), and use numeric owner/group zero. Pipe through `gzip -n` to omit source-name and timestamp header metadata. Update `docs/releasing.md` with those rules and the GNU tar requirement.\n\n## Reason\n\nThe same built files can currently acquire different archive hashes because packaging host metadata leaks into the output. Fixing this metadata allows a useful same-content reproducibility check.\n\n## Validation plan\n\nPackage identical content after changing mtimes and creation order, compare SHA-256 hashes, then unpack both outputs and compare names and bytes. Repeat with an explicit SOURCE_DATE_EPOCH and with it unset.\n\n## Boundaries\n\nThe script requires GNU tar; this does not promise portable flags for other tar implementations. Contents and permission bits are unchanged, so differences in those inputs may still change the hash.\n",
+  "files_complete": true,
+  "files": [
+    {
+      "path": "scripts/archive.sh",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "patch": "diff --git a/scripts/archive.sh b/scripts/archive.sh\n--- a/scripts/archive.sh\n+++ b/scripts/archive.sh\n@@ -1,3 +1,3 @@\n #!/usr/bin/env bash\n set -euo pipefail\n-tar -czf \"$1\" dist\n+tar --sort=name --mtime=\"@${SOURCE_DATE_EPOCH:-0}\" --owner=0 --group=0 --numeric-owner -cf - dist | gzip -n > \"$1\"\n",
+      "patch_truncated": false
+    },
+    {
+      "path": "docs/releasing.md",
+      "status": "modified",
+      "additions": 3,
+      "deletions": 1,
+      "patch": "diff --git a/docs/releasing.md b/docs/releasing.md\n--- a/docs/releasing.md\n+++ b/docs/releasing.md\n@@ -1,4 +1,6 @@\n # Release archive\n \n Run `scripts/archive.sh package.tar.gz` from the repository root after building dist/.\n-The packaging host must provide tar and gzip.\n+The packaging host must provide GNU tar and gzip.\n+Archive entries are sorted by name, owned by numeric user/group 0, and timestamped from SOURCE_DATE_EPOCH (default 0).\n+Gzip headers omit the source name and timestamp. File contents and permission bits are not normalized.\n",
+      "patch_truncated": false
+    }
+  ]
+}

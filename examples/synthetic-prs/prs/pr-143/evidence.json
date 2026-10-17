@@ -1,0 +1,19 @@
+{
+  "repository": "synthetic/pr-quality-demo",
+  "number": 143,
+  "base_sha": "65a14d3702f11098bca030c7a4db24b47b3e47e2",
+  "head_sha": "493484cdd68fb1aec68a1d3641668f2807d25f60",
+  "title": "feat(cart): add locale selection for the empty-cart label",
+  "body": "## Summary\n\n`web/src/emptyState.ts` now selects Spanish or English from the active locale and falls back to English for unknown locales. The export remains callable without arguments.\n\n## Reason\n\nEnglish-speaking shoppers need a readable empty state instead of receiving the Spanish label.\n\n## Validation proposed\n\nExercise English, Spanish, and an unknown locale; confirm the fallback text is English. Only those two languages are in scope.\n",
+  "files_complete": true,
+  "files": [
+    {
+      "path": "web/src/emptyState.ts",
+      "status": "modified",
+      "additions": 3,
+      "deletions": 1,
+      "patch": "diff --git a/web/src/emptyState.ts b/web/src/emptyState.ts\n--- a/web/src/emptyState.ts\n+++ b/web/src/emptyState.ts\n@@ -1,3 +1,5 @@\n+const EMPTY_CART_LABEL = \"No hay artículos\";\n+\n export function emptyCartLabel(): string {\n-  return \"No hay artículos\";\n+  return EMPTY_CART_LABEL;\n }\n",
+      "patch_truncated": false
+    }
+  ]
+}
