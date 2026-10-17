@@ -9,6 +9,7 @@ from pathlib import Path
 
 from pr_review_router.config import Policy
 from pr_review_router.contracts import PullRequestEvidence
+from pr_review_router.corpus_references import load_reference_revision
 from pr_review_router.engine import assess_coverage, assess_pr_text
 
 BASE_CASES = 100
@@ -101,20 +102,41 @@ def review_input_sha256(directory: Path) -> str:
 
 
 def validate_independent_review(
-    root: Path, index: dict, relative: str = "independent-review/reviews.json"
+    root: Path,
+    index: dict,
+    relative: str = "independent-review/reviews.json",
+    *,
+    check_oracle: bool = True,
+    require_blind_assessments: bool | None = None,
 ) -> dict:
     """Check that independent-review labels are current, complete, and grounded in evidence.
 
     :param root: Resolved corpus directory.
     :param index: Validated corpus manifest.
     :param relative: Review archive whose declared scope must match the supplied cases.
+    :param check_oracle: Whether archived author labels must match current author annotations.
+    :param require_blind_assessments: Require raw blind judgments; registered revisions declare this protocol.
     :returns: Agreement counts for the independent AI review.
     :raises ValueError: If a label is stale, malformed, or points at missing evidence.
     """
     review = read_json(root, relative)
+    if require_blind_assessments is None:
+        require_blind_assessments = relative != "independent-review/reviews.json"
+    has_previous_adjudications = any(
+        "previous_adjudicated" in label
+        for record in review.get("cases", {}).values()
+        for label in record.get("labels", {}).values()
+    )
+    requires_history = (
+        relative == ACTIVE_REVIEW_ARCHIVES["development"] or has_previous_adjudications
+    )
+    require(
+        not requires_history or "historical_review_sha256" in review,
+        "Review with historical adjudications must declare its historical archive hash",
+    )
     historical = (
         read_json(root, "independent-review/reviews.json")
-        if relative == ACTIVE_REVIEW_ARCHIVES["development"]
+        if "historical_review_sha256" in review
         else None
     )
     require(
@@ -126,7 +148,7 @@ def validate_independent_review(
         "Independent review predates the current rubric; re-review the cases",
     )
     require(review["criteria"] == REVIEWED_CRITERIA, "Unexpected independently reviewed criteria")
-    if relative == ACTIVE_REVIEW_ARCHIVES["development"]:
+    if historical is not None:
         require(
             review["historical_review_sha256"]
             == hashlib.sha256((root / "independent-review/reviews.json").read_bytes()).hexdigest(),
@@ -158,7 +180,7 @@ def validate_independent_review(
         paths = {file["path"] for file in evidence["files"]}
         require(set(record["labels"]) == set(REVIEWED_CRITERIA), f"{case_id}: missing criteria")
         for criterion, label in record["labels"].items():
-            if criterion == "change-triviality" and relative in ACTIVE_REVIEW_ARCHIVES.values():
+            if criterion == "change-triviality":
                 require(
                     family_triviality.setdefault(case["family_id"], label["adjudicated"])
                     == label["adjudicated"],
@@ -182,11 +204,12 @@ def validate_independent_review(
                 set(label["reviewers"]) == {"A", "B"} and set(values) <= allowed,
                 f"{case_id}/{criterion}: invalid label values",
             )
-            require(label["oracle"] == expected, f"{case_id}/{criterion}: stale oracle copy")
+            if check_oracle:
+                require(label["oracle"] == expected, f"{case_id}/{criterion}: stale oracle copy")
             require(
                 type(label["contested"]) is bool, f"{case_id}/{criterion}: invalid contested flag"
             )
-            if relative in ACTIVE_REVIEW_ARCHIVES.values():
+            if require_blind_assessments or "reviewer_assessments" in label:
                 assessments = label.get("reviewer_assessments", {})
                 require(
                     set(assessments) == {"A", "B"},
@@ -274,6 +297,28 @@ def load_active_reviews(root: Path, index: dict) -> dict:
     return records
 
 
+def load_grading_references(root: Path, split: str, revision: str = "latest"):
+    """Validate a registered grading snapshot without requiring its old author labels to be current.
+
+    :param root: Resolved corpus root containing the revision registry.
+    :param split: Selected partition or all cases.
+    :param revision: Latest, original, or a registered review identifier.
+    :returns: Policy-projected references with selected source fingerprints.
+    """
+    references = load_reference_revision(root, split, revision)
+    index = read_json(root, "index.json")
+    for partition, relative in references.archives.items():
+        subset = {**index, "cases": [case for case in index["cases"] if case["split"] == partition]}
+        validate_independent_review(
+            root,
+            subset,
+            relative,
+            check_oracle=False,
+            require_blind_assessments=references.metadata["review_protocol"] == "blind_assessments",
+        )
+    return references
+
+
 def validate_splits(root: Path, index: dict) -> dict:
     """Reject family overlap, duplicated patches across partitions, and stale split corpora.
 
@@ -288,6 +333,19 @@ def validate_splits(root: Path, index: dict) -> dict:
     )
     require(set(splits["partitions"]) == {"development", "evaluation"}, "Invalid partitions")
     corpus = read_json(root, "corpus.json")
+    require(corpus.get("assessment_rubric") == "rubric.toml", "Unexpected execution rubric")
+    require(
+        [case["case_id"] for case in corpus["cases"]]
+        == [case["case_id"] for case in index["cases"]],
+        "Execution corpus case order differs from index",
+    )
+    for execution, indexed in zip(corpus["cases"], index["cases"], strict=True):
+        require(
+            execution.get("category") == "rubric"
+            and execution.get("evidence") == indexed["evidence"]
+            and execution.get("review") == indexed.get("review"),
+            f"{indexed['case_id']}: execution corpus inputs differ from index",
+        )
     families = {}
     patches = {}
     family_patches = {}

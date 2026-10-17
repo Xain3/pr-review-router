@@ -357,8 +357,9 @@ These commands write `reports/synthetic-prs-label-review-development.json` and
 hashes by partition and an `adjudication_summary` including unresolved cases and
 author-reference overrides. Confusion remains explicitly measured against the
 provisional author labels; final adjudications are separately visible. The
-benchmark's `by_reference_confidence` uses the fresh development review and the
-held-out review, while the historical archive remains available for comparison.
+label-review audit's `by_review_confidence` retains full confusion for contested
+and uncontested cases; `review_confidence_support` counts their support. Benchmark `by_reference_confidence` follows the selected grading
+revision; `original` is explicitly grouped as `author_intent`.
 All participants use the same model family, and no human validity or live model
 quality measurement is claimed.
 
@@ -390,9 +391,11 @@ uv run python examples/synthetic-prs/review_report.py
 ```
 
 This writes `reports/synthetic-prs-label-review.json` for both reviewers, with
-support counts and a separate `by_reference_confidence` view. Cases containing
-any contested label are separated from `uncontested_ai` cases; neither group
-claims human validation. Recommendation confusion in this report is a policy
+support counts, separate `review_confidence_support` counts, and full confusion
+in `by_review_confidence`. Cases containing
+any contested label are counted separately from `uncontested_ai` cases; neither
+group claims human validation. This audit grades against original author intent
+to expose disagreements, while benchmark scoring defaults to latest adjudications. Recommendation confusion in this report is a policy
 projection of the archived labels, not an observed router run. No new live model
 quality score is claimed.
 
@@ -471,8 +474,12 @@ score accuracy, mean absolute error, binary trivial/non-trivial accuracy, a
 reference-by-prediction confusion matrix with separate uncertainty counts, and
 accuracy by PR communication quality. It also reports confusion and support
 by scenario, family, author, split, reference level, and scenario-by-level.
-Uncertain predictions stay in accuracy denominators; mean absolute error is
-computed only for classified cases. Compare scores for this criterion and statuses for the fourteen
+Uncertain predictions stay in accuracy denominators for known reference levels;
+mean absolute error uses only cases with both reference and prediction classified.
+Latest review judgments are the default. Unknown reference levels remain explicit
+and are excluded from numeric accuracy; native-label agreement and uncertainty
+counts include them. Select `--reference-revision original` or a registered name
+to grade against a different snapshot. Compare scores for this criterion and statuses for the fourteen
 status-based criteria. This command scores supplied predictions offline; it performs no
 inference and retains the provisional label status in its output. Withhold
 reference triviality labels from model inputs and split by family as described
@@ -548,11 +555,13 @@ rules match the native label.
 `rubric.toml`. Its expected criterion statuses come from the oracle
 (`not_assessable` becomes `uncertain`), and each expected recommendation is
 computed by applying the rubric's own enforcement rules to those statuses and the
-oracle triviality level. The benchmark is pinned by an explicit
-[`policy.toml`](policy.toml) and [`providers.toml`](providers.toml): the local
-`winnow:e4b` Ollaya decision model with six choice options, and the deterministic
-mock reviewer, since the benchmark measures the rubric decision rather than code
-review.
+oracle triviality level. Those execution references remain preserved. The benchmark
+recomputes grading references from **the latest adjudicated review by default**,
+including revised criterion labels and unresolved triviality judgments. Explicit
+[`policy.toml`](policy.toml) and [`providers.toml`](providers.toml) pin execution
+to the local `winnow:e4b` Ollaya decision model with six choice options and the
+deterministic mock reviewer. The benchmark measures rubric decisions; the mock
+reviewer supplies synthetic fixtures and performs no substantive code review.
 
 ```sh
 # Live local inference, recording exact HTTP exchanges for replay.
@@ -564,16 +573,47 @@ uv run python examples/synthetic-prs/benchmark.py \
   --replay-dir reports/synthetic-prs-benchmark \
   --output-dir reports/synthetic-prs-benchmark-replay
 
-# Rescore the same bound summary offline, including all scenario slices.
+# Rescore the same bound summary against the latest review, offline.
 uv run python examples/synthetic-prs/benchmark.py \
   --summary reports/synthetic-prs-benchmark/summary.json \
   --output-dir reports/synthetic-prs-benchmark-rescored
 ```
 
+Select grading labels independently of model inputs:
+
+```sh
+# List names without inference: latest, original, historical-125, review-2026-10-17.
+uv run python examples/synthetic-prs/benchmark.py --list-reference-revisions
+
+# Compare the same bound predictions with the canonical author-intent baseline.
+uv run python examples/synthetic-prs/benchmark.py \
+  --summary reports/synthetic-prs-benchmark/summary.json \
+  --reference-revision original \
+  --output-dir reports/synthetic-prs-original-grade
+
+# Pin an immutable named review rather than the moving latest alias.
+uv run python examples/synthetic-prs/benchmark.py \
+  --summary reports/synthetic-prs-benchmark/summary.json \
+  --reference-revision review-2026-10-17 \
+  --output-dir reports/synthetic-prs-pinned-grade
+```
+
+The standalone `evaluate_triviality.py` accepts the same `--reference-revision`
+selector and defaults to `latest`. `original` means the preserved canonical author
+annotations, including recorded corrections, rather than reconstructed initial
+drafts. `historical-125` covers development only: select `--split development`
+with matching predictions. Unknown names and missing selected-case coverage are
+errors; they never fall back to author labels. The registry
+[`reference-revisions.json`](independent-review/reference-revisions.json) names
+archive snapshots and their validation protocols. To add a revision, preserve old
+archives, register new partition archives, and move `latest` when ready. Every
+revision must match current case inputs and rubric; changing either requires
+re-review and fresh predictions.
+
 The runner removes `PR_REVIEW_ROUTER_*` environment overrides so the pinned
 policy alone applies, then runs `pr-review-router evaluate` and writes
 `benchmark.json` beside the router's per-case outputs. It records SHA-256
-hashes of the corpus, rubric, index, policy, and provider files; per-criterion
+hashes of prediction inputs and separate grading sources; per-criterion
 expected-to-actual counts; recommendation agreement and unsafe approvals; and
 triviality accuracy from the native scale answers. Outputs stay under ignored
 `reports/`.
@@ -591,14 +631,30 @@ all classified scale choices map to `passed`, so inspect the native ordinal matr
 Unobserved intersections are omitted; present groups can have support one and
 should not be interpreted as robust population estimates.
 
-Results must contain each selected case exactly once and match local reference
-labels. Before inference, the runner captures selected evidence, commit metadata,
-review texts, partitions, rubric, configuration, and label-review hashes. It
-checks that inputs did not change during the run, then binds the completed
-summary to `benchmark-inputs.json`. Offline `--summary` requires that sidecar and
-rejects stale, swapped, or unbound results instead of attributing old predictions
-to current files. Older summaries require a fresh benchmark run. Labels always
-retain the pinned corpus's provisional provenance.
+Results must contain each selected case exactly once. Version-2
+`benchmark-inputs.json` captures selected evidence, commit metadata, review texts,
+partitions, rubric, configuration, original run labels, and the completed summary
+hash. Execution corpus paths, order, category, and rubric must match the fixed
+index. The runner checks that inputs did not change during inference. Offline
+`--summary` requires that binding and rejects changed inputs or results. It can
+regrade unchanged predictions against new review snapshots without inference.
+Version-1 bindings work when their original canonical labels remain verifiable;
+unbound summaries require a fresh benchmark run.
+
+`benchmark.json` version 3 records `grading_reference` (requested/resolved name,
+protocol and source hashes) and `grading_references` (selected per-case judgments).
+The raw `summary.json` retains execution references and its original accounting;
+use `benchmark.json` for the chosen grade. No author annotations are rewritten.
+Latest grading changes `pr-087`'s testing explanation to passed and `pr-120/121`'s
+description coverage to failed. It retains 41 uncertain triviality references:
+35 development and six evaluation cases. These have their own confusion row and
+`uncertain` level stratum, and their expected recommendation cannot be approval.
+Numeric triviality accuracy uses only known reference levels (108 across all
+cases), retaining prediction abstentions in that denominator. An all-uncertain
+stratum reports null numeric accuracy. `native_label_agreement` includes every
+case, and counts of classifications or trivial predictions on unresolved
+references expose potentially overconfident decisions. All labels remain
+provisional AI judgments.
 
 On 2026-10-15, a live run on the original 100 cases (no review text and the earlier
 criterion instructions) had no schema or transport failures and no unsafe

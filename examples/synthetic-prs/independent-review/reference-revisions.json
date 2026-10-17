@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "latest": "review-2026-10-17",
+  "revisions": {
+    "original": {
+      "kind": "author_intent",
+      "description": "Preserved canonical author-intent annotations, including recorded pre-review corrections; not a reconstruction of initial drafts."
+    },
+    "historical-125": {
+      "kind": "adjudicated_review",
+      "description": "Historical independent AI adjudications for the original 125 development cases.",
+      "archives": {
+        "development": "independent-review/reviews.json"
+      },
+      "review_protocol": "historical"
+    },
+    "review-2026-10-17": {
+      "kind": "adjudicated_review",
+      "description": "Current adjudications for both development and held-out evaluation cases.",
+      "archives": {
+        "development": "independent-review/legacy-reviews.json",
+        "evaluation": "independent-review/authored-reviews.json"
+      },
+      "review_protocol": "blind_assessments"
+    }
+  }
+}

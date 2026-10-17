@@ -39,7 +39,15 @@ def test_fresh_legacy_review_covers_every_original_case_and_criterion():
 
 
 @pytest.mark.parametrize(
-    "mutation", ["missing_case", "raw_label", "evidence", "historical_hash", "previous_label"]
+    "mutation",
+    [
+        "missing_case",
+        "raw_label",
+        "evidence",
+        "historical_hash",
+        "missing_historical_hash",
+        "previous_label",
+    ],
 )
 def test_legacy_review_rejects_incomplete_stale_or_inconsistent_records(tmp_path, mutation):
     root = tmp_path / "corpus"
@@ -54,6 +62,8 @@ def test_legacy_review_rejects_incomplete_stale_or_inconsistent_records(tmp_path
         ] = "failed"
     elif mutation == "historical_hash":
         archive["historical_review_sha256"] = "0" * 64
+    elif mutation == "missing_historical_hash":
+        archive.pop("historical_review_sha256")
     elif mutation == "previous_label":
         archive["cases"]["pr-001"]["labels"]["title-format"]["previous_adjudicated"] = "failed"
     else:
@@ -69,7 +79,8 @@ def test_legacy_review_rejects_incomplete_stale_or_inconsistent_records(tmp_path
     }
     validate = runpy.run_path(str(ROOT / "validate.py"))["validate_independent_review"]
     with pytest.raises(
-        ValueError, match="cover exactly|blind judgment|re-review|historical archive|provenance"
+        ValueError,
+        match="cover exactly|blind judgment|re-review|historical archive|provenance",
     ):
         validate(root, selected, "independent-review/legacy-reviews.json")
 
@@ -93,7 +104,7 @@ def test_legacy_arbitration_corrects_evidence_errors_and_keeps_ambiguous_familie
     assert len(uncertain) == 35
 
 
-def test_benchmark_rejects_stale_active_reviews_before_scoring_or_binding(tmp_path):
+def test_benchmark_rejects_stale_grading_without_invalidating_prediction_bindings(tmp_path):
     root = tmp_path / "corpus"
     shutil.copytree(ROOT, root, ignore=shutil.ignore_patterns("__pycache__"))
     path = root / "independent-review/legacy-reviews.json"
@@ -109,8 +120,8 @@ def test_benchmark_rejects_stale_active_reviews_before_scoring_or_binding(tmp_pa
     }
     with pytest.raises(ValueError, match="re-review"):
         namespace["score"](summary, "development")
-    with pytest.raises(ValueError, match="re-review"):
-        namespace["input_binding"]("development", root / "policy.toml", root / "providers.toml")
+    # Review revisions affect grading, not immutable prediction inputs.
+    namespace["input_binding"]("development", root / "policy.toml", root / "providers.toml")
 
 
 @pytest.mark.parametrize("split,count", [("development", 125), ("evaluation", 24), ("all", 149)])
@@ -122,6 +133,14 @@ def test_review_report_scores_selected_partition_and_exposes_final_adjudications
     assert result["adjudication_summary"]["label_count"] == count * 7
     for reviewer in result["reviewers"].values():
         assert reviewer["case_count"] == count
+        assert reviewer["grading_reference"]["revision"] == "original"
+        assert {
+            key: value["case_count"] for key, value in reviewer["by_review_confidence"].items()
+        } == result["review_confidence_support"]
+        assert all(
+            value["criteria"]["testing-explanation"]["support"] == value["case_count"]
+            for value in reviewer["by_review_confidence"].values()
+        )
         assert sum(group["case_count"] for group in reviewer["by_scenario"].values()) == count
         assert (
             sum(group["case_count"] for group in reviewer["by_triviality_level"].values()) == count

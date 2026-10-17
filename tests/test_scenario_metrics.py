@@ -49,7 +49,7 @@ def _score(summary):
     :param summary: Experiment outputs with embedded references.
     :returns: Stratified benchmark metrics.
     """
-    return runpy.run_path(str(ROOT / "benchmark.py"))["score"](summary, "evaluation")
+    return runpy.run_path(str(ROOT / "benchmark.py"))["score"](summary, "evaluation", "original")
 
 
 @pytest.mark.parametrize("mutation", ["missing", "duplicate", "unknown", "references"])
@@ -163,7 +163,7 @@ def test_triviality_scores_only_the_selected_partition_and_counts_abstention():
     }
     predictions["predictions"][0]["score"] = None
     evaluate = runpy.run_path(str(ROOT / "evaluate_triviality.py"))["evaluate"]
-    result = evaluate(ROOT, predictions, "evaluation")
+    result = evaluate(ROOT, predictions, "evaluation", "original")
     assert result["case_count"] == 24 and result["classified"] == 23
     assert result["exact_score_accuracy"] == 23 / 24
     assert sum(result["confusion_matrix"]["uncertain"]) == 1
@@ -209,8 +209,7 @@ def test_rescoring_requires_the_original_input_binding(tmp_path, evaluation_summ
     evidence = json.loads(path.read_text())
     evidence["body"] += "\nAdditional supplied prose.\n"
     path.write_text(json.dumps(evidence))
-    with pytest.raises(ValueError, match="re-review"):
-        namespace["input_binding"]("evaluation", root / "policy.toml", root / "providers.toml")
+    # Prediction binding still rejects changed supplied evidence, independently of label revision.
     changed = copy.deepcopy(binding)
     changed["case_inputs_sha256"]["pr-126"] = namespace["case_inputs_sha256"](
         {

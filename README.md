@@ -162,6 +162,11 @@ The [index](examples/synthetic-prs/INDEX.md) includes family and author provenan
 Both partitions have fresh blind review under the same seven-criterion rubric;
 the [review guide](examples/synthetic-prs/README.md#independent-review) explains
 the preserved history, current adjudications, and unresolved cases.
+The benchmark grades the latest adjudicated review by default. Use
+`--reference-revision original` for canonical author labels, or select a registered
+review snapshot with `--reference-revision NAME`; list them with
+`--list-reference-revisions`. Bound predictions can be rescored offline under
+another revision without inference. Unresolved judgments remain uncertain.
 These synthetic AI labels still require human review before quality assessment
 or calibration.
 
