@@ -450,6 +450,21 @@ sets across partitions, stale partition corpora, and missing author provenance.
 Independent authoring and blind AI label review do not confer human-reviewed
 ground truth; contested judgments retain their dissent and provisional labels.
 
+The original 125 development cases also receive two fresh blind judgments per
+criterion under the same current seven-criterion rubric and adjudication rules
+as the 24 evaluation cases. `independent-review/legacy-reviews.json` records
+these current judgments; `reviews.json` remains the unchanged historical
+archive. Both raw reviewer assessments, source pointers, input hashes, prior
+adjudications, and any current dissent are retained. A clear factual contradiction
+can overturn author intent; unresolved interpretations receive `uncertain`.
+Patch-based triviality adjudications must be consistent across identical family
+diffs, independently of PR-text variants. The offline review reporter accepts
+`--split development`, `--split evaluation` (default), or `--split all`, and
+includes final adjudications and unresolved disagreements separately from
+confusion against provisional author references. The benchmark's contested-case
+view uses the latest review for each partition. No original PR input, author
+annotation, rubric, or partition assignment is rewritten by the re-review.
+
 The benchmark runners default to evaluation; `--split development` and
 `--split all` are explicit alternatives. Scoring requires exactly one result for
 each selected case and compares embedded references with pinned local labels.

@@ -209,8 +209,15 @@ def test_rescoring_requires_the_original_input_binding(tmp_path, evaluation_summ
     evidence = json.loads(path.read_text())
     evidence["body"] += "\nAdditional supplied prose.\n"
     path.write_text(json.dumps(evidence))
-    changed = namespace["input_binding"](
-        "evaluation", root / "policy.toml", root / "providers.toml"
+    with pytest.raises(ValueError, match="re-review"):
+        namespace["input_binding"]("evaluation", root / "policy.toml", root / "providers.toml")
+    changed = copy.deepcopy(binding)
+    changed["case_inputs_sha256"]["pr-126"] = namespace["case_inputs_sha256"](
+        {
+            "evidence": "prs/pr-126/evidence.json",
+            "metadata": "prs/pr-126/metadata.json",
+            "review": "prs/pr-126/review.md",
+        }
     )
     with pytest.raises(ValueError, match="Stale.*rerun"):
         namespace["verify_binding"](summary_path, changed)

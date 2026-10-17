@@ -257,6 +257,8 @@ fail PR communication quality merely because of their triviality score.
 
 ## Independent review
 
+### Historical review of the original cases
+
 [`independent-review/reviews.json`](independent-review/reviews.json) holds an
 independent AI review of the seven rubric criteria (`title-format`,
 `summary-section`, `change-rationale`, `description-coverage`,
@@ -317,6 +319,48 @@ Limitations:
   deterministic and agreed in all cases.
 - Human review is still required before using these labels for calibration or
   quality assessment.
+
+### Fresh review of the original 125 cases
+
+[`independent-review/legacy-reviews.json`](independent-review/legacy-reviews.json)
+adds a fresh blind review of every original case using exactly the same current
+seven-criterion rubric as the held-out cases. Reviewers received only opaque,
+shuffled input packets and the rubric; they could not see author labels,
+historical review judgments, case/scenario identities, or one another's answers.
+Pass A divided the workload between two independent agents (63 and 62 cases);
+a third agent performed pass B for all 125 cases. This yields two independent
+judgments for each of 875 criterion labels, or 1,750 raw judgments.
+
+The coordinating adjudicator compared both passes with the actual evidence and
+rubric, retaining a supported judgment when the text settles the issue and
+`uncertain` when it does not. Matched families receive the same final
+patch-based triviality judgment regardless of their PR descriptions. Both raw
+rationales, flags, source pointers, and the previous adjudication are preserved.
+The original fixtures, provisional author annotations, partition assignment, and
+historical `reviews.json` are unchanged. The new archive fingerprints the
+historical archive as well as the case inputs and rubric.
+
+See the [fresh development review findings](independent-review/LEGACY-REVIEW.md)
+for the resulting disagreements and final judgments: `pr-087` now passes its
+testing explanation, `pr-120/121` fail description coverage, and 35 cases in
+three repeated diff families retain uncertain triviality adjudications. There
+are 49 contested labels across 45 original cases. Reproduce the complete
+scenario/criterion/reference-level confusion and adjudication findings offline:
+
+```sh
+uv run python examples/synthetic-prs/review_report.py --split development
+uv run python examples/synthetic-prs/review_report.py --split all
+```
+
+These commands write `reports/synthetic-prs-label-review-development.json` and
+`reports/synthetic-prs-label-review-all.json`. Report version 2 records archive
+hashes by partition and an `adjudication_summary` including unresolved cases and
+author-reference overrides. Confusion remains explicitly measured against the
+provisional author labels; final adjudications are separately visible. The
+benchmark's `by_reference_confidence` uses the fresh development review and the
+held-out review, while the historical archive remains available for comparison.
+All participants use the same model family, and no human validity or live model
+quality measurement is claimed.
 
 ### Held-out independent review
 

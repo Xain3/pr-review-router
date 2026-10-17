@@ -74,7 +74,8 @@ def score(summary: dict, split: str = "all") -> dict:
     :raises ValueError: If case coverage or embedded references differ from pinned inputs.
     """
     index = json.loads((ROOT / "index.json").read_text(encoding="utf-8"))
-    runpy.run_path(str(ROOT / "validate.py"))["validate_splits"](ROOT, index)
+    validation = runpy.run_path(str(ROOT / "validate.py"))
+    validation["validate_splits"](ROOT, index)
     if summary.get("label_status", index["label_status"]) != index["label_status"]:
         raise ValueError("Summary label provenance differs from the provisional corpus")
     levels = {level["label"]: level["score"] for level in index["triviality_scale"]["levels"]}
@@ -99,10 +100,7 @@ def score(summary: dict, split: str = "all") -> dict:
         raise ValueError("Summary reference labels differ from the pinned selected corpus")
     outputs = {case["case_id"]: case.get("rubric") or {} for case in summary["cases"]}
     rows = []
-    review_labels = {}
-    for name in ("reviews.json", "authored-reviews.json"):
-        archive = json.loads((ROOT / "independent-review" / name).read_text(encoding="utf-8"))
-        review_labels.update(archive["cases"])
+    review_labels = validation["load_active_reviews"](ROOT, index)
     for case in selected:
         actual = outputs[case["case_id"]]
         answer = (actual.get("native_answers") or {}).get(RUBRIC_TRIVIALITY) or {}
@@ -163,7 +161,9 @@ def input_binding(split: str, config: Path, providers: Path) -> dict:
     :returns: Content fingerprints bound to the selected case IDs.
     """
     index = json.loads((ROOT / "index.json").read_text(encoding="utf-8"))
-    runpy.run_path(str(ROOT / "validate.py"))["validate_splits"](ROOT, index)
+    validation = runpy.run_path(str(ROOT / "validate.py"))
+    validation["validate_splits"](ROOT, index)
+    validation["load_active_reviews"](ROOT, index)
     selected = [case for case in index["cases"] if split == "all" or case["split"] == split]
     paths = {
         name: ROOT / name
@@ -175,6 +175,7 @@ def input_binding(split: str, config: Path, providers: Path) -> dict:
             "corpus-development.json",
             "corpus-evaluation.json",
             "independent-review/reviews.json",
+            "independent-review/legacy-reviews.json",
             "independent-review/authored-reviews.json",
         )
     }

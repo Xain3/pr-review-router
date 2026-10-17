@@ -23,6 +23,10 @@ REVIEWED_CRITERIA = [
     "testing-explanation",
     "change-triviality",
 ]
+ACTIVE_REVIEW_ARCHIVES = {
+    "development": "independent-review/legacy-reviews.json",
+    "evaluation": "independent-review/authored-reviews.json",
+}
 REVIEW_STATUSES = {
     "none": "not_assessable",
     "ambiguous": "not_assessable",
@@ -108,6 +112,11 @@ def validate_independent_review(
     :raises ValueError: If a label is stale, malformed, or points at missing evidence.
     """
     review = read_json(root, relative)
+    historical = (
+        read_json(root, "independent-review/reviews.json")
+        if relative == ACTIVE_REVIEW_ARCHIVES["development"]
+        else None
+    )
     require(
         review["schema_version"] == 1 and review["label_status"] == "independent_ai_review",
         "Independent review must not claim human review",
@@ -117,6 +126,12 @@ def validate_independent_review(
         "Independent review predates the current rubric; re-review the cases",
     )
     require(review["criteria"] == REVIEWED_CRITERIA, "Unexpected independently reviewed criteria")
+    if relative == ACTIVE_REVIEW_ARCHIVES["development"]:
+        require(
+            review["historical_review_sha256"]
+            == hashlib.sha256((root / "independent-review/reviews.json").read_bytes()).hexdigest(),
+            "Legacy re-review no longer matches its preserved historical archive",
+        )
     require(
         set(review["cases"]) == {case["case_id"] for case in index["cases"]},
         "Independent review must cover exactly the corpus cases",
@@ -126,6 +141,7 @@ def validate_independent_review(
     status_to_oracle = {"passed": "passed", "failed": "failed", "not_assessable": "uncertain"}
     counts = Counter()
     per_criterion = {criterion: Counter() for criterion in REVIEWED_CRITERIA}
+    family_triviality = {}
     for case in index["cases"]:
         case_id = case["case_id"]
         directory = root / "prs" / case_id
@@ -142,6 +158,18 @@ def validate_independent_review(
         paths = {file["path"] for file in evidence["files"]}
         require(set(record["labels"]) == set(REVIEWED_CRITERIA), f"{case_id}: missing criteria")
         for criterion, label in record["labels"].items():
+            if criterion == "change-triviality" and relative in ACTIVE_REVIEW_ARCHIVES.values():
+                require(
+                    family_triviality.setdefault(case["family_id"], label["adjudicated"])
+                    == label["adjudicated"],
+                    f"{case_id}: final triviality differs across matched family patches",
+                )
+            if historical is not None:
+                require(
+                    label.get("previous_adjudicated")
+                    == historical["cases"][case_id]["labels"][criterion]["adjudicated"],
+                    f"{case_id}/{criterion}: historical adjudication provenance disagrees",
+                )
             allowed = levels | {"uncertain"} if criterion == "change-triviality" else statuses
             reference = oracle[criterion]
             expected = (
@@ -155,6 +183,25 @@ def validate_independent_review(
                 f"{case_id}/{criterion}: invalid label values",
             )
             require(label["oracle"] == expected, f"{case_id}/{criterion}: stale oracle copy")
+            require(
+                type(label["contested"]) is bool, f"{case_id}/{criterion}: invalid contested flag"
+            )
+            if relative in ACTIVE_REVIEW_ARCHIVES.values():
+                assessments = label.get("reviewer_assessments", {})
+                require(
+                    set(assessments) == {"A", "B"},
+                    f"{case_id}/{criterion}: missing blind judgments",
+                )
+                for reviewer, assessment in assessments.items():
+                    require(
+                        assessment["label"] == label["reviewers"][reviewer]
+                        and bool(assessment["rationale"].strip())
+                        and bool(assessment["evidence"])
+                        and set(assessment["evidence"]) <= set(label["evidence"])
+                        and type(assessment["contested"]) is bool
+                        and (not assessment["contested"] or label["contested"]),
+                        f"{case_id}/{criterion}: inconsistent blind judgment for {reviewer}",
+                    )
             unanimous = len(set(values)) == 1
             require(
                 label["resolution"]
@@ -209,6 +256,22 @@ def validate_independent_review(
         "Stale independent-review summary",
     )
     return dict(counts)
+
+
+def load_active_reviews(root: Path, index: dict) -> dict:
+    """Load current reviews only after validating their input and judgment provenance.
+
+    :param root: Corpus root containing both current review archives and preserved history.
+    :param index: Manifest with the case assignments for each partition.
+    :returns: Case records from the latest validated review of each partition.
+    :raises ValueError: If an archive is stale, incomplete, or inconsistent.
+    """
+    records = {}
+    for split, relative in ACTIVE_REVIEW_ARCHIVES.items():
+        selected = {**index, "cases": [case for case in index["cases"] if case["split"] == split]}
+        validate_independent_review(root, selected, relative)
+        records.update(read_json(root, relative)["cases"])
+    return records
 
 
 def validate_splits(root: Path, index: dict) -> dict:
@@ -802,6 +865,11 @@ def validate(root: Path) -> dict:
             root,
             {**index, "cases": [case for case in index["cases"] if case["split"] == "evaluation"]},
             "independent-review/authored-reviews.json",
+        ),
+        "legacy_independent_review": validate_independent_review(
+            root,
+            {**index, "cases": [case for case in index["cases"] if case["split"] == "development"]},
+            ACTIVE_REVIEW_ARCHIVES["development"],
         ),
     }
 

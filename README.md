@@ -159,6 +159,9 @@ cases from 12 new families for evaluation; the original 125 cases are for
 development. Scorers report confusion by scenario, criterion, reference triviality
 level, and their intersections, with support counts and explicit uncertainty.
 The [index](examples/synthetic-prs/INDEX.md) includes family and author provenance.
+Both partitions have fresh blind review under the same seven-criterion rubric;
+the [review guide](examples/synthetic-prs/README.md#independent-review) explains
+the preserved history, current adjudications, and unresolved cases.
 These synthetic AI labels still require human review before quality assessment
 or calibration.
 

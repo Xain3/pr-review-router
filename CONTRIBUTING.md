@@ -31,7 +31,7 @@ uv run pr-review-router evaluate --corpus examples/local-models/corpus.json --pr
 uv run pr-review-router evaluate --corpus examples/rubric-review/corpus.json --providers-config examples/local-models/replay.toml --replay-dir examples/rubric-review/recordings --output-dir reports/rubric-review-replay
 uv run python examples/rubric-review/compare.py
 uv run python examples/synthetic-prs/validate.py
-uv run python examples/synthetic-prs/review_report.py
+uv run python examples/synthetic-prs/review_report.py --split all
 ```
 
 Use `uv run ruff format .` to format changes. Commit `uv.lock` whenever dependencies

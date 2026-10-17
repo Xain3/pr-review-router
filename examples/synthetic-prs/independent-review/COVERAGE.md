@@ -1,5 +1,9 @@
 # Held-out scenario review findings
 
+The original 125 development cases also have a
+[fresh review under the same criteria](LEGACY-REVIEW.md), with their original
+fixtures and historical archive preserved. This page covers the 24 held-out cases.
+
 The extension adds 24 independently authored PRs across twelve new families,
 with paired descriptions/reviews and all five reference triviality levels.
 The original 125 cases and their historical review archive remain unchanged.
