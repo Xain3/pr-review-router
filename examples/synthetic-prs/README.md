@@ -227,6 +227,69 @@ is labeled separately from conflicting content, and `expected_quality` is
 `needs_revision` when any quality criterion fails. Non-trivial changes do not
 fail PR communication quality merely because of their triviality score.
 
+## Independent review
+
+[`independent-review/reviews.json`](independent-review/reviews.json) holds an
+independent AI review of the seven rubric criteria (`title-format`,
+`summary-section`, `change-rationale`, `description-coverage`,
+`review-coverage`, `testing-explanation`, `change-triviality`) for all 125
+cases: 875 labels, each with a rationale, evidence pointers, the oracle label,
+both reviewers' labels, a `contested` flag, and the adjudicated label. Its
+`label_status` is `independent_ai_review`. **This is not human review.** The
+corpus, manifest, and router `corpus.json` stay `provisional`.
+
+Protocol:
+
+- Two reviewer passes (A and B) labeled every case from a packet containing only
+  the title, description, commit messages, patches, supplied review, and the
+  rubric text. Case IDs were opaque and shuffled differently for each pass; no
+  annotation, scenario name, or README was available. Each label has a rationale
+  of at most two sentences, evidence pointers (`title`, `body#Section`,
+  `commit:N`, `patch:path`, `review`, `none`), and a `contested` flag for
+  labels a reasonable reviewer could decide differently.
+- The adjudicator compared both passes with the oracle and recorded every
+  split. `resolution` is `unanimous`, `split_oracle_upheld`, or
+  `oracle_overruled`; splits keep the dissenting rationale.
+- Each case stores a hash of the evidence, commits, and review it was labeled
+  against, and the file stores a hash of `rubric.toml`. `validate.py` fails if
+  either changes, so edited cases or rubric text must be re-reviewed.
+
+What the review found. A first pass over the earlier corpus left 29 of 875
+labels non-unanimous, and the causes were fixable:
+
+- 24 partial-coverage labels (descriptions and reviews that skip an added test
+  file or documentation edit). Both reviewers followed the rubric as written,
+  which said "behavior or configuration change", while the oracle definition
+  counts tests and documentation. The rubric now says the latter.
+- Three "missing change description" bodies (`pr-044`, `pr-045`, `pr-095`) still
+  stated the behavior in their Breaking changes section. The section is now
+  removed from those bodies.
+- Two CSV cases (`pr-088`, `pr-115`) had a manual-testing line too vague to judge,
+  which was then reworded without echoing the omitted tests.
+
+All 125 cases were re-labeled blind on the corrected corpus and rubric, and the
+three CSV cases again after a final wording change. Result: 874 of 875 labels
+are unanimous with the oracle. The one split is `pr-087` `testing-explanation`
+(Summary lists added tests but there is no Testing section; reviewers passed and
+failed it), recorded as contested with the oracle upheld. 59 labels are
+flagged contested by at least one reviewer, mostly `change-triviality`
+(`cli-help` as mechanical versus bounded behavior, parameter additions as
+substantive versus bounded) and `testing-explanation`; filter on
+`contested: false` for high-confidence references.
+
+Limitations:
+
+- Both reviewers and the adjudicator are the same model family, and the
+  adjudicator also wrote PRs 101–125 and the rubric wording. Agreement shows that
+  the labels are consistent with the rubric as written and that ambiguities were
+  surfaced; it does not establish external validity.
+- The planted defects are deliberately clear, so high agreement is expected.
+  The 13 other oracle criteria (`title_meaningful`, consistency labels, and so
+  on) were not independently reviewed; `title-format` and `summary-section` are
+  deterministic and agreed in all cases.
+- Human review is still required before using these labels for calibration or
+  quality assessment.
+
 ## Change triviality scale and benchmark
 
 Higher scores mean less trivial changes. Use the highest applicable level for
