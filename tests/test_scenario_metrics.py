@@ -214,6 +214,70 @@ def test_benchmark_executes_only_the_selected_corpus(tmp_path, monkeypatch):
     assert json.loads((tmp_path / "benchmark-inputs.json").read_text())["split"] == "evaluation"
 
 
+def test_model_provenance_collects_configured_and_observed_models(tmp_path):
+    collect = runpy.run_path(str(ROOT / "benchmark.py"))["collect_model_provenance"]
+    artifact = {
+        "providers": {
+            "decision": {
+                "backend": "ollaya",
+                "endpoint": "http://localhost:11435",
+                "model": "winnow:e4b",
+            },
+            "review": {"backend": "mock"},
+        },
+        "decision": {
+            "models": {
+                "winnow:e4b": {
+                    "digest": "sha256:abc",
+                    "server_version": "1.2.3",
+                    "template": "not exported",
+                }
+            }
+        },
+        "review": {"responses": []},
+    }
+    (tmp_path / "case-a.experiment.json").write_text(json.dumps(artifact))
+
+    provenance = collect(tmp_path, ["case-a", "case-b"])
+
+    assert provenance["status"] == "partial"
+    assert provenance["artifacts_found"] == 1
+    assert provenance["missing_case_ids"] == ["case-b"]
+    assert provenance["roles"]["decision"]["selections"] == [
+        {"backend": "ollaya", "configured_model": "winnow:e4b"}
+    ]
+    assert provenance["roles"]["decision"]["models"] == [
+        {"model": "winnow:e4b", "digest": "sha256:abc", "server_version": "1.2.3"}
+    ]
+    assert provenance["roles"]["review"]["models"] == []
+    assert provenance["inference_location"] == "local"
+    assert provenance["roles"]["decision"]["inference_location"] == "local"
+    assert provenance["roles"]["review"]["inference_location"] == "mock"
+    assert provenance["roles"]["review"]["selections"] == [
+        {"backend": "mock", "configured_model": None}
+    ]
+
+    artifact["providers"]["review"] = {
+        "backend": "ollama",
+        "endpoint": "https://models.example.com",
+        "model": "reviewer-v1",
+    }
+    artifact["review"] = {"models": {}}
+    (tmp_path / "case-a.experiment.json").write_text(json.dumps(artifact))
+    decider_local = collect(tmp_path, ["case-a"])
+    assert decider_local["inference_location"] == "mixed"
+    assert decider_local["roles"]["decision"]["inference_location"] == "local"
+    assert decider_local["roles"]["review"]["inference_location"] == "hosted_api"
+
+    artifact["providers"]["decision"]["endpoint"] = "https://models.example.com"
+    artifact["providers"]["review"]["endpoint"] = "http://localhost:11434"
+    (tmp_path / "case-a.experiment.json").write_text(json.dumps(artifact))
+    reviewer_local = collect(tmp_path, ["case-a"])
+    assert reviewer_local["inference_location"] == "mixed"
+    assert reviewer_local["roles"]["decision"]["inference_location"] == "hosted_api"
+    assert reviewer_local["roles"]["review"]["inference_location"] == "local"
+
+
 def test_rescoring_requires_the_original_input_binding(tmp_path, evaluation_summary):
     root = tmp_path / "corpus"
     shutil.copytree(ROOT, root, ignore=shutil.ignore_patterns("__pycache__"))

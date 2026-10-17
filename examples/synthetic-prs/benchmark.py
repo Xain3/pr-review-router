@@ -2,12 +2,14 @@
 
 import argparse
 import hashlib
+import ipaddress
 import json
 import os
 import runpy
 import subprocess
 import sys
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from pr_review_router.corpus_metrics import rubric_metrics, stratify
 from pr_review_router.corpus_references import reference_revisions
@@ -276,6 +278,95 @@ def verify_binding(summary_path: Path, expected: dict) -> dict:
     return origins
 
 
+def collect_model_provenance(output_dir: Path, case_ids: list[str]) -> dict:
+    """Collect configured and observed model identities from case artifacts.
+
+    :param output_dir: Directory containing per-case experiment artifacts.
+    :param case_ids: Selected benchmark cases in prediction order.
+    :returns: Model selections, observed identities, and artifact coverage.
+    :raises ValueError: If an available experiment artifact is invalid.
+    """
+    missing = []
+    configurations = {role: set() for role in ("decision", "review")}
+    models = {role: set() for role in ("decision", "review")}
+    locations = {role: set() for role in ("decision", "review")}
+    found = 0
+    for case_id in case_ids:
+        path = output_dir / f"{case_id}.experiment.json"
+        if not path.is_file():
+            missing.append(case_id)
+            continue
+        artifact = json.loads(path.read_text(encoding="utf-8"))
+        found += 1
+        for role in configurations:
+            provider = artifact.get("providers", {}).get(role, {})
+            if not isinstance(provider, dict):
+                raise ValueError(f"Invalid {role} provider provenance in {path}")
+            configurations[role].add((provider.get("backend"), provider.get("model")))
+            if provider.get("backend") == "mock":
+                locations[role].add("mock")
+            else:
+                endpoint = provider.get("endpoint")
+                if isinstance(endpoint, str):
+                    hostname = urlsplit(endpoint).hostname
+                    try:
+                        is_loopback = (
+                            hostname == "localhost"
+                            or ipaddress.ip_address(hostname or "").is_loopback
+                        )
+                    except ValueError:
+                        is_loopback = False
+                    locations[role].add("local" if is_loopback else "hosted_api")
+            diagnostics = artifact.get(role) or {}
+            if not isinstance(diagnostics, dict):
+                raise ValueError(f"Invalid {role} model diagnostics in {path}")
+            observed = diagnostics.get("models", {})
+            if not isinstance(observed, dict):
+                raise ValueError(f"Invalid {role} model identities in {path}")
+            for name, metadata in observed.items():
+                if not isinstance(metadata, dict):
+                    raise ValueError(f"Invalid {role} model identity in {path}")
+                models[role].add((name, metadata.get("digest"), metadata.get("server_version")))
+
+    def location(values: set[str]) -> str:
+        return "unavailable" if not values else next(iter(values)) if len(values) == 1 else "mixed"
+
+    inference_locations = {role: location(values) for role, values in locations.items()}
+    model_locations = set().union(*locations.values()) - {"mock"}
+    inference_location = (
+        location(model_locations)
+        if model_locations
+        else "mock"
+        if any("mock" in values for values in locations.values())
+        else "unavailable"
+    )
+    return {
+        "status": "unavailable" if found == 0 else "complete" if not missing else "partial",
+        "artifacts_found": found,
+        "artifacts_expected": len(case_ids),
+        "missing_case_ids": missing,
+        "inference_location": inference_location,
+        "roles": {
+            role: {
+                "inference_location": inference_locations[role],
+                "selections": [
+                    {"backend": backend, "configured_model": model}
+                    for backend, model in sorted(
+                        configurations[role], key=lambda item: (item[0] or "", item[1] or "")
+                    )
+                ],
+                "models": [
+                    {"model": name, "digest": digest, "server_version": server_version}
+                    for name, digest, server_version in sorted(
+                        models[role], key=lambda item: (item[0], item[1] or "", item[2] or "")
+                    )
+                ],
+            }
+            for role in configurations
+        },
+    }
+
+
 def main() -> None:
     """Run or replay the benchmark and save ``benchmark.json`` beside the router outputs."""
     parser = argparse.ArgumentParser(description=__doc__)
@@ -336,8 +427,12 @@ def main() -> None:
     except (OSError, ValueError) as error:
         parser.error(str(error))
     benchmark = {
-        "benchmark_version": 3,
+        "benchmark_version": 4,
         "mode": summary["mode"],
+        "model_provenance": collect_model_provenance(
+            args.summary.parent if args.summary else args.output_dir,
+            binding["selected_case_ids"],
+        ),
         "label_status": json.loads((ROOT / "index.json").read_text())["label_status"],
         "prediction_inputs_sha256": binding["inputs_sha256"],
         "prediction_summary_sha256": hashlib.sha256(

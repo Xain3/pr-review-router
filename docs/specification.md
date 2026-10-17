@@ -502,8 +502,16 @@ separately from grading sources, so review-only revisions permit offline rescori
 while altered model inputs, rubric or configurations require fresh predictions.
 Version-1 bindings remain usable when their original canonical labels are still
 verifiable; unbound summaries require a fresh run. The raw router summary retains
-its original execution references; `benchmark.json` version 3 is the selected
-revision's grade. The standalone scorer emits version 3 as well. Scoring existing
+its original execution references; `benchmark.json` version 4 is the selected
+revision's grade and includes configured providers plus observed local model names,
+digests, server versions, and an inference-location classification (`local`,
+`hosted_api`, `mixed`, `mock`, or `unavailable`) both overall and for each provider
+role when per-case experiment artifacts are available. Mock roles are explicitly
+identified as `mock`; they are excluded from the overall model inference location.
+Partial or missing artifacts are identified in the provenance coverage.
+The current provider configuration accepts only loopback model endpoints; hosted
+API classification is reserved for compatible future providers or archived runs.
+The standalone scorer emits version 3 as well. Scoring existing
 summaries or predictions is offline and does not run inference. Agreement with
 copied reference labels tests accounting only, and public family holdouts do not
 establish external validity or authorize automated acceptance.
