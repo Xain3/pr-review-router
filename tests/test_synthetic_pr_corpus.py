@@ -3,6 +3,7 @@
 import copy
 import json
 import runpy
+import shutil
 from pathlib import Path
 
 import pytest
@@ -46,7 +47,11 @@ def test_synthetic_pr_corpus_regenerates_deterministically(tmp_path):
         for path in tmp_path.rglob("*")
         if path.is_file()
     }
-    expected_paths = {path.relative_to(CORPUS) for path in CORPUS.rglob("*.json")}
+    expected_paths = {
+        path.relative_to(CORPUS)
+        for path in CORPUS.rglob("*.json")
+        if "independent-review" not in path.parts
+    }
     expected_paths |= {path.relative_to(CORPUS) for path in CORPUS.rglob("review.md")}
     expected_paths.add(Path("INDEX.md"))
 
@@ -402,3 +407,58 @@ def test_rubric_instructions_separate_failure_from_insufficient_evidence():
     assert "Choose failed" in instructions["description-coverage"]
     assert "Choose uncertain when no review is supplied" in instructions["review-coverage"]
     assert "new required parameter" in instructions["change-triviality"]
+
+
+def _reviews():
+    return json.loads((CORPUS / "independent-review" / "reviews.json").read_text())
+
+
+def test_independent_review_covers_every_case_without_claiming_human_review():
+    reviews = _reviews()
+    index = json.loads((CORPUS / "index.json").read_text())
+    corpus = json.loads((CORPUS / "corpus.json").read_text())
+    assert reviews["label_status"] == "independent_ai_review"
+    # The router's own corpus must keep saying that no human has reviewed the labels.
+    assert corpus["label_status"] == index["label_status"] == "provisional"
+    assert set(reviews["cases"]) == {case["case_id"] for case in index["cases"]}
+    assert all(len(record["labels"]) == 7 for record in reviews["cases"].values())
+    # Every split is recorded with the dissenting rationale rather than silently resolved.
+    for record in reviews["cases"].values():
+        for label in record["labels"].values():
+            if label["resolution"] != "unanimous":
+                assert label["contested"] and label["dissent"]
+
+
+def test_independent_review_labels_agree_with_the_oracle_except_recorded_splits():
+    reviews = _reviews()
+    splits = {
+        (case_id, criterion): label
+        for case_id, record in reviews["cases"].items()
+        for criterion, label in record["labels"].items()
+        if label["resolution"] != "unanimous"
+    }
+    assert set(splits) == {("pr-087", "testing-explanation")}
+    assert splits[("pr-087", "testing-explanation")]["reviewers"] == {"A": "passed", "B": "failed"}
+    # Review coverage drives routing, so its labels must match the oracle everywhere.
+    assert all(
+        record["labels"]["review-coverage"]["adjudicated"]
+        == record["labels"]["review-coverage"]["oracle"]
+        for record in reviews["cases"].values()
+    )
+
+
+@pytest.mark.parametrize("change", ["evidence", "rubric", "claim"])
+def test_validator_rejects_stale_or_overclaiming_independent_review(tmp_path, change):
+    shutil.copytree(CORPUS, tmp_path / "corpus", ignore=shutil.ignore_patterns("__pycache__"))
+    root = tmp_path / "corpus"
+    if change == "evidence":
+        path = root / "prs" / "pr-001" / "evidence.json"
+        path.write_text(path.read_text().replace("Read the guide", "Read this guide"))
+    elif change == "rubric":
+        (root / "rubric.toml").write_text((root / "rubric.toml").read_text() + "\n# edited\n")
+    else:
+        path = root / "independent-review" / "reviews.json"
+        path.write_text(path.read_text().replace("independent_ai_review", "human_reviewed", 1))
+    validate = runpy.run_path(str(CORPUS / "validate.py"))["validate"]
+    with pytest.raises(ValueError, match="re-review|human review"):
+        validate(root)

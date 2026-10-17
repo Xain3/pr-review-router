@@ -1,5 +1,6 @@
 """Validate corpus structure, patch coverage, commit accounting, and label references offline."""
 
+import hashlib
 import json
 import re
 from collections import Counter
@@ -12,6 +13,15 @@ from pr_review_router.engine import assess_coverage, assess_pr_text
 
 BASE_CASES = 100
 CASE_COUNT = 125
+REVIEWED_CRITERIA = [
+    "title-format",
+    "summary-section",
+    "change-rationale",
+    "description-coverage",
+    "review-coverage",
+    "testing-explanation",
+    "change-triviality",
+]
 REVIEW_STATUSES = {
     "none": "not_assessable",
     "ambiguous": "not_assessable",
@@ -35,7 +45,7 @@ BOUNDARY_SCORES = {
 }
 # Boundary text must state facts without characterizing impact or naming a level.
 BOUNDARY_LEAKS = re.compile(
-    r"break|compatib|no behavio|trivial|refactor|mechanical|substantive|editorial|"
+    r"break|compatib|no behav|trivial|refactor|mechanical|substantive|editorial|"
     r"security|migrat|public",
     re.IGNORECASE,
 )
@@ -68,6 +78,133 @@ def read_json(root: Path, relative: str) -> dict:
     value = json.loads(source.read_text(encoding="utf-8"))
     require(isinstance(value, dict), f"Not a JSON object: {relative}")
     return value
+
+
+def review_input_sha256(directory: Path) -> str:
+    """Hash the files an independent reviewer saw, so edited cases invalidate their reviews.
+
+    :param directory: One case directory under ``prs/``.
+    :returns: Hexadecimal digest of the evidence, commit metadata, and optional review text.
+    """
+    digest = hashlib.sha256()
+    for name in ("evidence.json", "metadata.json", "review.md"):
+        path = directory / name
+        digest.update(name.encode() + b"\0")
+        digest.update(path.read_bytes() if path.exists() else b"")
+        digest.update(b"\0")
+    return digest.hexdigest()
+
+
+def validate_independent_review(root: Path, index: dict) -> dict:
+    """Check that independent-review labels are current, complete, and grounded in evidence.
+
+    :param root: Resolved corpus directory.
+    :param index: Validated corpus manifest.
+    :returns: Agreement counts for the independent AI review.
+    :raises ValueError: If a label is stale, malformed, or points at missing evidence.
+    """
+    review = read_json(root, "independent-review/reviews.json")
+    require(
+        review["schema_version"] == 1 and review["label_status"] == "independent_ai_review",
+        "Independent review must not claim human review",
+    )
+    require(
+        review["rubric_sha256"] == hashlib.sha256((root / "rubric.toml").read_bytes()).hexdigest(),
+        "Independent review predates the current rubric; re-review the cases",
+    )
+    require(review["criteria"] == REVIEWED_CRITERIA, "Unexpected independently reviewed criteria")
+    require(
+        set(review["cases"]) == {case["case_id"] for case in index["cases"]},
+        "Independent review must cover exactly the corpus cases",
+    )
+    levels = {level["label"] for level in index["triviality_scale"]["levels"]}
+    statuses = {"passed", "failed", "uncertain"}
+    status_to_oracle = {"passed": "passed", "failed": "failed", "not_assessable": "uncertain"}
+    counts = Counter()
+    per_criterion = {criterion: Counter() for criterion in REVIEWED_CRITERIA}
+    for case in index["cases"]:
+        case_id = case["case_id"]
+        directory = root / "prs" / case_id
+        record = review["cases"][case_id]
+        require(
+            record["input_sha256"] == review_input_sha256(directory),
+            f"{case_id}: case changed after its independent review; re-review it",
+        )
+        require(record["round"] in {2, 3}, f"{case_id}: unknown review round")
+        evidence = read_json(root, case["evidence"])
+        metadata = read_json(root, case["metadata"])
+        oracle = read_json(root, case["annotations"])["criteria"]
+        sections = set(re.findall(r"^## (.+)$", evidence["body"], re.MULTILINE))
+        paths = {file["path"] for file in evidence["files"]}
+        require(set(record["labels"]) == set(REVIEWED_CRITERIA), f"{case_id}: missing criteria")
+        for criterion, label in record["labels"].items():
+            allowed = levels | {"uncertain"} if criterion == "change-triviality" else statuses
+            reference = oracle[criterion]
+            expected = (
+                reference["level"]
+                if "level" in reference
+                else status_to_oracle[reference["status"]]
+            )
+            values = [label["oracle"], label["adjudicated"], *label["reviewers"].values()]
+            require(
+                set(label["reviewers"]) == {"A", "B"} and set(values) <= allowed,
+                f"{case_id}/{criterion}: invalid label values",
+            )
+            require(label["oracle"] == expected, f"{case_id}/{criterion}: stale oracle copy")
+            unanimous = len(set(values)) == 1
+            require(
+                label["resolution"]
+                == (
+                    "unanimous"
+                    if unanimous
+                    else "split_oracle_upheld"
+                    if label["adjudicated"] == label["oracle"]
+                    else "oracle_overruled"
+                ),
+                f"{case_id}/{criterion}: resolution disagrees with the labels",
+            )
+            require(
+                unanimous or (label["contested"] is True and bool(label.get("dissent"))),
+                f"{case_id}/{criterion}: split labels must be contested with a recorded dissent",
+            )
+            require(
+                bool(label["rationale"].strip()) and bool(label["evidence"]),
+                f"{case_id}/{criterion}: missing rationale or evidence",
+            )
+            for pointer in label["evidence"]:
+                parsed = re.fullmatch(r"(body#|commit:|patch:)(.+)", pointer)
+                kind, name = (parsed.group(1), parsed.group(2)) if parsed else ("", "")
+                require(
+                    pointer in {"title", "body", "none"}
+                    or (pointer == "review" and (directory / "review.md").exists())
+                    or (kind == "body#" and name in sections)
+                    or (
+                        kind == "commit:"
+                        and name.isdigit()
+                        and 0 < int(name) <= len(metadata["commits"])
+                    )
+                    or (kind == "patch:" and name in paths),
+                    f"{case_id}/{criterion}: unresolvable evidence {pointer}",
+                )
+            per_criterion[criterion][label["resolution"]] += 1
+            counts["labels"] += 1
+            counts[label["resolution"]] += 1
+            counts["contested"] += label["contested"]
+    require(
+        review["summary"]
+        == {
+            criterion: {
+                "unanimous": tally["unanimous"],
+                "split": tally["split_oracle_upheld"] + tally["oracle_overruled"],
+                "contested": sum(
+                    item["labels"][criterion]["contested"] for item in review["cases"].values()
+                ),
+            }
+            for criterion, tally in per_criterion.items()
+        },
+        "Stale independent-review summary",
+    )
+    return dict(counts)
 
 
 def validate(root: Path) -> dict:
@@ -574,6 +711,7 @@ def validate(root: Path) -> dict:
         "potential_triviality_confounders": text_confounder_count,
         "failed_criterion_counts": dict(failures),
         "valid_syntax_gibberish": valid_syntax_gibberish,
+        "independent_review": validate_independent_review(root, index),
     }
 
 
