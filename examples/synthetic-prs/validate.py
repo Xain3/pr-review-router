@@ -122,6 +122,18 @@ def validate_independent_review(
     review = read_json(root, relative)
     if require_blind_assessments is None:
         require_blind_assessments = relative != "independent-review/reviews.json"
+    has_previous_adjudications = any(
+        "previous_adjudicated" in label
+        for record in review.get("cases", {}).values()
+        for label in record.get("labels", {}).values()
+    )
+    requires_history = (
+        relative == ACTIVE_REVIEW_ARCHIVES["development"] or has_previous_adjudications
+    )
+    require(
+        not requires_history or "historical_review_sha256" in review,
+        "Review with historical adjudications must declare its historical archive hash",
+    )
     historical = (
         read_json(root, "independent-review/reviews.json")
         if "historical_review_sha256" in review

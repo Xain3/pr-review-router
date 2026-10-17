@@ -318,11 +318,12 @@ def test_binding_rejects_redirected_execution_inputs(bound_predictions, redirect
 
 
 @pytest.mark.parametrize(
-    "corruption", ["raw_label", "raw_evidence", "missing_raw", "family", "history"]
+    "corruption",
+    ["raw_label", "raw_evidence", "missing_raw", "family", "history", "missing_history_hash"],
 )
 def test_newly_named_reviews_receive_full_provenance_validation(bound_predictions, corruption):
     root, namespace, path, _ = bound_predictions
-    development = corruption == "history"
+    development = corruption in {"history", "missing_history_hash"}
     source = "legacy-reviews.json" if development else "authored-reviews.json"
     archive = json.loads((root / "independent-review" / source).read_text())
     case_id = "pr-001" if development else "pr-127" if corruption == "family" else "pr-126"
@@ -336,6 +337,8 @@ def test_newly_named_reviews_receive_full_provenance_validation(bound_prediction
         del label["reviewer_assessments"]
     elif corruption == "history":
         label["previous_adjudicated"] = "uncertain"
+    elif corruption == "missing_history_hash":
+        archive.pop("historical_review_sha256")
     else:
         label.update(adjudicated="incompatible", contested=True, dissent="Unresolved impact.")
     relative = "independent-review/newly-named.json"
@@ -346,5 +349,8 @@ def test_newly_named_reviews_receive_full_provenance_validation(bound_prediction
     registry["revisions"]["newly-named"] = definition
     registry["latest"] = "newly-named"
     (root / REGISTRY).write_text(json.dumps(registry))
-    with pytest.raises(ValueError, match="blind judgment|final triviality|historical adjudication"):
+    with pytest.raises(
+        ValueError,
+        match="blind judgment|final triviality|historical adjudication|historical archive hash",
+    ):
         namespace["score"](json.loads(path.read_text()), "evaluation")

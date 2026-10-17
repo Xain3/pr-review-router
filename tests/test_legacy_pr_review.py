@@ -39,7 +39,15 @@ def test_fresh_legacy_review_covers_every_original_case_and_criterion():
 
 
 @pytest.mark.parametrize(
-    "mutation", ["missing_case", "raw_label", "evidence", "historical_hash", "previous_label"]
+    "mutation",
+    [
+        "missing_case",
+        "raw_label",
+        "evidence",
+        "historical_hash",
+        "missing_historical_hash",
+        "previous_label",
+    ],
 )
 def test_legacy_review_rejects_incomplete_stale_or_inconsistent_records(tmp_path, mutation):
     root = tmp_path / "corpus"
@@ -54,6 +62,8 @@ def test_legacy_review_rejects_incomplete_stale_or_inconsistent_records(tmp_path
         ] = "failed"
     elif mutation == "historical_hash":
         archive["historical_review_sha256"] = "0" * 64
+    elif mutation == "missing_historical_hash":
+        archive.pop("historical_review_sha256")
     elif mutation == "previous_label":
         archive["cases"]["pr-001"]["labels"]["title-format"]["previous_adjudicated"] = "failed"
     else:
@@ -69,7 +79,8 @@ def test_legacy_review_rejects_incomplete_stale_or_inconsistent_records(tmp_path
     }
     validate = runpy.run_path(str(ROOT / "validate.py"))["validate_independent_review"]
     with pytest.raises(
-        ValueError, match="cover exactly|blind judgment|re-review|historical archive|provenance"
+        ValueError,
+        match="cover exactly|blind judgment|re-review|historical archive|provenance",
     ):
         validate(root, selected, "independent-review/legacy-reviews.json")
 
