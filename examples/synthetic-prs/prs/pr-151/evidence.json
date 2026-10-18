@@ -1,0 +1,19 @@
+{
+  "repository": "synthetic/pr-quality-demo",
+  "number": 151,
+  "base_sha": "8c7e4d3c6e83161e5189d3464b239eee42b438fa",
+  "head_sha": "76d5f65670fb906ad5dfeba145cdb421cab1341b",
+  "title": "chore(totals): rename a local variable in total",
+  "body": "## Summary\nRename the local variable t to running_total in total() in src/totals.py.\n\n## Rationale\nThe one-letter name is hard to read; a descriptive name makes the accumulation easier to follow.\n\n## Testing\nValidation plan: compare total() results for sample inputs before and after the rename; no new test is added.\n\n## Limitations\nOnly the variable in total() is renamed; other names in the module are unchanged.\n",
+  "files_complete": true,
+  "files": [
+    {
+      "path": "src/totals.py",
+      "status": "modified",
+      "additions": 3,
+      "deletions": 3,
+      "patch": "diff --git a/src/totals.py b/src/totals.py\n--- a/src/totals.py\n+++ b/src/totals.py\n@@ -1,6 +1,6 @@\n def total(prices):\n     # Add up the prices.\n-    t = 0\n+    running_total = 0\n     for price in prices:\n-        t += price\n-    return t\n+        running_total += price\n+    return running_total\n",
+      "patch_truncated": false
+    }
+  ]
+}

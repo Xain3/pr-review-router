@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "synthetic": true,
+  "case_id": "pr-149",
+  "url": "https://example.invalid/synthetic/pr-quality-demo/pull/149",
+  "state": "open",
+  "draft": false,
+  "author": {
+    "login": "independent-author-b",
+    "name": "independent-author-b",
+    "email": "independent-author-b@example.invalid"
+  },
+  "created_at": "2026-05-29T12:00:00+00:00",
+  "updated_at": "2026-05-29T13:00:00+00:00",
+  "base_ref": "main",
+  "head_ref": "synthetic/pr-149",
+  "base_sha": "2e78e2a2d9cdab9f627973c0514cfffa1b78af14",
+  "head_sha": "f86ead5087fa11ec56522aa2f8ff32f827927c4b",
+  "changed_files": 3,
+  "additions": 7,
+  "deletions": 1,
+  "commits": [
+    {
+      "sha": "dc36d8668cd60273112e6897c0e628077d7dcc4b",
+      "parents": [
+        "2e78e2a2d9cdab9f627973c0514cfffa1b78af14"
+      ],
+      "message": "Permit an optional sixteen-character lowercase hexadecimal trace identifier",
+      "author": {
+        "login": "independent-author-b",
+        "name": "independent-author-b",
+        "email": "independent-author-b@example.invalid"
+      },
+      "authored_at": "2026-05-29T11:50:00+00:00",
+      "files": [
+        "schemas/task-event.schema.json"
+      ],
+      "additions": 2,
+      "deletions": 1
+    },
+    {
+      "sha": "850d826d983317fa69a9441921683d63bfc0aa53",
+      "parents": [
+        "dc36d8668cd60273112e6897c0e628077d7dcc4b"
+      ],
+      "message": "Expose the optional trace identifier on TaskEvent",
+      "author": {
+        "login": "independent-author-b",
+        "name": "independent-author-b",
+        "email": "independent-author-b@example.invalid"
+      },
+      "authored_at": "2026-05-29T11:51:00+00:00",
+      "files": [
+        "src/task-event.ts"
+      ],
+      "additions": 1,
+      "deletions": 0
+    },
+    {
+      "sha": "f86ead5087fa11ec56522aa2f8ff32f827927c4b",
+      "parents": [
+        "850d826d983317fa69a9441921683d63bfc0aa53"
+      ],
+      "message": "Add serialized examples with and without trace identifiers",
+      "author": {
+        "login": "independent-author-b",
+        "name": "independent-author-b",
+        "email": "independent-author-b@example.invalid"
+      },
+      "authored_at": "2026-05-29T11:52:00+00:00",
+      "files": [
+        "tests/task-event.examples.json"
+      ],
+      "additions": 4,
+      "deletions": 0
+    }
+  ]
+}

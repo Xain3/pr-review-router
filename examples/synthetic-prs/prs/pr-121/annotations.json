@@ -1,0 +1,200 @@
+{
+  "schema_version": 3,
+  "case_id": "pr-121",
+  "label_status": "provisional",
+  "label_origin": "synthetic_author_intent",
+  "family_id": "change-default",
+  "scenario": "boundary",
+  "variant": "boundary",
+  "review_variant": "generic",
+  "complexity": "non_trivial",
+  "has_breaking_change": false,
+  "expected_quality": "good",
+  "tags": [
+    "boundary",
+    "non_trivial"
+  ],
+  "criteria": {
+    "title_format": {
+      "status": "passed",
+      "explanation": "The title uses a lowercase type, optional scope/!, and ': '.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "summary-section": {
+      "status": "passed",
+      "explanation": "The body includes a populated level-two Summary section.",
+      "sources": [
+        "evidence.json#/body"
+      ]
+    },
+    "review-coverage": {
+      "status": "failed",
+      "explanation": "The review is a generic approval that repeats the title and addresses no specific change.",
+      "sources": [
+        "review.md",
+        "evidence.json#/files"
+      ]
+    },
+    "title_meaningful": {
+      "status": "passed",
+      "explanation": "The title names a concrete, intelligible change.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "title_diff_consistency": {
+      "status": "passed",
+      "explanation": "The title agrees with the reference change and patch.",
+      "sources": [
+        "evidence.json#/title",
+        "evidence.json#/files"
+      ]
+    },
+    "description_present": {
+      "status": "passed",
+      "explanation": "The description contains substantive change information.",
+      "sources": [
+        "evidence.json#/body"
+      ]
+    },
+    "rationale": {
+      "status": "passed",
+      "explanation": "The rationale explains the concrete problem motivating the reference change.",
+      "sources": [
+        "evidence.json#/body"
+      ]
+    },
+    "changes_described": {
+      "status": "passed",
+      "explanation": "The description states concrete implementation changes.",
+      "sources": [
+        "evidence.json#/body"
+      ]
+    },
+    "description_title_consistency": {
+      "status": "passed",
+      "explanation": "The description and meaningful title describe the same change.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/title"
+      ]
+    },
+    "description_commit_consistency": {
+      "status": "passed",
+      "explanation": "The description covers the changes named by every commit.",
+      "sources": [
+        "evidence.json#/body",
+        "metadata.json#/commits"
+      ]
+    },
+    "description_diff_consistency": {
+      "status": "passed",
+      "explanation": "The summary covers all substantive changes in the patches.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "limitations": {
+      "status": "passed",
+      "explanation": "The description names relevant scope limits or risks.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "breaking_changes": {
+      "status": "not_applicable",
+      "explanation": "No public field or configuration entrypoint is removed in this family; any behavior changes and scope risks are still documented in the reference text.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "testing": {
+      "status": "passed",
+      "explanation": "The description gives a relevant validation plan, without claiming execution.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "change_triviality": {
+      "type": "ordinal",
+      "score": 2,
+      "level": "bounded_behavior",
+      "is_trivial": false,
+      "explanation": "src/pager.py changes _PAGE_SIZE from 100 to 50, so page() returns at most 50 rows; the added test pins 50 rows for a 200-item input. Returned lengths change for inputs over 50 items, a bounded behavior change requiring edge-case review.",
+      "sources": [
+        "evidence.json#/files"
+      ]
+    },
+    "title-format": {
+      "status": "passed",
+      "explanation": "The title uses a lowercase type, optional scope/!, and ': '.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "change-rationale": {
+      "status": "passed",
+      "explanation": "The rationale explains the concrete problem motivating the reference change.",
+      "sources": [
+        "evidence.json#/body"
+      ]
+    },
+    "description-coverage": {
+      "status": "passed",
+      "explanation": "The summary covers all substantive changes in the patches.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "testing-explanation": {
+      "status": "passed",
+      "explanation": "The description gives a relevant validation plan, without claiming execution.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "change-triviality": {
+      "type": "ordinal",
+      "score": 2,
+      "level": "bounded_behavior",
+      "is_trivial": false,
+      "explanation": "src/pager.py changes _PAGE_SIZE from 100 to 50, so page() returns at most 50 rows; the added test pins 50 rows for a 200-item input. Returned lengths change for inputs over 50 items, a bounded behavior change requiring edge-case review.",
+      "sources": [
+        "evidence.json#/files"
+      ]
+    }
+  },
+  "diagnostics": {
+    "text_diff_triviality": {
+      "diff_score": 2,
+      "title_score": 2,
+      "body_score": 2,
+      "text_score": 2,
+      "assessment": "agreed",
+      "relationship": "aligned",
+      "score_delta": 0,
+      "potential_confounder": false,
+      "title_explanation": "The stated work changes a page-size value and the expected length. Title: chore(pager): set the page size to 50",
+      "body_explanation": "The stated work changes a page-size value and the expected length. Summary: Change _PAGE_SIZE from 100 to 50 in src/pager.py and add tests/test_pager.py asserting that a 200-item input returns 50 rows.",
+      "sources": [
+        "evidence.json#/title",
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    }
+  },
+  "reference_change": {
+    "summary": "Change _PAGE_SIZE from 100 to 50 in src/pager.py and add tests/test_pager.py asserting that a 200-item input returns 50 rows.",
+    "rationale": "Pages of 100 rows are too large for the narrow display that renders them; 50 rows fit on one screen.",
+    "limitations": "Only src/pager.py is edited; other uses of the page size in the repository are not searched.",
+    "breaking_changes": ""
+  }
+}

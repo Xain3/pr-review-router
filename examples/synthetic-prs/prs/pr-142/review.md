@@ -1,0 +1,1 @@
+`web/src/emptyState.ts` extracts the same string into a private constant and keeps emptyCartLabel() and its return value unchanged. There is no dictionary or locale branch; the suggested exact-string comparison is appropriate for this extraction.

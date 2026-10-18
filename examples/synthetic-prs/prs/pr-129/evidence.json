@@ -1,0 +1,27 @@
+{
+  "repository": "synthetic/pr-quality-demo",
+  "number": 129,
+  "base_sha": "64b18ea16f0668543c06a991147be4ffc962165d",
+  "head_sha": "0e588626e790b11037f8b4f077514fbebece1505",
+  "title": "fix(a11y): correct the report button label spelling",
+  "body": "## Summary\n\nChange the report button’s aria-label from “Downlaod report” to “Download report”. The current transposition sounds wrong through speech output.\n\n## Testing\n\nTests pass.\n",
+  "files_complete": true,
+  "files": [
+    {
+      "path": "web/report-button.ts",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "patch": "diff --git a/web/report-button.ts b/web/report-button.ts\n--- a/web/report-button.ts\n+++ b/web/report-button.ts\n@@ -1,6 +1,6 @@\n export function reportButton(): HTMLButtonElement {\n   const button = document.createElement(\"button\");\n-  button.setAttribute(\"aria-label\", \"Downlaod report\");\n+  button.setAttribute(\"aria-label\", \"Download report\");\n   button.textContent = \"↓\";\n   return button;\n }\n",
+      "patch_truncated": false
+    },
+    {
+      "path": "web/report-button.test.ts",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "patch": "diff --git a/web/report-button.test.ts b/web/report-button.test.ts\n--- a/web/report-button.test.ts\n+++ b/web/report-button.test.ts\n@@ -2,5 +2,5 @@\n import { reportButton } from \"./report-button\";\n \n test(\"report button has an accessible name\", () => {\n-  expect(reportButton().getAttribute(\"aria-label\")).toBe(\"Downlaod report\");\n+  expect(reportButton().getAttribute(\"aria-label\")).toBe(\"Download report\");\n });\n",
+      "patch_truncated": false
+    }
+  ]
+}

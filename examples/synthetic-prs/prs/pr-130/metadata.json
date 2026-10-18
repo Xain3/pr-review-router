@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "synthetic": true,
+  "case_id": "pr-130",
+  "url": "https://example.invalid/synthetic/pr-quality-demo/pull/130",
+  "state": "open",
+  "draft": false,
+  "author": {
+    "login": "independent-author-a",
+    "name": "independent-author-a",
+    "email": "independent-author-a@example.invalid"
+  },
+  "created_at": "2026-05-10T12:00:00+00:00",
+  "updated_at": "2026-05-10T13:00:00+00:00",
+  "base_ref": "main",
+  "head_ref": "synthetic/pr-130",
+  "base_sha": "298e82487b300ad2230a571e5279861699a79ccc",
+  "head_sha": "65f277b408fdf4a62b088063537b3380989e7fa6",
+  "changed_files": 1,
+  "additions": 1,
+  "deletions": 1,
+  "commits": [
+    {
+      "sha": "65f277b408fdf4a62b088063537b3380989e7fa6",
+      "parents": [
+        "298e82487b300ad2230a571e5279861699a79ccc"
+      ],
+      "message": "build(lint): select the exact 1.4.1 lint runner version",
+      "author": {
+        "login": "independent-author-a",
+        "name": "independent-author-a",
+        "email": "independent-author-a@example.invalid"
+      },
+      "authored_at": "2026-05-10T11:50:00+00:00",
+      "files": [
+        "tools/lint/package.json"
+      ],
+      "additions": 1,
+      "deletions": 1
+    }
+  ]
+}

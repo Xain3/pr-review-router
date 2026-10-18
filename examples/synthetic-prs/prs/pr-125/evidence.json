@@ -1,0 +1,27 @@
+{
+  "repository": "synthetic/pr-quality-demo",
+  "number": 125,
+  "base_sha": "d9b854c7969a5c3f9ff125a9363dcd2c2f0730f7",
+  "head_sha": "28544ad5a903584c29608a763fac6f14e42e0750",
+  "title": "chore(client): add a timeout argument to fetch",
+  "body": "## Summary\nAdd a timeout parameter to fetch() in src/client.py, pass it to _get(), and pass 30 from the call in src/jobs.py.\n\n## Rationale\nCallers need to choose a timeout for slow endpoints instead of always waiting 30 seconds.\n\n## Testing\nValidation plan: call run('u') in src/jobs.py and check that it returns ('u', 30).\n\n## Limitations\nOnly fetch() and its call in src/jobs.py are changed; the timeout value is not validated.\n",
+  "files_complete": true,
+  "files": [
+    {
+      "path": "src/client.py",
+      "status": "modified",
+      "additions": 2,
+      "deletions": 2,
+      "patch": "diff --git a/src/client.py b/src/client.py\n--- a/src/client.py\n+++ b/src/client.py\n@@ -2,5 +2,5 @@\n     return (url, timeout)\n \n \n-def fetch(url):\n-    return _get(url, 30)\n+def fetch(url, timeout):\n+    return _get(url, timeout)\n",
+      "patch_truncated": false
+    },
+    {
+      "path": "src/jobs.py",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "patch": "diff --git a/src/jobs.py b/src/jobs.py\n--- a/src/jobs.py\n+++ b/src/jobs.py\n@@ -2,4 +2,4 @@\n \n \n def run(url):\n-    return fetch(url)\n+    return fetch(url, 30)\n",
+      "patch_truncated": false
+    }
+  ]
+}

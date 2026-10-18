@@ -1,0 +1,212 @@
+{
+  "schema_version": 3,
+  "case_id": "pr-144",
+  "label_status": "provisional",
+  "label_origin": "synthetic_author_intent",
+  "family_id": "normalized-release-archive",
+  "scenario": "accurate_with_open_tooling_concern",
+  "variant": "accurate_with_open_tooling_concern",
+  "review_variant": "open_concern",
+  "complexity": "non_trivial",
+  "has_breaking_change": false,
+  "expected_quality": "good",
+  "tags": [
+    "independently_authored",
+    "accurate_with_open_tooling_concern"
+  ],
+  "criteria": {
+    "title_format": {
+      "status": "passed",
+      "explanation": "The title uses a Conventional Commits type, scope, and subject.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "title_meaningful": {
+      "status": "passed",
+      "explanation": "The title identifies the archive metadata normalization change.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "title_diff_consistency": {
+      "status": "passed",
+      "explanation": "The title agrees with the supplied archive metadata normalization patch.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "description_present": {
+      "status": "passed",
+      "explanation": "The description contains substantive prose about this patch.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "rationale": {
+      "status": "passed",
+      "explanation": "The body names the concrete problem motivating the change.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "changes_described": {
+      "status": "passed",
+      "explanation": "The body makes specific claims about the edits.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "description_title_consistency": {
+      "status": "passed",
+      "explanation": "The title and body describe the same change.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "description_commit_consistency": {
+      "status": "passed",
+      "explanation": "The body accounts for every supplied commit message.",
+      "sources": [
+        "evidence.json#/body",
+        "metadata.json#/commits"
+      ]
+    },
+    "description_diff_consistency": {
+      "status": "passed",
+      "explanation": "The body accurately covers the substantive edits in every changed file.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "limitations": {
+      "status": "passed",
+      "explanation": "The body states relevant scope boundaries for this patch.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "breaking_changes": {
+      "status": "not_applicable",
+      "explanation": "The supplied patch removes no supported interface or configuration.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "testing": {
+      "status": "passed",
+      "explanation": "The body gives a specific validation plan relevant to the changed behavior.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "summary-section": {
+      "status": "passed",
+      "explanation": "A populated level-two Summary section is present.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "review-coverage": {
+      "status": "passed",
+      "explanation": "The supplied review addresses every changed file and relevant implications.",
+      "sources": [
+        "review.md",
+        "evidence.json#/files"
+      ]
+    },
+    "change_triviality": {
+      "type": "ordinal",
+      "score": 2,
+      "level": "bounded_behavior",
+      "is_trivial": false,
+      "explanation": "The shell pipeline changes archive bytes by fixing ordering, numeric ownership, and timestamps and suppressing gzip header metadata. This is bounded build-output behavior; the accompanying documentation exposes the GNU tar constraint without removing a documented application interface.",
+      "sources": [
+        "evidence.json#/files"
+      ]
+    },
+    "title-format": {
+      "status": "passed",
+      "explanation": "The title uses a Conventional Commits type, scope, and subject.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "change-rationale": {
+      "status": "passed",
+      "explanation": "The body names the concrete problem motivating the change.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "description-coverage": {
+      "status": "passed",
+      "explanation": "The body accurately covers the substantive edits in every changed file.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "testing-explanation": {
+      "status": "passed",
+      "explanation": "The body gives a specific validation plan relevant to the changed behavior.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "change-triviality": {
+      "type": "ordinal",
+      "score": 2,
+      "level": "bounded_behavior",
+      "is_trivial": false,
+      "explanation": "The shell pipeline changes archive bytes by fixing ordering, numeric ownership, and timestamps and suppressing gzip header metadata. This is bounded build-output behavior; the accompanying documentation exposes the GNU tar constraint without removing a documented application interface.",
+      "sources": [
+        "evidence.json#/files"
+      ]
+    }
+  },
+  "diagnostics": {
+    "text_diff_triviality": {
+      "diff_score": 2,
+      "title_score": 2,
+      "body_score": 2,
+      "text_score": 2,
+      "assessment": "agreed",
+      "relationship": "aligned",
+      "score_delta": 0,
+      "potential_confounder": false,
+      "title_explanation": "Stabilizing archive metadata implies a bounded build-output change.",
+      "body_explanation": "The body enumerates changed metadata and explicit build-environment limits.",
+      "sources": [
+        "evidence.json#/title",
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    }
+  },
+  "reference_change": {
+    "summary": "Normalize archive ordering, ownership, and timestamps; omit gzip header timestamps and names; document the rules and tool requirement.",
+    "rationale": "Identical built file contents can otherwise produce different archive bytes across packaging machines or times.",
+    "limitations": "GNU tar is required. File contents and permission bits are not normalized; no claim of universal cross-toolchain reproducibility is supported.",
+    "breaking_changes": "No public application interface is removed; the documented build tool requirement narrows to GNU tar."
+  },
+  "authorship": {
+    "author_id": "independent-author-b",
+    "method": "independent_agent_authored"
+  },
+  "contested_criteria": [
+    "change-triviality"
+  ]
+}

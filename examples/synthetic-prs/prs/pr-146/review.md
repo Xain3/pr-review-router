@@ -1,0 +1,1 @@
+Deleting `lib/cratebox/compat.rb` removes the documented alias, so downstream require calls need the migration. `lib/cratebox/version.rb` moves to 2.0.0 consistently with that break. `docs/loading.md` gives the replacement require and keeps the client class location unchanged; the clean-process load checks in the plan address the relevant packaging boundary.

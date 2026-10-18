@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "synthetic": true,
+  "case_id": "pr-118",
+  "url": "https://example.invalid/synthetic/pr-quality-demo/pull/118",
+  "state": "open",
+  "draft": false,
+  "author": {
+    "login": "synthetic-author-01",
+    "name": "Synthetic Author 01",
+    "email": "author-01@example.invalid"
+  },
+  "created_at": "2026-04-28T12:00:00+00:00",
+  "updated_at": "2026-04-28T13:00:00+00:00",
+  "base_ref": "main",
+  "head_ref": "synthetic/pr-118",
+  "base_sha": "3ba6ae55f52ef4d957936e282a35b796de83c31b",
+  "head_sha": "f57727b86383525abb8732dee88c7a192337c5c0",
+  "changed_files": 1,
+  "additions": 1,
+  "deletions": 1,
+  "commits": [
+    {
+      "sha": "f57727b86383525abb8732dee88c7a192337c5c0",
+      "parents": [
+        "3ba6ae55f52ef4d957936e282a35b796de83c31b"
+      ],
+      "message": "chore(totals): fix a repeated word in a comment",
+      "author": {
+        "login": "synthetic-author-01",
+        "name": "Synthetic Author 01",
+        "email": "author-01@example.invalid"
+      },
+      "authored_at": "2026-04-28T11:50:00+00:00",
+      "files": [
+        "src/totals.py"
+      ],
+      "additions": 1,
+      "deletions": 1
+    }
+  ]
+}

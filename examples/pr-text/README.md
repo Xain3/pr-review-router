@@ -49,3 +49,10 @@ The format settings are optional and disabled by default. Set
 checks validate only the configured text format: they do not determine whether
 the title or description accurately describes the code change, edit the PR, or
 approve it.
+
+The same pre-provider gate can be extended with `nonsemantic_checks` for
+repository-specific deterministic rules. Regex checks can inspect `title`,
+`body`, `patch`, or `file_paths`; script checks receive the validated evidence
+JSON on standard input and pass only when their command exits with status zero.
+See the policy format in the main [README](../../README.md). Failed checks are
+reported under `nonsemantic_checks` and hand the PR off without provider calls.

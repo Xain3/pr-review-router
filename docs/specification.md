@@ -337,6 +337,17 @@ supplied review are untrusted state data;
 criterion instructions are separate. Document/review coverage is not proof of
 code correctness, and review-provider responsibilities remain unchanged.
 
+The synthetic PR rubric's `change-rationale` criterion requires a motivating
+problem, need, or constraint distinct from a paraphrase of the change. Its paired
+`good` and `what_not_why` fixtures guard that distinction with the same patch.
+Its `description-coverage` criterion checks every changed file within one
+assessment; any omitted substantive change fails, without requiring literal file
+paths in the PR description. It first checks for a concrete edit claim in the
+description body; without one, it returns `uncertain` before comparing coverage.
+Its `review-coverage` criterion first distinguishes absent or unresolvable review
+text (`uncertain`) from assessable but generic or partial review text (`failed`),
+then checks each changed file within the same criterion.
+
 Semantic criteria are batched through `/v1/systemone`. Each criterion selects
 `question_type`: `choice` (default), `noul`, `predicate`, or `score`. `predicate`
 is an alias for `noul`; Ollaya requests use its native `noul` type. By default,
@@ -349,6 +360,12 @@ lowercase `label`, provider-visible `description`, and optional canonical
 mapped label receives its configured status. An unmapped label remains available
 to `routing_rules`; without a matching rule it maps conservatively to
 `uncertain`.
+
+A semantic choice criterion may set `uncertain_below_confidence` to a per-question
+cutoff in `[0, 1]`. Native confidence below the cutoff maps both the criterion
+status and effective routing label to `uncertain`; the raw choice and confidence
+remain recorded. This is a conservative policy over provider-reported,
+uncalibrated confidence, not a calibrated probability, and adds no provider calls.
 
 Each ordered `routing_rules` entry names a semantic choice
 `target_criterion_id`, a resulting stable `status`, and a nonempty `when`
@@ -440,6 +457,105 @@ blockers, suggestions, skip/approval advice, mismatches, and unsafe approval
 recommendations. Reference-label edits alone do not require fresh inference.
 See the [nine-case, six-criterion examples](../examples/rubric-review/README.md).
 Labels remain provisional and offline tapes explicitly synthetic.
+
+The separate [synthetic PR benchmark](../examples/synthetic-prs/README.md) contains
+157 sanitized fictional PRs across 30 families. Its fixed `splits.json` assigns
+133 cases (18 families) to development and 24 independently authored
+cases (12 new families) to evaluation. Matching description/review variants of a
+family stay together. Validation rejects overlapping families, identical patch
+sets across partitions, stale partition corpora, and missing author provenance.
+Independent authoring and blind AI label review do not confer human-reviewed
+ground truth; contested judgments retain their dissent and provisional labels.
+Historical review revisions declare their original scopes explicitly and cannot
+grade new cases they did not review.
+Eight boundary-family variants (PRs 150-157) extend the original development
+corpus so every family contains at least two cases. Existing 149 case inputs and
+review archives remain unchanged. The frozen `review-2026-10-18` snapshot adds
+two blind AI assessments per new case and retains their raw judgments and
+disagreements. Historical review revisions declare their original scopes
+explicitly and cannot grade new cases they did not review.
+
+The frozen `review-2026-10-17` revision includes the earlier blind review of the
+original 125 development cases and the 24 evaluation cases. Its source archives
+retain their original rubric fingerprint and remain available for reproduction.
+The current `review-2026-10-18-rubric-refresh` revision supersedes it as `latest`
+after two new blind passes over all 157 cases and focused adjudication of
+disagreements and reference conflicts. Old archives, annotations, PR inputs, and
+partition assignments are preserved; labels remain provisional AI judgments.
+
+The `review-2026-10-18-rubric-refresh` snapshot is the current `latest` revision
+for all 157 cases. Two fresh blind AI passes used separately shuffled opaque
+packets containing only the current rubric and supplied PR evidence/review; a
+third isolated adjudication pass resolved reviewer splits, contested judgments,
+prior-reference conflicts, and matched-family triviality disagreements. Raw
+judgments and evidence pointers are retained. Older review archives remain
+unchanged and each revision pins its own rubric hash; only `latest` must match the
+current rubric. All labels remain provisional and are not human ground truth.
+
+The router benchmark defaults to `--split random --sample-size 60`, sampling across
+the entire corpus in balanced family rounds without replacement: exactly two cases
+per family. `--sample-size 30` selects exactly one per family for a quick run.
+Other sizes continue in rounds across families with remaining cases; sizes below
+the family count select distinct random families.
+A supplied `--seed` reproduces selection; otherwise a fresh seed is
+generated. Reports and prediction bindings record the seed, sampling method, size,
+and selected case IDs. Offline rescoring reuses the original sample without drawing
+again. The sampled corpus and its confined input snapshots are saved with outputs.
+Random cross-family samples do not constitute family-disjoint held-out evaluation.
+The benchmark also accepts repeated `--case-id` options for an explicit subset
+instead of random sampling. IDs must be unique and known; explicit selection
+cannot be combined with `--seed` or `--sample-size`. The selected IDs and input
+hashes are recorded for offline rescoring. This reruns model assessment and does
+not alter or replace the independent reference archives.
+The standalone triviality scorer retains its evaluation default. Explicit
+`--split evaluation`, `--split development`, and `--split all` remain available.
+Scoring requires exactly one result for
+each selected case. Both benchmark scorers default to `--reference-revision
+latest`, resolved through `independent-review/reference-revisions.json` to the
+current adjudications for both partitions. `original` selects preserved canonical
+author-intent annotations, including recorded corrections; named snapshots select
+other registered adjudications. `--list-reference-revisions` lists the benchmark's
+choices without inference. Unknown names and revisions missing any selected case
+fail explicitly; partial historical reviews cannot fill gaps with author labels.
+Expected criterion statuses and advisory recommendations are recomputed from the
+selected native judgments through the rubric's enforcement rules. Unresolved
+triviality remains `uncertain`, maps to an uncertain criterion, and cannot justify
+approval. Every report records the resolved revision, source hashes and selected
+per-case judgments separately from prediction-run references.
+Reports include support and expected-to-actual confusion per criterion,
+scenario, reference triviality level, family, split, author, and scenario-by-level
+intersection. Native ordinal triviality confusion is separate from its mapped
+criterion status; all classified native labels map to `passed`. Missing answers
+and explicit uncertainty stay separate and remain in accuracy denominators for
+known reference levels. Uncertain reference levels have a separate confusion row
+and stratum, never a numeric substitute. Numeric accuracy and error exclude
+uncertain references, report the known-reference support, and are null when no
+reference level is known. Native-label agreement includes all cases; separate
+counts expose classifications and trivial predictions on unresolved references.
+Reports count false passes, missed blocking recommendations, non-trivial changes
+classified as trivial, and unsafe approval recommendations in every stratum.
+The standalone triviality scorer also accepts `null` as an explicit abstention;
+missing cases are errors. Input fingerprints include the split definition and
+selected evidence, commit metadata, and supplied review contents. Execution corpus
+paths, case order, category, and rubric must match the indexed fixed corpus.
+Version-2 prediction bindings preserve original run labels and summary hashes
+separately from grading sources, so review-only revisions permit offline rescoring
+while altered model inputs, rubric or configurations require fresh predictions.
+Version-1 bindings remain usable when their original canonical labels are still
+verifiable; unbound summaries require a fresh run. The raw router summary retains
+its original execution references; `benchmark.json` version 4 is the selected
+revision's grade and includes configured providers plus observed local model names,
+digests, server versions, and an inference-location classification (`local`,
+`hosted_api`, `mixed`, `mock`, or `unavailable`) both overall and for each provider
+role when per-case experiment artifacts are available. Mock roles are explicitly
+identified as `mock`; they are excluded from the overall model inference location.
+Partial or missing artifacts are identified in the provenance coverage.
+The current provider configuration accepts only loopback model endpoints; hosted
+API classification is reserved for compatible future providers or archived runs.
+The standalone scorer emits version 3 as well. Scoring existing
+summaries or predictions is offline and does not run inference. Agreement with
+copied reference labels tests accounting only, and public family holdouts do not
+establish external validity or authorize automated acceptance.
 
 ## Mock behavior
 

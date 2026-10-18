@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "synthetic": true,
+  "case_id": "pr-128",
+  "url": "https://example.invalid/synthetic/pr-quality-demo/pull/128",
+  "state": "open",
+  "draft": false,
+  "author": {
+    "login": "independent-author-a",
+    "name": "independent-author-a",
+    "email": "independent-author-a@example.invalid"
+  },
+  "created_at": "2026-05-08T12:00:00+00:00",
+  "updated_at": "2026-05-08T13:00:00+00:00",
+  "base_ref": "main",
+  "head_ref": "synthetic/pr-128",
+  "base_sha": "64b18ea16f0668543c06a991147be4ffc962165d",
+  "head_sha": "8d8dd5d60c3d95ac6cc778e38a484a4b7471427c",
+  "changed_files": 2,
+  "additions": 2,
+  "deletions": 2,
+  "commits": [
+    {
+      "sha": "4964932b393ca60c856bdc9d9fc2ce7d1c48f6e1",
+      "parents": [
+        "64b18ea16f0668543c06a991147be4ffc962165d"
+      ],
+      "message": "fix(a11y): correct the report button accessible name",
+      "author": {
+        "login": "independent-author-a",
+        "name": "independent-author-a",
+        "email": "independent-author-a@example.invalid"
+      },
+      "authored_at": "2026-05-08T11:50:00+00:00",
+      "files": [
+        "web/report-button.ts"
+      ],
+      "additions": 1,
+      "deletions": 1
+    },
+    {
+      "sha": "8d8dd5d60c3d95ac6cc778e38a484a4b7471427c",
+      "parents": [
+        "4964932b393ca60c856bdc9d9fc2ce7d1c48f6e1"
+      ],
+      "message": "test(a11y): expect the corrected accessible name",
+      "author": {
+        "login": "independent-author-a",
+        "name": "independent-author-a",
+        "email": "independent-author-a@example.invalid"
+      },
+      "authored_at": "2026-05-08T11:51:00+00:00",
+      "files": [
+        "web/report-button.test.ts"
+      ],
+      "additions": 1,
+      "deletions": 1
+    }
+  ]
+}

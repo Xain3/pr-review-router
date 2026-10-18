@@ -1,0 +1,1 @@
+The aria-label correction in `web/report-button.ts` leaves the arrow and button element intact. `web/report-button.test.ts` now asserts the corrected full label rather than the misspelling. Both changes are addressed; before merging, can the author check that the intended locale is English and that an untranslated label is acceptable here?

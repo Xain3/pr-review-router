@@ -1,0 +1,212 @@
+{
+  "schema_version": 3,
+  "case_id": "pr-147",
+  "label_status": "provisional",
+  "label_origin": "synthetic_author_intent",
+  "family_id": "ruby-require-alias-removal",
+  "scenario": "breaking_loader_removal_claimed_as_organization",
+  "variant": "breaking_loader_removal_claimed_as_organization",
+  "review_variant": "generic",
+  "complexity": "non_trivial",
+  "has_breaking_change": true,
+  "expected_quality": "needs_revision",
+  "tags": [
+    "independently_authored",
+    "breaking_loader_removal_claimed_as_organization"
+  ],
+  "criteria": {
+    "title_format": {
+      "status": "passed",
+      "explanation": "The title uses a Conventional Commits type, scope, and subject.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "title_meaningful": {
+      "status": "passed",
+      "explanation": "The title identifies the claimed client-loader reorganization change.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "title_diff_consistency": {
+      "status": "failed",
+      "explanation": "The title frames an internal reorganization while the patch deletes a supported loading path.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "description_present": {
+      "status": "passed",
+      "explanation": "The description contains substantive prose about this patch.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "rationale": {
+      "status": "failed",
+      "explanation": "The body motivates grouping files, but the supplied patch retires an entrypoint rather than moving it and gives no reason for that removal.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "changes_described": {
+      "status": "passed",
+      "explanation": "The body makes specific claims about the edits.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "description_title_consistency": {
+      "status": "passed",
+      "explanation": "The title and body describe the same change.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "description_commit_consistency": {
+      "status": "failed",
+      "explanation": "The body contradicts the alias-removal commit and omits the migration-guide commit.",
+      "sources": [
+        "evidence.json#/body",
+        "metadata.json#/commits"
+      ]
+    },
+    "description_diff_consistency": {
+      "status": "failed",
+      "explanation": "The body falsely preserves existing require statements and omits the documentation migration and exact version change.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "limitations": {
+      "status": "passed",
+      "explanation": "The body states relevant scope boundaries for this patch.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "breaking_changes": {
+      "status": "failed",
+      "explanation": "The removed supported alias is denied rather than disclosed, and no migration instructions are given.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "testing": {
+      "status": "passed",
+      "explanation": "The body gives a specific validation plan relevant to the changed behavior.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "summary-section": {
+      "status": "passed",
+      "explanation": "A populated level-two Summary section is present.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "review-coverage": {
+      "status": "failed",
+      "explanation": "The review repeats the title and gives generic approval without addressing any of the three changed files.",
+      "sources": [
+        "review.md",
+        "evidence.json#/files"
+      ]
+    },
+    "change_triviality": {
+      "type": "ordinal",
+      "score": 4,
+      "level": "incompatible",
+      "is_trivial": false,
+      "explanation": "The deleted Ruby file was explicitly documented as a supported require alias. Existing callers of cratebox/compat lose that entrypoint, and the documentation requires migration; this is incompatible regardless of the one-line deletion.",
+      "sources": [
+        "evidence.json#/files"
+      ]
+    },
+    "title-format": {
+      "status": "passed",
+      "explanation": "The title uses a Conventional Commits type, scope, and subject.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "change-rationale": {
+      "status": "failed",
+      "explanation": "The body motivates grouping files, but the supplied patch retires an entrypoint rather than moving it and gives no reason for that removal.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "description-coverage": {
+      "status": "failed",
+      "explanation": "The body falsely preserves existing require statements and omits the documentation migration and exact version change.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "testing-explanation": {
+      "status": "passed",
+      "explanation": "The body gives a specific validation plan relevant to the changed behavior.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "change-triviality": {
+      "type": "ordinal",
+      "score": 4,
+      "level": "incompatible",
+      "is_trivial": false,
+      "explanation": "The deleted Ruby file was explicitly documented as a supported require alias. Existing callers of cratebox/compat lose that entrypoint, and the documentation requires migration; this is incompatible regardless of the one-line deletion.",
+      "sources": [
+        "evidence.json#/files"
+      ]
+    }
+  },
+  "diagnostics": {
+    "text_diff_triviality": {
+      "diff_score": 4,
+      "title_score": 1,
+      "body_score": 1,
+      "text_score": 1,
+      "assessment": "agreed",
+      "relationship": "text_understates",
+      "score_delta": -3,
+      "potential_confounder": true,
+      "title_explanation": "Reorganizing a loader without an explicit interface change implies mechanical organization.",
+      "body_explanation": "The body expressly claims only organization and continued compatibility, understating the removed entrypoint.",
+      "sources": [
+        "evidence.json#/title",
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    }
+  },
+  "reference_change": {
+    "summary": "Delete the documented cratebox/compat require alias, bump the Ruby gem to 2.0.0, and document migration to cratebox/client.",
+    "rationale": "Retire the duplicate supported loader so the package maintains one canonical entrypoint.",
+    "limitations": "The client class and its methods do not move; downstream require strings cannot be updated by this patch.",
+    "breaking_changes": "Existing require \"cratebox/compat\" callers stop loading; replace it with require \"cratebox/client\" before adopting version 2.0."
+  },
+  "authorship": {
+    "author_id": "independent-author-b",
+    "method": "independent_agent_authored"
+  },
+  "contested_criteria": [
+    "testing-explanation"
+  ]
+}

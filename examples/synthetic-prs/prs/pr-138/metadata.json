@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "synthetic": true,
+  "case_id": "pr-138",
+  "url": "https://example.invalid/synthetic/pr-quality-demo/pull/138",
+  "state": "open",
+  "draft": false,
+  "author": {
+    "login": "independent-author-b",
+    "name": "independent-author-b",
+    "email": "independent-author-b@example.invalid"
+  },
+  "created_at": "2026-05-18T12:00:00+00:00",
+  "updated_at": "2026-05-18T13:00:00+00:00",
+  "base_ref": "main",
+  "head_ref": "synthetic/pr-138",
+  "base_sha": "c7eb1cfcac574a313003b8d43f6550f96658a3c4",
+  "head_sha": "b7ebb948ae1818aecb6079d17d99b39d37624392",
+  "changed_files": 2,
+  "additions": 17,
+  "deletions": 4,
+  "commits": [
+    {
+      "sha": "1c7e8e2ecf1b2ae2a823b6d83789f7f219afe272",
+      "parents": [
+        "c7eb1cfcac574a313003b8d43f6550f96658a3c4"
+      ],
+      "message": "Close the header stream when reading raises",
+      "author": {
+        "login": "independent-author-b",
+        "name": "independent-author-b",
+        "email": "independent-author-b@example.invalid"
+      },
+      "authored_at": "2026-05-18T11:50:00+00:00",
+      "files": [
+        "packet/header.py"
+      ],
+      "additions": 2,
+      "deletions": 4
+    },
+    {
+      "sha": "b7ebb948ae1818aecb6079d17d99b39d37624392",
+      "parents": [
+        "1c7e8e2ecf1b2ae2a823b6d83789f7f219afe272"
+      ],
+      "message": "Add a regression case for header read failures",
+      "author": {
+        "login": "independent-author-b",
+        "name": "independent-author-b",
+        "email": "independent-author-b@example.invalid"
+      },
+      "authored_at": "2026-05-18T11:51:00+00:00",
+      "files": [
+        "tests/test_header.py"
+      ],
+      "additions": 15,
+      "deletions": 0
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "repository": "synthetic/pr-quality-demo",
+  "number": 30,
+  "base_sha": "1af41584b263c10f1b7d7fe9180942f5106a6f71",
+  "head_sha": "d2c04a170cd49c05f50c679ac3dc6f3718143f02",
+  "title": "fix(core): blorb zzz flarp",
+  "body": "## Summary\nDelete config/legacy.toml and remove its setup instructions from docs/setup.md; config/default.toml remains the documented configuration.\n\n## Rationale\nTwo documented configuration entrypoints cause operators to select an obsolete file that is no longer maintained.\n\n## Testing\nValidation plan: inspect the remaining setup instructions and check that config/default.toml is the only documented configuration entrypoint.\n\n## Limitations\nNo automatic migration is included; scripts referencing the removed file must be updated manually.\n\n## Breaking changes\nBREAKING CHANGE: config/legacy.toml is removed; deploy scripts must use config/default.toml.\n",
+  "files_complete": true,
+  "files": [
+    {
+      "path": "config/legacy.toml",
+      "status": "removed",
+      "additions": 0,
+      "deletions": 2,
+      "patch": "diff --git a/config/legacy.toml b/config/legacy.toml\n--- a/config/legacy.toml\n+++ /dev/null\n@@ -1,2 +0,0 @@\n-timeout_seconds = 10\n-retries = 2\n",
+      "patch_truncated": false
+    },
+    {
+      "path": "docs/setup.md",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 2,
+      "patch": "diff --git a/docs/setup.md b/docs/setup.md\n--- a/docs/setup.md\n+++ b/docs/setup.md\n@@ -1,4 +1,3 @@\n # Setup\n \n-Use config/legacy.toml for older deployments.\n-Use config/default.toml for new deployments.\n+Use config/default.toml for all deployments.\n",
+      "patch_truncated": false
+    }
+  ]
+}

@@ -1,0 +1,212 @@
+{
+  "schema_version": 3,
+  "case_id": "pr-137",
+  "label_status": "provisional",
+  "label_origin": "synthetic_author_intent",
+  "family_id": "receipt-retry-ceiling",
+  "scenario": "scope_mismatch",
+  "variant": "scope_mismatch",
+  "review_variant": "partial",
+  "complexity": "non_trivial",
+  "has_breaking_change": false,
+  "expected_quality": "needs_revision",
+  "tags": [
+    "independently_authored",
+    "scope_mismatch"
+  ],
+  "criteria": {
+    "title_format": {
+      "status": "passed",
+      "explanation": "The title has a Conventional Commits type, optional scope, and subject.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "title_meaningful": {
+      "status": "passed",
+      "explanation": "The subject names an intelligible edit and its affected area.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "title_diff_consistency": {
+      "status": "failed",
+      "explanation": "The refactoring/clarification title understates a real attempt-budget change.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "description_present": {
+      "status": "passed",
+      "explanation": "The body contains substantive prose about this change.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "rationale": {
+      "status": "failed",
+      "explanation": "Clarifying count versus wait terminology does not explain increasing the invocation ceiling.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "changes_described": {
+      "status": "passed",
+      "explanation": "The body concretely claims a terminology clarification with an unchanged two-attempt budget.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "description_title_consistency": {
+      "status": "passed",
+      "explanation": "The body and title describe the same change.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "description_commit_consistency": {
+      "status": "failed",
+      "explanation": "Each commit describes a three-attempt change while the body says the budget and assertion stay at two.",
+      "sources": [
+        "evidence.json#/body",
+        "metadata.json#/commits"
+      ]
+    },
+    "description_diff_consistency": {
+      "status": "failed",
+      "explanation": "The loop, assertion, and operations guide all change from two to three, contradicting the unchanged-budget account.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "limitations": {
+      "status": "passed",
+      "explanation": "Timing and idempotency are expressly excluded.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "breaking_changes": {
+      "status": "not_applicable",
+      "explanation": "No supported public name or configuration entrypoint is removed by these patches.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "testing": {
+      "status": "failed",
+      "explanation": "The proposed all-failure check expects the old two-attempt ceiling, contradicting the new three-attempt bound; the plan does not validate the changed policy.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "summary-section": {
+      "status": "passed",
+      "explanation": "A populated level-two Summary section is present.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "review-coverage": {
+      "status": "failed",
+      "explanation": "The review addresses the Java implementation and test but never addresses the changed operations guide.",
+      "sources": [
+        "review.md",
+        "evidence.json#/files"
+      ]
+    },
+    "change_triviality": {
+      "type": "ordinal",
+      "score": 2,
+      "level": "bounded_behavior",
+      "is_trivial": false,
+      "explanation": "The Java loop ceiling changes from two invocations to three, the failed-attempt test expects three, and the operations guide follows it. This changes behavior for repeated failures while preserving the public method signature, so it is bounded_behavior level 2.",
+      "sources": [
+        "evidence.json#/files"
+      ]
+    },
+    "title-format": {
+      "status": "passed",
+      "explanation": "The title has a Conventional Commits type, optional scope, and subject.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "change-rationale": {
+      "status": "failed",
+      "explanation": "Clarifying count versus wait terminology does not explain increasing the invocation ceiling.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "description-coverage": {
+      "status": "failed",
+      "explanation": "The loop, assertion, and operations guide all change from two to three, contradicting the unchanged-budget account.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "testing-explanation": {
+      "status": "failed",
+      "explanation": "The proposed all-failure check expects the old two-attempt ceiling, contradicting the new three-attempt bound; the plan does not validate the changed policy.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "change-triviality": {
+      "type": "ordinal",
+      "score": 2,
+      "level": "bounded_behavior",
+      "is_trivial": false,
+      "explanation": "The Java loop ceiling changes from two invocations to three, the failed-attempt test expects three, and the operations guide follows it. This changes behavior for repeated failures while preserving the public method signature, so it is bounded_behavior level 2.",
+      "sources": [
+        "evidence.json#/files"
+      ]
+    }
+  },
+  "diagnostics": {
+    "text_diff_triviality": {
+      "diff_score": 2,
+      "title_score": 1,
+      "body_score": 1,
+      "text_score": 1,
+      "assessment": "agreed",
+      "relationship": "text_understates",
+      "score_delta": -1,
+      "potential_confounder": true,
+      "title_explanation": "A refactoring to clarify an existing policy implies preserved behavior.",
+      "body_explanation": "The body expressly says terminology-only, unchanged budget, and no behavior change.",
+      "sources": [
+        "evidence.json#/title",
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    }
+  },
+  "reference_change": {
+    "summary": "Raise the receipt send-attempt ceiling from two to three and update the failure assertion and operations guide.",
+    "rationale": "Give a transient second failure one additional chance to recover before delivery is abandoned.",
+    "limitations": "The loop remains synchronous with no delay, cancellation, or idempotency safeguard; repeated sends may duplicate effects if failures are reported after delivery.",
+    "breaking_changes": null
+  },
+  "authorship": {
+    "author_id": "independent-author-a",
+    "method": "independent_agent_authored"
+  },
+  "contested_criteria": [
+    "testing-explanation"
+  ]
+}

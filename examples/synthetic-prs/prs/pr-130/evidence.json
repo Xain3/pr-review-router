@@ -1,0 +1,19 @@
+{
+  "repository": "synthetic/pr-quality-demo",
+  "number": 130,
+  "base_sha": "298e82487b300ad2230a571e5279861699a79ccc",
+  "head_sha": "65f277b408fdf4a62b088063537b3380989e7fa6",
+  "title": "build(lint): select the 1.4.1 lint runner release",
+  "body": "## Summary\n\nSelect exact version 1.4.1 of the fictional `@harbor/lint` development tool instead of 1.4.0 in `tools/lint/package.json`. This manifest is the complete input for the isolated lint-tool fixture; it has no lockfile.\n\nThe onboarding team chose 1.4.1 as its lint baseline, while this fixture still requests 1.4.0. Aligning the manifest avoids contributors comparing diagnostics from those different tool installations. This PR only changes the requested version. Release notes and package code are not supplied, so it does not claim a particular bug fix or that diagnostics are unchanged. The application’s runtime dependencies are outside this edit.\n\nPlanned check: install this isolated tool manifest in a disposable directory, inspect the installed runner version, then compare lint output on the same valid and invalid sample source. No installation or package behavior is demonstrated by the patch itself.\n",
+  "files_complete": true,
+  "files": [
+    {
+      "path": "tools/lint/package.json",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "patch": "diff --git a/tools/lint/package.json b/tools/lint/package.json\n--- a/tools/lint/package.json\n+++ b/tools/lint/package.json\n@@ -2,6 +2,6 @@\n   \"name\": \"fixture-lint-tools\",\n   \"private\": true,\n   \"devDependencies\": {\n-    \"@harbor/lint\": \"1.4.0\"\n+    \"@harbor/lint\": \"1.4.1\"\n   }\n }\n",
+      "patch_truncated": false
+    }
+  ]
+}

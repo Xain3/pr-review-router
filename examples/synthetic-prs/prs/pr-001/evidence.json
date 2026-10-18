@@ -1,0 +1,19 @@
+{
+  "repository": "synthetic/pr-quality-demo",
+  "number": 1,
+  "base_sha": "5802e190d17d257bb46987905143a51d35dfa2ea",
+  "head_sha": "66cf33289522494c2530ad6a25fe74aed7b1b36a",
+  "title": "docs(guide): remove a repeated word",
+  "body": "## Summary\nReplace 'Read the the guide' with 'Read the guide' in docs/usage.md.\n\n## Rationale\nThe repeated word interrupts the onboarding instructions and can confuse readers.\n\n## Testing\nValidation plan: render docs/usage.md and check the corrected sentence; no runtime code changes.\n\n## Limitations\nOnly this sentence is corrected; the rest of the guide has not been audited.\n\n## Breaking changes\nNone; this is a prose correction.\n",
+  "files_complete": true,
+  "files": [
+    {
+      "path": "docs/usage.md",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "patch": "diff --git a/docs/usage.md b/docs/usage.md\n--- a/docs/usage.md\n+++ b/docs/usage.md\n@@ -1,3 +1,3 @@\n # Usage\n \n-Read the the guide before starting.\n+Read the guide before starting.\n",
+      "patch_truncated": false
+    }
+  ]
+}

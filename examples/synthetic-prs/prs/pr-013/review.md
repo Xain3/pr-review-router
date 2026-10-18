@@ -1,0 +1,1 @@
+- README.md: the link target changes from docs/geting-started.md to docs/getting-started.md and the label is unchanged. No code or interface is touched.

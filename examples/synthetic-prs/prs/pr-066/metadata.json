@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "synthetic": true,
+  "case_id": "pr-066",
+  "url": "https://example.invalid/synthetic/pr-quality-demo/pull/66",
+  "state": "open",
+  "draft": false,
+  "author": {
+    "login": "synthetic-author-06",
+    "name": "Synthetic Author 06",
+    "email": "author-06@example.invalid"
+  },
+  "created_at": "2026-03-07T12:00:00+00:00",
+  "updated_at": "2026-03-07T13:00:00+00:00",
+  "base_ref": "main",
+  "head_ref": "synthetic/pr-066",
+  "base_sha": "666bcffd244693b9b4af1f8a2eef18258317baa6",
+  "head_sha": "70df19bbbb6ac58e5bf16e6bfc577e8f66e25fca",
+  "changed_files": 2,
+  "additions": 7,
+  "deletions": 1,
+  "commits": [
+    {
+      "sha": "ed3a13eeb3b945f66b8cb1f8b9f96adfd1a9b02a",
+      "parents": [
+        "666bcffd244693b9b4af1f8a2eef18258317baa6"
+      ],
+      "message": "perf(db): add an index to the orders table",
+      "author": {
+        "login": "synthetic-author-06",
+        "name": "Synthetic Author 06",
+        "email": "author-06@example.invalid"
+      },
+      "authored_at": "2026-03-07T11:50:00+00:00",
+      "files": [
+        "src/batch.py"
+      ],
+      "additions": 1,
+      "deletions": 1
+    },
+    {
+      "sha": "70df19bbbb6ac58e5bf16e6bfc577e8f66e25fca",
+      "parents": [
+        "ed3a13eeb3b945f66b8cb1f8b9f96adfd1a9b02a"
+      ],
+      "message": "test(batch): cover batch-size boundaries",
+      "author": {
+        "login": "synthetic-author-06",
+        "name": "Synthetic Author 06",
+        "email": "author-06@example.invalid"
+      },
+      "authored_at": "2026-03-07T11:51:00+00:00",
+      "files": [
+        "tests/test_batch.py"
+      ],
+      "additions": 6,
+      "deletions": 0
+    }
+  ]
+}

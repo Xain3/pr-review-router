@@ -1,0 +1,27 @@
+{
+  "repository": "synthetic/pr-quality-demo",
+  "number": 17,
+  "base_sha": "24b046c6af49f7c3f00293559bf7dab40ec961c7",
+  "head_sha": "c079f4b863ad7260d742f6ad1b868dc072419121",
+  "title": "Compare tokens in constant time",
+  "body": "## Summary\nUse hmac.compare_digest instead of == in src/auth.py, and add tests for matching and mismatching ASCII tokens.\n\n## Rationale\nOrdinary equality may reveal the first differing position through timing; token validation should avoid that comparison leak.\n\n## Testing\nValidation plan: run tests/test_auth.py for equal and unequal tokens. These functional tests do not measure timing or prove side-channel resistance.\n\n## Limitations\nThe contract still requires ASCII strings of the supported type; this does not protect unrelated authentication logic or network timing.\n\n## Breaking changes\nNone for supported ASCII tokens; unsupported token types are outside the contract.\n",
+  "files_complete": true,
+  "files": [
+    {
+      "path": "src/auth.py",
+      "status": "modified",
+      "additions": 4,
+      "deletions": 1,
+      "patch": "diff --git a/src/auth.py b/src/auth.py\n--- a/src/auth.py\n+++ b/src/auth.py\n@@ -1,2 +1,5 @@\n+import hmac\n+\n+\n def valid_token(actual, expected):\n-    return actual == expected\n+    return hmac.compare_digest(actual, expected)\n",
+      "patch_truncated": false
+    },
+    {
+      "path": "tests/test_auth.py",
+      "status": "added",
+      "additions": 6,
+      "deletions": 0,
+      "patch": "diff --git a/tests/test_auth.py b/tests/test_auth.py\n--- /dev/null\n+++ b/tests/test_auth.py\n@@ -0,0 +1,6 @@\n+from src.auth import valid_token\n+\n+\n+def test_tokens():\n+    assert valid_token('abc', 'abc')\n+    assert not valid_token('abc', 'abd')\n",
+      "patch_truncated": false
+    }
+  ]
+}

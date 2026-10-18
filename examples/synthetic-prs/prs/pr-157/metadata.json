@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "synthetic": true,
+  "case_id": "pr-157",
+  "url": "https://example.invalid/synthetic/pr-quality-demo/pull/157",
+  "state": "open",
+  "draft": false,
+  "author": {
+    "login": "synthetic-author-08",
+    "name": "Synthetic Author 08",
+    "email": "author-08@example.invalid"
+  },
+  "created_at": "2026-06-06T12:00:00+00:00",
+  "updated_at": "2026-06-06T13:00:00+00:00",
+  "base_ref": "main",
+  "head_ref": "synthetic/pr-157",
+  "base_sha": "d9b854c7969a5c3f9ff125a9363dcd2c2f0730f7",
+  "head_sha": "e617e8c408c214cc92e468cc268e07997254c1e9",
+  "changed_files": 2,
+  "additions": 3,
+  "deletions": 3,
+  "commits": [
+    {
+      "sha": "4acf68fcc747577461bc47c8c2745049de6fd322",
+      "parents": [
+        "d9b854c7969a5c3f9ff125a9363dcd2c2f0730f7"
+      ],
+      "message": "chore(client): add a timeout argument to fetch",
+      "author": {
+        "login": "synthetic-author-08",
+        "name": "Synthetic Author 08",
+        "email": "author-08@example.invalid"
+      },
+      "authored_at": "2026-06-06T11:50:00+00:00",
+      "files": [
+        "src/client.py"
+      ],
+      "additions": 2,
+      "deletions": 2
+    },
+    {
+      "sha": "e617e8c408c214cc92e468cc268e07997254c1e9",
+      "parents": [
+        "4acf68fcc747577461bc47c8c2745049de6fd322"
+      ],
+      "message": "chore(jobs): pass an explicit timeout to fetch",
+      "author": {
+        "login": "synthetic-author-08",
+        "name": "Synthetic Author 08",
+        "email": "author-08@example.invalid"
+      },
+      "authored_at": "2026-06-06T11:51:00+00:00",
+      "files": [
+        "src/jobs.py"
+      ],
+      "additions": 1,
+      "deletions": 1
+    }
+  ]
+}

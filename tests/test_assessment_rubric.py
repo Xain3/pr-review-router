@@ -236,7 +236,9 @@ def test_complete_rubric_input_budget_includes_supplied_review_and_prevents_http
     assert result.artifact["assessment_rubric"]["recommendation"] == "needs_human_review"
 
 
-@pytest.mark.parametrize("change", ["review", "criterion", "action", "prompt"])
+@pytest.mark.parametrize(
+    "change", ["review", "criterion", "action", "confidence_threshold", "prompt"]
+)
 def test_rubric_replay_fingerprint_includes_complete_review_and_rubric(
     tmp_path, monkeypatch, change
 ):
@@ -250,6 +252,8 @@ def test_rubric_replay_fingerprint_includes_complete_review_and_rubric(
         rubric.criteria[2].instructions += " Changed question."
     elif change == "action":
         rubric.criteria[2].action = "suggest"
+    elif change == "confidence_threshold":
+        rubric.criteria[2].uncertain_below_confidence = 0.8
     else:
         monkeypatch.setattr("pr_review_router.assessment_rubric.PROMPT_VERSION", "new-version")
     with pytest.raises(ReplayMismatch):

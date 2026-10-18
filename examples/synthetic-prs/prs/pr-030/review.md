@@ -1,0 +1,2 @@
+- config/legacy.toml: the file and its timeout_seconds and retries settings are deleted, so any deploy script that references it fails until migrated to config/default.toml.
+- docs/setup.md: the legacy instructions are removed and config/default.toml is documented for all deployments.

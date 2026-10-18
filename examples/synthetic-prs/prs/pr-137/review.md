@@ -1,0 +1,1 @@
+The sender loop now runs up to three times on false results. The exhaustion test has been updated to expect three, while the immediate-success test still expects one. That gives useful evidence for the new bound, though it does not cover a success on the third call.

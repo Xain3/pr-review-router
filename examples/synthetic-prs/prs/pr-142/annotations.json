@@ -1,0 +1,210 @@
+{
+  "schema_version": 3,
+  "case_id": "pr-142",
+  "label_status": "provisional",
+  "label_origin": "synthetic_author_intent",
+  "family_id": "spanish-label-constant",
+  "scenario": "complete_description_without_summary_heading",
+  "variant": "complete_description_without_summary_heading",
+  "review_variant": "complete",
+  "complexity": "trivial",
+  "has_breaking_change": false,
+  "expected_quality": "needs_revision",
+  "tags": [
+    "independently_authored",
+    "complete_description_without_summary_heading"
+  ],
+  "criteria": {
+    "title_format": {
+      "status": "passed",
+      "explanation": "The title uses a Conventional Commits type, scope, and subject.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "title_meaningful": {
+      "status": "passed",
+      "explanation": "The title identifies the Spanish label extraction change.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "title_diff_consistency": {
+      "status": "passed",
+      "explanation": "The title agrees with the supplied Spanish label extraction patch.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "description_present": {
+      "status": "passed",
+      "explanation": "The description contains substantive prose about this patch.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "rationale": {
+      "status": "passed",
+      "explanation": "The body names the concrete problem motivating the change.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "changes_described": {
+      "status": "passed",
+      "explanation": "The body makes specific claims about the edits.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "description_title_consistency": {
+      "status": "passed",
+      "explanation": "The title and body describe the same change.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "description_commit_consistency": {
+      "status": "passed",
+      "explanation": "The body accounts for every supplied commit message.",
+      "sources": [
+        "evidence.json#/body",
+        "metadata.json#/commits"
+      ]
+    },
+    "description_diff_consistency": {
+      "status": "passed",
+      "explanation": "The body accurately covers the substantive edits in every changed file.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "limitations": {
+      "status": "passed",
+      "explanation": "The body states relevant scope boundaries for this patch.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "breaking_changes": {
+      "status": "not_applicable",
+      "explanation": "The supplied patch removes no supported interface or configuration.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "testing": {
+      "status": "passed",
+      "explanation": "The body gives a specific validation plan relevant to the changed behavior.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "summary-section": {
+      "status": "failed",
+      "explanation": "The substantive account is under Change, not a level-two Summary heading required by the rubric.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "review-coverage": {
+      "status": "passed",
+      "explanation": "The supplied review addresses every changed file and relevant implications.",
+      "sources": [
+        "review.md",
+        "evidence.json#/files"
+      ]
+    },
+    "change_triviality": {
+      "type": "ordinal",
+      "score": 1,
+      "level": "mechanical",
+      "is_trivial": true,
+      "explanation": "The TypeScript function returns the exact same literal through a module-private constant. Its exported name, arguments, and output remain unchanged, demonstrating a mechanical extraction.",
+      "sources": [
+        "evidence.json#/files"
+      ]
+    },
+    "title-format": {
+      "status": "passed",
+      "explanation": "The title uses a Conventional Commits type, scope, and subject.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "change-rationale": {
+      "status": "passed",
+      "explanation": "The body names the concrete problem motivating the change.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "description-coverage": {
+      "status": "passed",
+      "explanation": "The body accurately covers the substantive edits in every changed file.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "testing-explanation": {
+      "status": "passed",
+      "explanation": "The body gives a specific validation plan relevant to the changed behavior.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "change-triviality": {
+      "type": "ordinal",
+      "score": 1,
+      "level": "mechanical",
+      "is_trivial": true,
+      "explanation": "The TypeScript function returns the exact same literal through a module-private constant. Its exported name, arguments, and output remain unchanged, demonstrating a mechanical extraction.",
+      "sources": [
+        "evidence.json#/files"
+      ]
+    }
+  },
+  "diagnostics": {
+    "text_diff_triviality": {
+      "diff_score": 1,
+      "title_score": 1,
+      "body_score": 1,
+      "text_score": 1,
+      "assessment": "agreed",
+      "relationship": "aligned",
+      "score_delta": 0,
+      "potential_confounder": false,
+      "title_explanation": "Naming an existing label implies a mechanical refactor.",
+      "body_explanation": "The body explicitly preserves the literal, export, and output.",
+      "sources": [
+        "evidence.json#/title",
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    }
+  },
+  "reference_change": {
+    "summary": "Extract the unchanged Spanish empty-cart string into a module-private constant.",
+    "rationale": "Give the existing label a local name ahead of a possible later catalog migration; no catalog is introduced here.",
+    "limitations": "Only the current Spanish string is present; there is no locale lookup, fallback, or additional translation.",
+    "breaking_changes": "None; the export, signature, and returned string stay the same."
+  },
+  "authorship": {
+    "author_id": "independent-author-b",
+    "method": "independent_agent_authored"
+  },
+  "contested_criteria": []
+}

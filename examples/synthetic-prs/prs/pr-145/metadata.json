@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "synthetic": true,
+  "case_id": "pr-145",
+  "url": "https://example.invalid/synthetic/pr-quality-demo/pull/145",
+  "state": "open",
+  "draft": false,
+  "author": {
+    "login": "independent-author-b",
+    "name": "independent-author-b",
+    "email": "independent-author-b@example.invalid"
+  },
+  "created_at": "2026-05-25T12:00:00+00:00",
+  "updated_at": "2026-05-25T13:00:00+00:00",
+  "base_ref": "main",
+  "head_ref": "synthetic/pr-145",
+  "base_sha": "ffddf10e26a34541569b59c734777a943a0bb576",
+  "head_sha": "c853a61c3832b5b736515051d805cae2253a0d80",
+  "changed_files": 2,
+  "additions": 4,
+  "deletions": 2,
+  "commits": [
+    {
+      "sha": "5bcec979f3b222dc14c47069890c20f5a1b6e155",
+      "parents": [
+        "ffddf10e26a34541569b59c734777a943a0bb576"
+      ],
+      "message": "Normalize tar metadata and omit gzip timestamps in release archives",
+      "author": {
+        "login": "independent-author-b",
+        "name": "independent-author-b",
+        "email": "independent-author-b@example.invalid"
+      },
+      "authored_at": "2026-05-25T11:50:00+00:00",
+      "files": [
+        "scripts/archive.sh"
+      ],
+      "additions": 1,
+      "deletions": 1
+    },
+    {
+      "sha": "c853a61c3832b5b736515051d805cae2253a0d80",
+      "parents": [
+        "5bcec979f3b222dc14c47069890c20f5a1b6e155"
+      ],
+      "message": "Document archive metadata rules and GNU tar dependency",
+      "author": {
+        "login": "independent-author-b",
+        "name": "independent-author-b",
+        "email": "independent-author-b@example.invalid"
+      },
+      "authored_at": "2026-05-25T11:51:00+00:00",
+      "files": [
+        "docs/releasing.md"
+      ],
+      "additions": 3,
+      "deletions": 1
+    }
+  ]
+}

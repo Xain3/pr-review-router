@@ -1,0 +1,210 @@
+{
+  "schema_version": 3,
+  "case_id": "pr-135",
+  "label_status": "provisional",
+  "label_origin": "synthetic_author_intent",
+  "family_id": "receipt-column-migration",
+  "scenario": "scope_mismatch",
+  "variant": "scope_mismatch",
+  "review_variant": "open_concern",
+  "complexity": "non_trivial",
+  "has_breaking_change": true,
+  "expected_quality": "needs_revision",
+  "tags": [
+    "independently_authored",
+    "scope_mismatch"
+  ],
+  "criteria": {
+    "title_format": {
+      "status": "passed",
+      "explanation": "The title has a Conventional Commits type, optional scope, and subject.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "title_meaningful": {
+      "status": "passed",
+      "explanation": "The subject names an intelligible edit and its affected area.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "title_diff_consistency": {
+      "status": "failed",
+      "explanation": "The title presents a documentation-only change while the patch also executes a supported-column rename.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "description_present": {
+      "status": "passed",
+      "explanation": "The body contains substantive prose about this change.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "rationale": {
+      "status": "failed",
+      "explanation": "A paragraph-finding benefit explains prose cleanup but supplies no reason for removing the supported SQL column name.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "changes_described": {
+      "status": "passed",
+      "explanation": "The body makes concrete claims about a documentation edit and a comment-only SQL file.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "description_title_consistency": {
+      "status": "passed",
+      "explanation": "The body and title describe the same change.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "description_commit_consistency": {
+      "status": "failed",
+      "explanation": "The comment-only/no-migration account conflicts with the breaking rename and query-migration commit messages.",
+      "sources": [
+        "evidence.json#/body",
+        "metadata.json#/commits"
+      ]
+    },
+    "description_diff_consistency": {
+      "status": "failed",
+      "explanation": "The executable ALTER TABLE is not explanatory prose, and the guide explicitly says the old column is not retained as an alias.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "limitations": {
+      "status": "failed",
+      "explanation": "The stated prose-only scope denies the actual external-query compatibility impact.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "breaking_changes": {
+      "status": "failed",
+      "explanation": "The body denies any query migration despite removal of the documented old name without an alias.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "testing": {
+      "status": "failed",
+      "explanation": "The body dismisses database validation on a false prose-only premise and checks only rendered prose.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "summary-section": {
+      "status": "passed",
+      "explanation": "A populated level-two Summary section is present.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "review-coverage": {
+      "status": "passed",
+      "explanation": "The review covers the actual SQL rename and guide edit, including the unresolved external-consumer rollout.",
+      "sources": [
+        "review.md",
+        "evidence.json#/files"
+      ]
+    },
+    "change_triviality": {
+      "type": "ordinal",
+      "score": 4,
+      "level": "incompatible",
+      "is_trivial": false,
+      "explanation": "The added ALTER TABLE renames customer_ref to account_ref, and the existing documentation explicitly identifies customer_ref as supported. The old name has no alias, so previously valid external SQL queries require migration: incompatible level 4.",
+      "sources": [
+        "evidence.json#/files"
+      ]
+    },
+    "title-format": {
+      "status": "passed",
+      "explanation": "The title has a Conventional Commits type, optional scope, and subject.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "change-rationale": {
+      "status": "failed",
+      "explanation": "A paragraph-finding benefit explains prose cleanup but supplies no reason for removing the supported SQL column name.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "description-coverage": {
+      "status": "failed",
+      "explanation": "The executable ALTER TABLE is not explanatory prose, and the guide explicitly says the old column is not retained as an alias.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "testing-explanation": {
+      "status": "failed",
+      "explanation": "The body dismisses database validation on a false prose-only premise and checks only rendered prose.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "change-triviality": {
+      "type": "ordinal",
+      "score": 4,
+      "level": "incompatible",
+      "is_trivial": false,
+      "explanation": "The added ALTER TABLE renames customer_ref to account_ref, and the existing documentation explicitly identifies customer_ref as supported. The old name has no alias, so previously valid external SQL queries require migration: incompatible level 4.",
+      "sources": [
+        "evidence.json#/files"
+      ]
+    }
+  },
+  "diagnostics": {
+    "text_diff_triviality": {
+      "diff_score": 4,
+      "title_score": 0,
+      "body_score": 0,
+      "text_score": 0,
+      "assessment": "agreed",
+      "relationship": "text_understates",
+      "score_delta": -4,
+      "potential_confounder": true,
+      "title_explanation": "The docs title claims only a terminology clarification.",
+      "body_explanation": "The body explicitly claims a prose-only edit, comment-only SQL, unchanged schema, and no query migration.",
+      "sources": [
+        "evidence.json#/title",
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    }
+  },
+  "reference_change": {
+    "summary": "Add a migration renaming the documented customer_ref receipt column to account_ref and require consumers to update their queries.",
+    "rationale": "The intended terminology is account reference rather than customer reference.",
+    "limitations": "The old SQL name is removed without an alias; out-of-repository consumers must coordinate updates. Rollback and database-specific compatibility are not demonstrated.",
+    "breaking_changes": "Existing queries using event_receipts.customer_ref stop resolving after migration 008; update them to account_ref as part of the deployment."
+  },
+  "authorship": {
+    "author_id": "independent-author-a",
+    "method": "independent_agent_authored"
+  },
+  "contested_criteria": []
+}

@@ -147,6 +147,13 @@ def test_predicate_question_type_uses_ollaya_noul_protocol():
     [
         {"question_type": "noul"},
         {"question_type": "noul", "fail_threshold": 0.8, "pass_threshold": 0.2},
+        {"uncertain_below_confidence": 1.1},
+        {
+            "question_type": "noul",
+            "fail_threshold": 0.2,
+            "pass_threshold": 0.8,
+            "uncertain_below_confidence": 0.8,
+        },
         {"question_type": "noul", "fail_threshold": 0.5, "pass_threshold": 0.5},
         {"question_type": "noul", "fail_threshold": 0.2, "pass_threshold": 1.1},
         {"question_type": "noul", "fail_threshold": float("nan"), "pass_threshold": 0.8},
@@ -192,6 +199,20 @@ def test_invalid_choice_configuration_is_rejected(choices):
     criterion = rubric.criteria[2].model_dump()
     criterion["choices"] = choices
     with pytest.raises(ValidationError):
+        AssessmentCriterion.model_validate(criterion)
+
+
+def test_confidence_abstention_requires_an_uncertain_choice_mapping():
+    _, _, rubric, _ = inputs()
+    criterion = rubric.criteria[2].model_dump(mode="json")
+    criterion.update(
+        uncertain_below_confidence=0.8,
+        choices=[
+            {"label": "complete", "description": "Complete.", "status": "passed"},
+            {"label": "missing", "description": "Missing.", "status": "failed"},
+        ],
+    )
+    with pytest.raises(ValidationError, match="exactly one uncertain choice"):
         AssessmentCriterion.model_validate(criterion)
 
 
@@ -288,6 +309,63 @@ def test_custom_choice_labels_are_sent_validated_and_normalized_to_routing_statu
     assert assessment["status"] == "passed"
     assert assessment["native_answer"]["choice"] == "satisfied"
     assert assessment["explanation"].startswith("Model selected satisfied, which maps to passed.")
+
+
+@pytest.mark.parametrize(
+    ("confidence", "expected_status", "expected_recommendation"),
+    [(0.79, "uncertain", "needs_human_review"), (0.8, "passed", "skip_and_approve")],
+)
+def test_low_confidence_choice_becomes_uncertain_for_enforcement_and_preserves_native_answer(
+    confidence, expected_status, expected_recommendation
+):
+    """Apply a per-criterion cutoff, preserving raw answers and conservative routing."""
+    _, evidence, rubric, review = inputs()
+    document = rubric.model_dump(mode="json")
+    for criterion in document["criteria"]:
+        criterion["action"] = None
+    document["criteria"][2]["uncertain_below_confidence"] = 0.8
+    document["enforcement_rules"] = [
+        {"when": {"change-rationale": ["passed"]}, "enforce": ["summary-section"]},
+        {"when": {"change-rationale": ["uncertain"]}, "enforce": ["change-rationale"]},
+    ]
+    rubric = type(rubric).model_validate(document)
+    server = RubricServer()
+
+    def response(request):
+        """Return a passed choice with confidence below its configured threshold.
+
+        :param request: Actual outgoing rubric request.
+        :returns: Synthetic response with preserved choice and low confidence.
+        """
+        result = server.handle(request)
+        if request.url.path != "/v1/systemone":
+            return result
+        body = result.json()
+        body["answers"]["change-rationale"].update(
+            confidence=confidence,
+            probabilities={"passed": confidence, "failed": 0.1, "uncertain": 0.9 - confidence},
+        )
+        return httpx.Response(200, json=body)
+
+    result = run_experiment(
+        evidence,
+        Policy(),
+        fixture_config(),
+        rubric=rubric,
+        review_text=review,
+        http_transport=httpx.MockTransport(response),
+    )
+    assessed = result.artifact["assessment_rubric"]
+    rationale = next(
+        item for item in assessed["criteria"] if item["criterion_id"] == "change-rationale"
+    )
+
+    assert rationale["status"] == expected_status
+    assert rationale["native_answer"]["choice"] == "passed"
+    assert rationale["native_answer"]["confidence"] == confidence
+    assert assessed["recommendation"] == expected_recommendation
+    assert server.decision_calls == 1
+    assert server.review_calls == int(expected_recommendation == "skip_and_approve")
 
 
 def test_unmapped_choices_support_ordered_multi_criterion_routing_rules():

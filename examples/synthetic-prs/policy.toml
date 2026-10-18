@@ -1,0 +1,20 @@
+# Pinned policy for the synthetic-PR rubric benchmark; every setting is explicit.
+allow_direct_acceptance = false
+allow_direct_rejection = false
+acceptance_confidence = 0.95
+rejection_confidence = 0.95
+review_behavior = "escalate"
+feedback_depth = "standard"
+acceptance_feedback = false
+unresolved_outcome = "needs_human_review"
+skip_confidence = 0.95
+review_confidence = 0.85
+max_input_bytes = 100000
+max_files = 100
+max_findings = 5
+title_format = "any"
+required_body_sections = []
+rubric_minimum_score = 70
+rubric_criteria = []
+nonsemantic_checks = []
+check_timeout_seconds = 10

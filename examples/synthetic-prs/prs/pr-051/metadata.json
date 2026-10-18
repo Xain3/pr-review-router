@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "synthetic": true,
+  "case_id": "pr-051",
+  "url": "https://example.invalid/synthetic/pr-quality-demo/pull/51",
+  "state": "open",
+  "draft": false,
+  "author": {
+    "login": "synthetic-author-01",
+    "name": "Synthetic Author 01",
+    "email": "author-01@example.invalid"
+  },
+  "created_at": "2026-02-20T12:00:00+00:00",
+  "updated_at": "2026-02-20T13:00:00+00:00",
+  "base_ref": "main",
+  "head_ref": "synthetic/pr-051",
+  "base_sha": "5802e190d17d257bb46987905143a51d35dfa2ea",
+  "head_sha": "1c8bef1b680a2fdba638c72ef5fb124061584c52",
+  "changed_files": 1,
+  "additions": 1,
+  "deletions": 1,
+  "commits": [
+    {
+      "sha": "1c8bef1b680a2fdba638c72ef5fb124061584c52",
+      "parents": [
+        "5802e190d17d257bb46987905143a51d35dfa2ea"
+      ],
+      "message": "docs(guide): remove a repeated word",
+      "author": {
+        "login": "synthetic-author-01",
+        "name": "Synthetic Author 01",
+        "email": "author-01@example.invalid"
+      },
+      "authored_at": "2026-02-20T11:50:00+00:00",
+      "files": [
+        "docs/usage.md"
+      ],
+      "additions": 1,
+      "deletions": 1
+    }
+  ]
+}

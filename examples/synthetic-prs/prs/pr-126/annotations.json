@@ -1,0 +1,210 @@
+{
+  "schema_version": 3,
+  "case_id": "pr-126",
+  "label_status": "provisional",
+  "label_origin": "synthetic_author_intent",
+  "family_id": "unicode-prose-repair",
+  "scenario": "complete_account",
+  "variant": "complete_account",
+  "review_variant": "complete",
+  "complexity": "trivial",
+  "has_breaking_change": false,
+  "expected_quality": "good",
+  "tags": [
+    "independently_authored",
+    "complete_account"
+  ],
+  "criteria": {
+    "title_format": {
+      "status": "passed",
+      "explanation": "The title has a Conventional Commits type, optional scope, and subject.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "title_meaningful": {
+      "status": "passed",
+      "explanation": "The subject names an intelligible edit and its affected area.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "title_diff_consistency": {
+      "status": "passed",
+      "explanation": "The account identifies both the accented prose repairs and the Japanese punctuation edit.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "description_present": {
+      "status": "passed",
+      "explanation": "The body contains substantive prose about this change.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "rationale": {
+      "status": "passed",
+      "explanation": "The author links the accent and punctuation repairs to readable, correct localized examples.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "changes_described": {
+      "status": "passed",
+      "explanation": "The account identifies both the accented prose repairs and the Japanese punctuation edit.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "description_title_consistency": {
+      "status": "passed",
+      "explanation": "The body and title describe the same change.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "description_commit_consistency": {
+      "status": "passed",
+      "explanation": "The body covers the changes named in each accompanying commit message.",
+      "sources": [
+        "evidence.json#/body",
+        "metadata.json#/commits"
+      ]
+    },
+    "description_diff_consistency": {
+      "status": "passed",
+      "explanation": "The account identifies both the accented prose repairs and the Japanese punctuation edit.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "limitations": {
+      "status": "passed",
+      "explanation": "The body limits the edit to prose and explicitly excludes loading and filename behavior.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "breaking_changes": {
+      "status": "not_applicable",
+      "explanation": "No supported public name or configuration entrypoint is removed by these patches.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "testing": {
+      "status": "passed",
+      "explanation": "The plan checks both rendered Markdown pages, accented glyphs, and the Japanese full stop.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "summary-section": {
+      "status": "passed",
+      "explanation": "A populated level-two Summary section is present.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "review-coverage": {
+      "status": "passed",
+      "explanation": "The review separately addresses both Markdown pages and the rendering implication.",
+      "sources": [
+        "review.md",
+        "evidence.json#/files"
+      ]
+    },
+    "change_triviality": {
+      "type": "ordinal",
+      "score": 0,
+      "level": "editorial",
+      "is_trivial": true,
+      "explanation": "Only explanatory Markdown words and punctuation change in two locale pages; no executable text or interface changes.",
+      "sources": [
+        "evidence.json#/files"
+      ]
+    },
+    "title-format": {
+      "status": "passed",
+      "explanation": "The title has a Conventional Commits type, optional scope, and subject.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "change-rationale": {
+      "status": "passed",
+      "explanation": "The author links the accent and punctuation repairs to readable, correct localized examples.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "description-coverage": {
+      "status": "passed",
+      "explanation": "The account identifies both the accented prose repairs and the Japanese punctuation edit.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "testing-explanation": {
+      "status": "passed",
+      "explanation": "The plan checks both rendered Markdown pages, accented glyphs, and the Japanese full stop.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "change-triviality": {
+      "type": "ordinal",
+      "score": 0,
+      "level": "editorial",
+      "is_trivial": true,
+      "explanation": "Only explanatory Markdown words and punctuation change in two locale pages; no executable text or interface changes.",
+      "sources": [
+        "evidence.json#/files"
+      ]
+    }
+  },
+  "diagnostics": {
+    "text_diff_triviality": {
+      "diff_score": 0,
+      "title_score": 0,
+      "body_score": 0,
+      "text_score": 0,
+      "assessment": "agreed",
+      "relationship": "aligned",
+      "score_delta": 0,
+      "potential_confounder": false,
+      "title_explanation": "Accents and punctuation in locale prose imply an editorial change.",
+      "body_explanation": "The body states only prose corrections and a rendering check.",
+      "sources": [
+        "evidence.json#/title",
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    }
+  },
+  "reference_change": {
+    "summary": "Restore accents in the French and Spanish prose examples and correct the Japanese sentence terminator.",
+    "rationale": "Readers should see the intended words and punctuation rather than ASCII approximations and a stray comma.",
+    "limitations": "Only explanatory Markdown prose changes; translation loading, filenames, and encoding behavior are outside the patch.",
+    "breaking_changes": null
+  },
+  "authorship": {
+    "author_id": "independent-author-a",
+    "method": "independent_agent_authored"
+  },
+  "contested_criteria": []
+}

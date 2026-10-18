@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "synthetic": true,
+  "case_id": "pr-104",
+  "url": "https://example.invalid/synthetic/pr-quality-demo/pull/104",
+  "state": "open",
+  "draft": false,
+  "author": {
+    "login": "synthetic-author-04",
+    "name": "Synthetic Author 04",
+    "email": "author-04@example.invalid"
+  },
+  "created_at": "2026-04-14T12:00:00+00:00",
+  "updated_at": "2026-04-14T13:00:00+00:00",
+  "base_ref": "main",
+  "head_ref": "synthetic/pr-104",
+  "base_sha": "ebbf30c3e069a318ad71161b7574e6171addda2b",
+  "head_sha": "b322bf387ff5f690fd6e97ecc065318dc32c1627",
+  "changed_files": 2,
+  "additions": 8,
+  "deletions": 0,
+  "commits": [
+    {
+      "sha": "07dafe1e5ad4884aaf080c2455a64f1982b95980",
+      "parents": [
+        "ebbf30c3e069a318ad71161b7574e6171addda2b"
+      ],
+      "message": "fix(stats): return zero for an empty average",
+      "author": {
+        "login": "synthetic-author-04",
+        "name": "Synthetic Author 04",
+        "email": "author-04@example.invalid"
+      },
+      "authored_at": "2026-04-14T11:50:00+00:00",
+      "files": [
+        "src/stats.py"
+      ],
+      "additions": 2,
+      "deletions": 0
+    },
+    {
+      "sha": "b322bf387ff5f690fd6e97ecc065318dc32c1627",
+      "parents": [
+        "07dafe1e5ad4884aaf080c2455a64f1982b95980"
+      ],
+      "message": "test(stats): cover empty and ordinary inputs",
+      "author": {
+        "login": "synthetic-author-04",
+        "name": "Synthetic Author 04",
+        "email": "author-04@example.invalid"
+      },
+      "authored_at": "2026-04-14T11:51:00+00:00",
+      "files": [
+        "tests/test_stats.py"
+      ],
+      "additions": 6,
+      "deletions": 0
+    }
+  ]
+}

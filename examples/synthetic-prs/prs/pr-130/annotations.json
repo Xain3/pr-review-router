@@ -1,0 +1,209 @@
+{
+  "schema_version": 3,
+  "case_id": "pr-130",
+  "label_status": "provisional",
+  "label_origin": "synthetic_author_intent",
+  "family_id": "development-dependency-pin",
+  "scenario": "complete_account",
+  "variant": "complete_account",
+  "review_variant": "none",
+  "complexity": "non_trivial",
+  "has_breaking_change": false,
+  "expected_quality": "good",
+  "tags": [
+    "independently_authored",
+    "complete_account"
+  ],
+  "criteria": {
+    "title_format": {
+      "status": "passed",
+      "explanation": "The title has a Conventional Commits type, optional scope, and subject.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "title_meaningful": {
+      "status": "passed",
+      "explanation": "The subject names an intelligible edit and its affected area.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "title_diff_consistency": {
+      "status": "passed",
+      "explanation": "The body accurately names the single exact dependency-version change.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "description_present": {
+      "status": "passed",
+      "explanation": "The body contains substantive prose about this change.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "rationale": {
+      "status": "passed",
+      "explanation": "The selected onboarding baseline is 1.4.1 while the manifest still selects 1.4.0, explaining the concrete version update.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "changes_described": {
+      "status": "passed",
+      "explanation": "The body accurately names the single exact dependency-version change.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "description_title_consistency": {
+      "status": "passed",
+      "explanation": "The body and title describe the same change.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "description_commit_consistency": {
+      "status": "passed",
+      "explanation": "The body covers the changes named in each accompanying commit message.",
+      "sources": [
+        "evidence.json#/body",
+        "metadata.json#/commits"
+      ]
+    },
+    "description_diff_consistency": {
+      "status": "passed",
+      "explanation": "The body accurately names the single exact dependency-version change.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "limitations": {
+      "status": "passed",
+      "explanation": "The body distinguishes requested version from unverified package behavior and excludes runtime dependencies.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "breaking_changes": {
+      "status": "not_applicable",
+      "explanation": "No supported public name or configuration entrypoint is removed by these patches.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "testing": {
+      "status": "passed",
+      "explanation": "The plan specifies isolated installation, installed-version inspection, and matched valid/invalid-source lint output checks.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "summary-section": {
+      "status": "passed",
+      "explanation": "A populated level-two Summary section is present.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "review-coverage": {
+      "status": "not_assessable",
+      "explanation": "No separate review text is supplied.",
+      "sources": []
+    },
+    "change_triviality": {
+      "type": "ordinal",
+      "score": 2,
+      "level": "bounded_behavior",
+      "is_trivial": false,
+      "explanation": "The dev-dependency selection changes from exact 1.4.0 to exact 1.4.1. That is a bounded tooling configuration change; the package internals and any broader behavioral impact cannot be inferred from this manifest alone.",
+      "sources": [
+        "evidence.json#/files"
+      ]
+    },
+    "title-format": {
+      "status": "passed",
+      "explanation": "The title has a Conventional Commits type, optional scope, and subject.",
+      "sources": [
+        "evidence.json#/title"
+      ]
+    },
+    "change-rationale": {
+      "status": "passed",
+      "explanation": "The selected onboarding baseline is 1.4.1 while the manifest still selects 1.4.0, explaining the concrete version update.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "description-coverage": {
+      "status": "passed",
+      "explanation": "The body accurately names the single exact dependency-version change.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "testing-explanation": {
+      "status": "passed",
+      "explanation": "The plan specifies isolated installation, installed-version inspection, and matched valid/invalid-source lint output checks.",
+      "sources": [
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    },
+    "change-triviality": {
+      "type": "ordinal",
+      "score": 2,
+      "level": "bounded_behavior",
+      "is_trivial": false,
+      "explanation": "The dev-dependency selection changes from exact 1.4.0 to exact 1.4.1. That is a bounded tooling configuration change; the package internals and any broader behavioral impact cannot be inferred from this manifest alone.",
+      "sources": [
+        "evidence.json#/files"
+      ]
+    }
+  },
+  "diagnostics": {
+    "text_diff_triviality": {
+      "diff_score": 2,
+      "title_score": 2,
+      "body_score": 2,
+      "text_score": 2,
+      "assessment": "agreed",
+      "relationship": "aligned",
+      "score_delta": 0,
+      "potential_confounder": false,
+      "title_explanation": "Selecting a different tooling release states a configuration change.",
+      "body_explanation": "The body states a changed exact version and explicitly leaves the unseen release behavior unclaimed.",
+      "sources": [
+        "evidence.json#/title",
+        "evidence.json#/body",
+        "evidence.json#/files"
+      ]
+    }
+  },
+  "reference_change": {
+    "summary": "Change the fictional development lint-runner dependency from exact version 1.4.0 to exact version 1.4.1.",
+    "rationale": "The onboarding team chose 1.4.1 as its lint baseline, while the isolated fixture still requests 1.4.0; the version selection should align.",
+    "limitations": "The manifest proves the resolver selection changes, but supplies no package implementation, release notes, installation transcript, or runtime application dependency change.",
+    "breaking_changes": null
+  },
+  "authorship": {
+    "author_id": "independent-author-a",
+    "method": "independent_agent_authored"
+  },
+  "contested_criteria": [
+    "change-triviality"
+  ]
+}
