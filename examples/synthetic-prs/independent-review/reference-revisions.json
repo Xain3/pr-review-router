@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "latest": "review-2026-10-18",
+  "latest": "review-2026-10-18-rubric-refresh",
   "revisions": {
     "original": {
       "kind": "author_intent",
@@ -9,6 +9,7 @@
     "historical-125": {
       "kind": "adjudicated_review",
       "description": "Historical independent AI adjudications for the original 125 development cases.",
+      "rubric_sha256": "504bfa4858976d8422b28d49b0fd90a4bbbeef20caec39326f57eddfa3f6f9d7",
       "archives": {
         "development": "independent-review/reviews.json"
       },
@@ -151,6 +152,7 @@
         "evaluation": "independent-review/authored-reviews.json"
       },
       "review_protocol": "blind_assessments",
+      "rubric_sha256": "504bfa4858976d8422b28d49b0fd90a4bbbeef20caec39326f57eddfa3f6f9d7",
       "case_ids": {
         "development": [
           "pr-001",
@@ -310,10 +312,21 @@
     "review-2026-10-18": {
       "kind": "adjudicated_review",
       "review_protocol": "blind_assessments",
+      "rubric_sha256": "504bfa4858976d8422b28d49b0fd90a4bbbeef20caec39326f57eddfa3f6f9d7",
       "description": "Full 133-case development snapshot retaining the old 125 assessments unchanged, adding eight supplied blind reviews; unchanged 24-case evaluation archive.",
       "archives": {
         "development": "independent-review/development-reviews-2026-10-18.json",
         "evaluation": "independent-review/authored-reviews.json"
+      }
+    },
+    "review-2026-10-18-rubric-refresh": {
+      "kind": "adjudicated_review",
+      "review_protocol": "blind_assessments",
+      "rubric_sha256": "9a781bde1f98e95f2f74d0190852dc9fa2a9ba70eb53cd553b4b4e56d994bd1d",
+      "description": "Two fresh blind review passes and adjudication under the 2026-10-18 rubric, covering the full 133-case development and 24-case evaluation partitions.",
+      "archives": {
+        "development": "independent-review/development-reviews-2026-10-18-rubric-refresh.json",
+        "evaluation": "independent-review/evaluation-reviews-2026-10-18-rubric-refresh.json"
       }
     }
   }

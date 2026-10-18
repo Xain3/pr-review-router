@@ -58,14 +58,14 @@ def test_latest_defaults_use_adjudications_and_preserve_unknown_reference_levels
     original = score(summary, reference_revision="original")
     assert summary == before
     assert original["recommendation"]["agreement"] == original["triviality"]["exact_accuracy"] == 1
-    assert latest["grading_reference"]["revision"] == "review-2026-10-18"
-    assert latest["grading_references"]["pr-087"]["criteria"]["testing-explanation"] == "passed"
-    assert latest["grading_references"]["pr-120"]["criteria"]["description-coverage"] == "failed"
-    assert latest["grading_references"]["pr-121"]["recommendation"] == "block"
-    assert latest["triviality"]["reference_uncertain"] == 41
-    assert latest["triviality"]["reference_classified"] == 116
-    assert latest["triviality"]["unresolved_reference_classifications"] == 41
-    assert latest["by_triviality_level"]["uncertain"]["case_count"] == 41
+    assert latest["grading_reference"]["revision"] == "review-2026-10-18-rubric-refresh"
+    assert latest["grading_references"]["pr-087"]["criteria"]["testing-explanation"] == "failed"
+    assert latest["grading_references"]["pr-120"]["criteria"]["description-coverage"] == "passed"
+    assert latest["grading_references"]["pr-121"]["recommendation"] == "suggest_changes"
+    assert latest["triviality"]["reference_uncertain"] == 0
+    assert latest["triviality"]["reference_classified"] == 157
+    assert latest["triviality"]["unresolved_reference_classifications"] == 0
+    assert "uncertain" not in latest["by_triviality_level"]
     for reference in latest["grading_references"].values():
         if reference["triviality_score"] is None:
             assert reference["criteria"]["change-triviality"] == "uncertain"
@@ -80,12 +80,9 @@ def test_latest_perfect_answers_grade_uncertainty_separately_from_numeric_accura
     assert result["recommendation"]["agreement"] == 1
     assert all(value["agreement"] == 1 for value in result["criteria"].values())
     assert result["triviality"]["native_label_agreement"] == 1
-    assert result["triviality"]["paired_classified"] == 116
-    assert result["triviality"]["confusion_matrix"]["uncertain_reference"]["uncertain"] == 41
-    unknown = result["by_triviality_level"]["uncertain"]["triviality"]
-    assert unknown["exact_accuracy"] is unknown["binary_accuracy"] is None
-    assert unknown["mean_absolute_error_when_classified"] is None
-    assert unknown["support"] == 41
+    assert result["triviality"]["paired_classified"] == 157
+    assert result["triviality"]["confusion_matrix"]["uncertain_reference"]["uncertain"] == 0
+    assert "uncertain" not in result["by_triviality_level"]
 
 
 @pytest.mark.parametrize(
@@ -101,12 +98,28 @@ def test_historical_and_original_sources_are_explicit_and_do_not_rewrite_cases()
     historical = load_reference_revision(ROOT, "development", "historical-125")
     latest = load_reference_revision(ROOT, "development")
     assert historical.cases["pr-087"]["criteria"]["testing-explanation"] == "failed"
-    assert latest.cases["pr-087"]["criteria"]["testing-explanation"] == "passed"
+    assert latest.cases["pr-087"]["criteria"]["testing-explanation"] == "failed"
     assert historical.cases["pr-002"]["triviality_score"] == 1
-    assert latest.cases["pr-002"]["triviality_score"] is None
+    assert latest.cases["pr-002"]["triviality_score"] == 2
     assert len(historical.cases) == 125
     annotation = json.loads((ROOT / "prs/pr-087/annotations.json").read_text())
     assert annotation["criteria"]["testing-explanation"]["status"] == "failed"
+
+
+def test_previous_review_snapshot_remains_frozen_and_uses_its_pinned_rubric():
+    previous = load_reference_revision(ROOT, "all", "review-2026-10-18")
+    latest = load_reference_revision(ROOT, "all", "latest")
+
+    assert previous.metadata["rubric_sha256"] == (
+        "504bfa4858976d8422b28d49b0fd90a4bbbeef20caec39326f57eddfa3f6f9d7"
+    )
+    assert previous.metadata["case_count"] == 157
+    assert sum(
+        case["triviality_level"] == "uncertain" for case in previous.cases.values()
+    ) == 41
+    assert previous.cases["pr-087"]["criteria"]["testing-explanation"] == "passed"
+    assert latest.metadata["rubric_sha256"] != previous.metadata["rubric_sha256"]
+    assert all(case["triviality_level"] != "uncertain" for case in latest.cases.values())
 
 
 @pytest.mark.parametrize(
@@ -117,6 +130,11 @@ def test_historical_and_original_sources_are_explicit_and_do_not_rewrite_cases()
         ("review-2026-10-17", "evaluation", 24),
         ("review-2026-10-17", "all", 149),
         ("review-2026-10-18", "development", 133),
+        ("review-2026-10-18", "evaluation", 24),
+        ("review-2026-10-18", "all", 157),
+        ("review-2026-10-18-rubric-refresh", "development", 133),
+        ("review-2026-10-18-rubric-refresh", "evaluation", 24),
+        ("review-2026-10-18-rubric-refresh", "all", 157),
         ("latest", "all", 157),
     ],
 )
@@ -149,23 +167,34 @@ def test_registered_scope_cannot_hide_missing_or_invalid_review_coverage(tmp_pat
     root = tmp_path / "corpus"
     shutil.copytree(ROOT, root, ignore=shutil.ignore_patterns("__pycache__"))
     registry = json.loads((root / REGISTRY).read_text())
-    definition = registry["revisions"]["review-2026-10-17"]
-    scope = definition["case_ids"]["development"]
-    if corruption == "duplicate":
-        scope.append(scope[0])
-    elif corruption == "unknown":
-        scope.append("pr-999")
-    elif corruption == "wrong_partition":
-        scope.append("pr-126")
-    elif corruption == "missing":
-        scope.remove("pr-001")
-    elif corruption == "unscoped":
-        del definition["case_ids"]
+    revision = (
+        "review-2026-10-18-rubric-refresh"
+        if corruption == "latest_subset"
+        else "review-2026-10-17"
+    )
+    definition = registry["revisions"][revision]
+    if corruption == "latest_subset":
+        relative = "independent-review/incomplete-latest.json"
+        archive = json.loads((root / definition["archives"]["development"]).read_text())
+        archive["cases"].pop("pr-001")
+        (root / relative).write_text(json.dumps(archive))
+        definition["archives"]["development"] = relative
+        registry["latest"] = revision
     else:
-        registry["latest"] = "review-2026-10-17"
+        scope = definition["case_ids"]["development"]
+        if corruption == "duplicate":
+            scope.append(scope[0])
+        elif corruption == "unknown":
+            scope.append("pr-999")
+        elif corruption == "wrong_partition":
+            scope.append("pr-126")
+        elif corruption == "missing":
+            scope.remove("pr-001")
+        else:
+            del definition["case_ids"]
     (root / REGISTRY).write_text(json.dumps(registry))
     with pytest.raises(ValueError, match="Invalid reference scope|incomplete reference archive"):
-        load_reference_revision(root, "development", "review-2026-10-17")
+        load_reference_revision(root, "development", revision)
 
 
 @pytest.fixture
@@ -219,7 +248,7 @@ def test_offline_cli_rescores_same_predictions_with_latest_and_original(
         results[revision] = json.loads((output / "benchmark.json").read_text())
     assert path.read_bytes() == original_bytes
     assert results["original"]["recommendation"]["agreement"] == 1
-    assert results["latest"]["triviality"]["reference_uncertain"] == 6
+    assert results["latest"]["triviality"]["reference_uncertain"] == 0
     assert (
         results["original"]["prediction_summary_sha256"]
         == results["latest"]["prediction_summary_sha256"]
@@ -244,13 +273,7 @@ def test_random_cli_records_seed_and_reuses_sample_offline(tmp_path, monkeypatch
         return summary
 
     monkeypatch.setitem(namespace["main"].__globals__, "run_router", fake_run)
-    arguments = [
-        "benchmark.py",
-        "--reference-revision",
-        "original",
-        "--output-dir",
-        str(output),
-    ]
+    arguments = ["benchmark.py", "--reference-revision", "original", "--output-dir", str(output)]
     if seed is not None:
         arguments += ["--seed", str(seed)]
     monkeypatch.setattr(namespace["sys"], "argv", arguments)
@@ -345,7 +368,7 @@ def test_explicit_case_cli_records_selected_ids_and_reuses_them_offline(tmp_path
 
 def test_new_review_revision_changes_grading_without_invalidating_predictions(bound_predictions):
     root, namespace, path, binding = bound_predictions
-    archive_path = root / "independent-review/authored-reviews.json"
+    archive_path = root / "independent-review/evaluation-reviews-2026-10-18-rubric-refresh.json"
     archive = json.loads(archive_path.read_text())
     label = archive["cases"]["pr-126"]["labels"]["testing-explanation"]
     label.update(
@@ -364,14 +387,9 @@ def test_new_review_revision_changes_grading_without_invalidating_predictions(bo
     relative = "independent-review/future-review.json"
     (root / relative).write_text(json.dumps(archive))
     registry = json.loads((root / REGISTRY).read_text())
-    registry["revisions"]["future-review"] = {
-        "kind": "adjudicated_review",
-        "review_protocol": "blind_assessments",
-        "archives": {
-            "development": "independent-review/development-reviews-2026-10-18.json",
-            "evaluation": relative,
-        },
-    }
+    future = copy.deepcopy(registry["revisions"][registry["latest"]])
+    future["archives"]["evaluation"] = relative
+    registry["revisions"]["future-review"] = future
     registry["latest"] = "future-review"
     (root / REGISTRY).write_text(json.dumps(registry))
     current = namespace["input_binding"](
@@ -434,7 +452,7 @@ def test_legacy_bindings_allow_new_review_grading_when_original_labels_are_verif
     result = namespace["score"](
         json.loads(path.read_text()), "evaluation", prediction_references=origins
     )
-    assert result["triviality"]["reference_uncertain"] == 6
+    assert result["triviality"]["reference_uncertain"] == 0
 
 
 def test_standalone_triviality_defaults_to_selected_adjudications():
@@ -447,10 +465,10 @@ def test_standalone_triviality_defaults_to_selected_adjudications():
     }
     evaluate = runpy.run_path(str(ROOT / "evaluate_triviality.py"))["evaluate"]
     result = evaluate(ROOT, predictions)
-    assert result["reference_uncertain"] == 41
+    assert result["reference_uncertain"] == 0
     assert result["native_label_agreement"] == 1
     assert result["exact_score_accuracy"] == 1
-    assert result["by_triviality_level"]["uncertain"]["support"] == 41
+    assert "uncertain" not in result["by_triviality_level"]
 
 
 def test_revision_archive_paths_cannot_leave_the_corpus(tmp_path):
@@ -460,6 +478,7 @@ def test_revision_archive_paths_cannot_leave_the_corpus(tmp_path):
     registry["revisions"]["bad"] = {
         "kind": "adjudicated_review",
         "review_protocol": "blind_assessments",
+        "rubric_sha256": hashlib.sha256((root / "rubric.toml").read_bytes()).hexdigest(),
         "archives": {"development": "../outside.json"},
     }
     (root / REGISTRY).write_text(json.dumps(registry))
@@ -500,7 +519,11 @@ def test_binding_rejects_redirected_execution_inputs(bound_predictions, redirect
 def test_newly_named_reviews_receive_full_provenance_validation(bound_predictions, corruption):
     root, namespace, path, _ = bound_predictions
     development = corruption in {"history", "missing_history_hash"}
-    source = "development-reviews-2026-10-18.json" if development else "authored-reviews.json"
+    source = (
+        "development-reviews-2026-10-18-rubric-refresh.json"
+        if development
+        else "evaluation-reviews-2026-10-18-rubric-refresh.json"
+    )
     archive = json.loads((root / "independent-review" / source).read_text())
     case_id = "pr-001" if development else "pr-127" if corruption == "family" else "pr-126"
     criterion = "change-triviality" if corruption == "family" else "testing-explanation"
@@ -511,10 +534,8 @@ def test_newly_named_reviews_receive_full_provenance_validation(bound_prediction
         label["reviewer_assessments"]["A"]["evidence"] = ["patch:nonexistent.py"]
     elif corruption == "missing_raw":
         del label["reviewer_assessments"]
-    elif corruption == "history":
+    elif corruption in {"history", "missing_history_hash"}:
         label["previous_adjudicated"] = "uncertain"
-    elif corruption == "missing_history_hash":
-        archive.pop("historical_review_sha256")
     else:
         label.update(adjudicated="incompatible", contested=True, dissent="Unresolved impact.")
     relative = "independent-review/newly-named.json"
@@ -527,6 +548,6 @@ def test_newly_named_reviews_receive_full_provenance_validation(bound_prediction
     (root / REGISTRY).write_text(json.dumps(registry))
     with pytest.raises(
         ValueError,
-        match="blind judgment|final triviality|historical adjudication|historical archive hash",
+        match="blind judgment|final triviality|historical adjudication|historical archive hash|rubric fingerprint",
     ):
         namespace["score"](json.loads(path.read_text()), "evaluation")

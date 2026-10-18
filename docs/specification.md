@@ -466,30 +466,31 @@ family stay together. Validation rejects overlapping families, identical patch
 sets across partitions, stale partition corpora, and missing author provenance.
 Independent authoring and blind AI label review do not confer human-reviewed
 ground truth; contested judgments retain their dissent and provisional labels.
-
-Eight boundary-family variants (PRs 150-157) extend the original development
-corpus so every family contains at least two cases. Existing 149 case inputs and
-review archives remain unchanged. The new `review-2026-10-18` snapshot adds two
-blind AI assessments per new case and retains their raw judgments and disagreements.
 Historical review revisions declare their original scopes explicitly and cannot
 grade new cases they did not review.
+Eight boundary-family variants (PRs 150-157) extend the original development
+corpus so every family contains at least two cases. Existing 149 case inputs and
+review archives remain unchanged. The frozen `review-2026-10-18` snapshot adds
+two blind AI assessments per new case and retains their raw judgments and
+disagreements. Historical review revisions declare their original scopes
+explicitly and cannot grade new cases they did not review.
 
-The original 125 development cases also receive two fresh blind judgments per
-criterion under the same current seven-criterion rubric and adjudication rules
-as the 24 evaluation cases. `independent-review/legacy-reviews.json` records
-these current judgments; `reviews.json` remains the unchanged historical
-archive. Both raw reviewer assessments, source pointers, input hashes, prior
-adjudications, and any current dissent are retained. A clear factual contradiction
-can overturn author intent; unresolved interpretations receive `uncertain`.
-Patch-based triviality adjudications must be consistent across identical family
-diffs, independently of PR-text variants. The offline review reporter accepts
-`--split development`, `--split evaluation` (default), or `--split all`, and
-includes final adjudications and unresolved disagreements separately from
-confusion against provisional author references. The label-review audit's
-`by_review_confidence` retains full confusion for contested and uncontested cases;
-`review_confidence_support` counts their support. The benchmark's contested-case view uses its
-selected grading revision. No original PR input, author
-annotation, rubric, or partition assignment is rewritten by the re-review.
+The frozen `review-2026-10-17` revision includes the earlier blind review of the
+original 125 development cases and the 24 evaluation cases. Its source archives
+retain their original rubric fingerprint and remain available for reproduction.
+The current `review-2026-10-18-rubric-refresh` revision supersedes it as `latest`
+after two new blind passes over all 157 cases and focused adjudication of
+disagreements and reference conflicts. Old archives, annotations, PR inputs, and
+partition assignments are preserved; labels remain provisional AI judgments.
+
+The `review-2026-10-18-rubric-refresh` snapshot is the current `latest` revision
+for all 157 cases. Two fresh blind AI passes used separately shuffled opaque
+packets containing only the current rubric and supplied PR evidence/review; a
+third isolated adjudication pass resolved reviewer splits, contested judgments,
+prior-reference conflicts, and matched-family triviality disagreements. Raw
+judgments and evidence pointers are retained. Older review archives remain
+unchanged and each revision pins its own rubric hash; only `latest` must match the
+current rubric. All labels remain provisional and are not human ground truth.
 
 The router benchmark defaults to `--split random --sample-size 60`, sampling across
 the entire corpus in balanced family rounds without replacement: exactly two cases

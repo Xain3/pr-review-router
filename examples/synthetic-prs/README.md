@@ -86,9 +86,11 @@ authored held-out families (PRs 126–149):
 
 PRs 150-157 retain their families' original patches but rotate the supplied-review
 variants. Two blind AI reviewers assessed the new inputs for the
-`review-2026-10-18` snapshot, now `latest`; raw judgments, disagreements, and
-adjudication explanations are retained. These labels remain provisional, not
-human-reviewed. The original 149 case files and prior review archives are unchanged.
+frozen `review-2026-10-18` snapshot; raw judgments, disagreements, and
+adjudication explanations are retained. The later
+`review-2026-10-18-rubric-refresh` snapshot is now `latest`. These labels remain
+provisional, not human-reviewed. The original 149 case files and prior review
+archives are unchanged.
 
 There are 35 good cases and 122 cases needing revision, with 277 commits total.
 The invariants for the first 100 cases (ten good, ninety needing revision, and the
@@ -336,27 +338,18 @@ Limitations:
 - Human review is still required before using these labels for calibration or
   quality assessment.
 
-### Fresh review of the original 125 cases
+### Frozen review of the original 125 cases
 
 [`independent-review/legacy-reviews.json`](independent-review/legacy-reviews.json)
-adds a fresh blind review of every original case using exactly the same current
-seven-criterion rubric as the held-out cases. Reviewers received only opaque,
+preserves two blind passes over all 125 original cases under the rubric pinned
+to the frozen `review-2026-10-17` revision. Reviewers received only opaque,
 shuffled input packets and the rubric; they could not see author labels,
 historical review judgments, case/scenario identities, or one another's answers.
-Pass A divided the workload between two independent agents (63 and 62 cases);
-a third agent performed pass B for all 125 cases. This yields two independent
-judgments for each of 875 criterion labels, or 1,750 raw judgments.
+This yields two independent judgments for each of 875 criterion labels, or 1,750
+raw judgments. The original fixtures, author annotations, partition assignment,
+and historical `reviews.json` remain unchanged.
 
-The coordinating adjudicator compared both passes with the actual evidence and
-rubric, retaining a supported judgment when the text settles the issue and
-`uncertain` when it does not. Matched families receive the same final
-patch-based triviality judgment regardless of their PR descriptions. Both raw
-rationales, flags, source pointers, and the previous adjudication are preserved.
-The original fixtures, provisional author annotations, partition assignment, and
-historical `reviews.json` are unchanged. The new archive fingerprints the
-historical archive as well as the case inputs and rubric.
-
-See the [fresh development review findings](independent-review/LEGACY-REVIEW.md)
+See the [frozen development review findings](independent-review/LEGACY-REVIEW.md)
 for the resulting disagreements and final judgments: `pr-087` now passes its
 testing explanation, `pr-120/121` fail description coverage, and 35 cases in
 three repeated diff families retain uncertain triviality adjudications. There
@@ -382,7 +375,8 @@ quality measurement is claimed.
 ### Held-out independent review
 
 [`independent-review/authored-reviews.json`](independent-review/authored-reviews.json)
-preserves two further blind passes over all 24 new cases (168 labels per pass).
+preserves two blind passes over all 24 held-out cases (168 labels per pass) for
+the frozen `review-2026-10-17` and `review-2026-10-18` revisions.
 Both saw only opaque input packets and the shared rubric, with no author labels,
 scenario names, author identities, or other reviewer answers. The original
 125-case archive is unchanged and retains its original scope. Input and rubric
@@ -414,6 +408,21 @@ group claims human validation. This audit grades against original author intent
 to expose disagreements, while benchmark scoring defaults to latest adjudications. Recommendation confusion in this report is a policy
 projection of the archived labels, not an observed router run. No new live model
 quality score is claimed.
+
+### Current rubric-refresh review
+
+[`review-2026-10-18-rubric-refresh`](independent-review/reference-revisions.json)
+is the current `latest` snapshot for all 157 cases. Two fresh blind AI passes
+received separately shuffled packets with opaque IDs and only the current rubric,
+title, description, commits, patches, and supplied review. They did not see
+annotations, scenarios, author identities, prior review judgments, or benchmark
+outputs. A third isolated pass adjudicated reviewer splits, contested labels,
+disagreements with prior references, and matched-family triviality consistency.
+Raw reviewer rationales and evidence pointers are retained; older revision
+archives remain unchanged and explicitly pinned to their original rubric hash.
+
+These are AI assessments, not human-validated ground truth or calibration. Labels
+remain provisional; disagreements and contested judgments remain visible.
 
 ## Change triviality scale and benchmark
 
@@ -606,7 +615,7 @@ uv run python examples/synthetic-prs/benchmark.py \
 Select grading labels independently of model inputs:
 
 ```sh
-# List available revisions without inference, including review-2026-10-18.
+# List available revisions without inference, including the current rubric refresh.
 uv run python examples/synthetic-prs/benchmark.py --list-reference-revisions
 
 # Compare the same bound predictions with the canonical author-intent baseline.
@@ -618,9 +627,12 @@ uv run python examples/synthetic-prs/benchmark.py \
 # Pin an immutable named review rather than the moving latest alias.
 uv run python examples/synthetic-prs/benchmark.py \
   --summary reports/synthetic-prs-benchmark/summary.json \
-  --reference-revision review-2026-10-18 \
+  --reference-revision review-2026-10-18-rubric-refresh \
   --output-dir reports/synthetic-prs-pinned-grade
 ```
+
+The frozen `review-2026-10-18` revision remains available for reproducing older
+scores; it is no longer the `latest` alias.
 
 The standalone `evaluate_triviality.py` accepts the same `--reference-revision`
 selector and defaults to `latest`. `original` means the preserved canonical author
@@ -631,8 +643,9 @@ errors; they never fall back to author labels. The registry
 [`reference-revisions.json`](independent-review/reference-revisions.json) names
 archive snapshots and their validation protocols. To add a revision, preserve old
 archives, register new partition archives, and move `latest` when ready. Every
-revision must match current case inputs and rubric; changing either requires
-re-review and fresh predictions.
+revision pins its rubric and case-input hashes. Frozen revisions remain usable
+under their original rubric; `latest` must match the current rubric. Changing
+inputs or rubric requires re-review and fresh predictions.
 
 The runner removes `PR_REVIEW_ROUTER_*` environment overrides so the pinned
 policy alone applies, then runs `pr-review-router evaluate` and writes
@@ -677,16 +690,17 @@ regrade unchanged predictions against new review snapshots without inference.
 Version-1 bindings work when their original canonical labels remain verifiable;
 unbound summaries require a fresh benchmark run.
 
-`benchmark.json` version 3 records `grading_reference` (requested/resolved name,
+`benchmark.json` version 4 records `grading_reference` (requested/resolved name,
 protocol and source hashes) and `grading_references` (selected per-case judgments).
 The raw `summary.json` retains execution references and its original accounting;
 use `benchmark.json` for the chosen grade. No author annotations are rewritten.
-Latest grading changes `pr-087`'s testing explanation to passed and `pr-120/121`'s
-description coverage to failed. It retains 41 uncertain triviality references:
-35 development and six evaluation cases. These have their own confusion row and
-`uncertain` level stratum, and their expected recommendation cannot be approval.
-Numeric triviality accuracy uses only known reference levels (108 across all
-cases), retaining prediction abstentions in that denominator. An all-uncertain
+The frozen `review-2026-10-18` grading retains 41 uncertain triviality references:
+35 development and six evaluation cases. The rubric-refresh revision classifies
+all 157 triviality references and retains contested criterion judgments.
+Uncertain references in any revision have their own confusion row and stratum,
+and cannot justify approval.
+Numeric triviality accuracy uses only known reference levels, retaining
+prediction abstentions in that denominator. An all-uncertain
 stratum reports null numeric accuracy. `native_label_agreement` includes every
 case, and counts of classifications or trivial predictions on unresolved
 references expose potentially overconfident decisions. All labels remain

@@ -26,8 +26,8 @@ REVIEWED_CRITERIA = [
     "change-triviality",
 ]
 ACTIVE_REVIEW_ARCHIVES = {
-    "development": "independent-review/development-reviews-2026-10-18.json",
-    "evaluation": "independent-review/authored-reviews.json",
+    "development": "independent-review/development-reviews-2026-10-18-rubric-refresh.json",
+    "evaluation": "independent-review/evaluation-reviews-2026-10-18-rubric-refresh.json",
 }
 REVIEW_STATUSES = {
     "none": "not_assessable",
@@ -109,6 +109,7 @@ def validate_independent_review(
     *,
     check_oracle: bool = True,
     require_blind_assessments: bool | None = None,
+    expected_rubric_sha256: str | None = None,
 ) -> dict:
     """Check that independent-review labels are current, complete, and grounded in evidence.
 
@@ -117,6 +118,7 @@ def validate_independent_review(
     :param relative: Review archive whose declared scope must match the supplied cases.
     :param check_oracle: Whether archived author labels must match current author annotations.
     :param require_blind_assessments: Require raw blind judgments; registered revisions declare this protocol.
+    :param expected_rubric_sha256: Rubric hash pinned by the review revision; defaults to the current rubric.
     :returns: Agreement counts for the independent AI review.
     :raises ValueError: If a label is stale, malformed, or points at missing evidence.
     """
@@ -144,8 +146,11 @@ def validate_independent_review(
         review["schema_version"] == 1 and review["label_status"] == "independent_ai_review",
         "Independent review must not claim human review",
     )
+    expected_rubric = expected_rubric_sha256 or hashlib.sha256(
+        (root / "rubric.toml").read_bytes()
+    ).hexdigest()
     require(
-        review["rubric_sha256"] == hashlib.sha256((root / "rubric.toml").read_bytes()).hexdigest(),
+        review["rubric_sha256"] == expected_rubric,
         "Independent review predates the current rubric; re-review the cases",
     )
     require(review["criteria"] == REVIEWED_CRITERIA, "Unexpected independently reviewed criteria")
@@ -334,6 +339,7 @@ def load_grading_references(root: Path, split: str, revision: str = "latest"):
             relative,
             check_oracle=False,
             require_blind_assessments=references.metadata["review_protocol"] == "blind_assessments",
+            expected_rubric_sha256=references.metadata["rubric_sha256"],
         )
     return references
 
@@ -442,6 +448,7 @@ def validate(root: Path) -> dict:
     """
     root = root.resolve()
     index = read_json(root, "index.json")
+    review_registry = read_json(root, "independent-review/reference-revisions.json")
     router_corpus = {case["case_id"]: case for case in read_json(root, "corpus.json")["cases"]}
     require(
         index["schema_version"] == 3 and index["synthetic"] is True,
@@ -947,11 +954,13 @@ def validate(root: Path) -> dict:
                     if int(case["case_id"].removeprefix("pr-")) <= LEGACY_CASE_COUNT
                 ],
             },
+            expected_rubric_sha256=review_registry["revisions"]["historical-125"]["rubric_sha256"],
         ),
         "authored_independent_review": validate_independent_review(
             root,
             {**index, "cases": [case for case in index["cases"] if case["split"] == "evaluation"]},
             "independent-review/authored-reviews.json",
+            expected_rubric_sha256=review_registry["revisions"]["review-2026-10-17"]["rubric_sha256"],
         ),
         "legacy_independent_review": validate_independent_review(
             root,
@@ -964,11 +973,17 @@ def validate(root: Path) -> dict:
                 ],
             },
             "independent-review/legacy-reviews.json",
+            expected_rubric_sha256=review_registry["revisions"]["review-2026-10-17"]["rubric_sha256"],
         ),
         "development_independent_review": validate_independent_review(
             root,
             {**index, "cases": [case for case in index["cases"] if case["split"] == "development"]},
             ACTIVE_REVIEW_ARCHIVES["development"],
+        ),
+        "evaluation_independent_review": validate_independent_review(
+            root,
+            {**index, "cases": [case for case in index["cases"] if case["split"] == "evaluation"]},
+            ACTIVE_REVIEW_ARCHIVES["evaluation"],
         ),
     }
 

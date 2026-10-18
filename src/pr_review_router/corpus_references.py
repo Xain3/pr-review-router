@@ -96,6 +96,21 @@ def load_reference_revision(
     kind = definition.get("kind")
     if kind not in {"author_intent", "adjudicated_review"}:
         raise ValueError(f"Invalid reference kind for {resolved}")
+    archives = definition.get("archives", {})
+    if not isinstance(archives, dict):
+        raise ValueError(f"Invalid reference archives for {resolved}")
+    for relative in archives.values():
+        _source(root, relative)
+    current_rubric_sha256 = hashlib.sha256((root / "rubric.toml").read_bytes()).hexdigest()
+    archived_rubric_sha256 = definition.get("rubric_sha256")
+    if kind == "adjudicated_review" and (
+        not isinstance(archived_rubric_sha256, str)
+        or len(archived_rubric_sha256) != 64
+        or any(char not in "0123456789abcdef" for char in archived_rubric_sha256)
+    ):
+        raise ValueError(f"Missing or invalid rubric fingerprint for {resolved}")
+    if resolved == registry["latest"] and archived_rubric_sha256 != current_rubric_sha256:
+        raise ValueError(f"Latest review revision {resolved} is stale; re-review it")
     protocol = definition.get("review_protocol")
     if kind == "adjudicated_review" and protocol not in {"historical", "blind_assessments"}:
         raise ValueError(f"Invalid review protocol for {resolved}")
@@ -108,7 +123,6 @@ def load_reference_revision(
         "index.json": root / "index.json",
     }
     records: dict[str, Any] = {}
-    archives = definition.get("archives", {})
     scopes = definition.get("case_ids", {})
     if not isinstance(scopes, dict) or set(scopes) - set(archives):
         raise ValueError(f"Invalid reference scope for {resolved}")
@@ -133,8 +147,7 @@ def load_reference_revision(
         if (
             archive.get("schema_version") != 1
             or archive.get("label_status") != "independent_ai_review"
-            or archive.get("rubric_sha256")
-            != hashlib.sha256((root / "rubric.toml").read_bytes()).hexdigest()
+            or archive.get("rubric_sha256") != archived_rubric_sha256
             or set(archive.get("cases", {})) != expected_ids
         ):
             raise ValueError(f"Stale or incomplete reference archive: {relative}; re-review it")
@@ -217,6 +230,8 @@ def load_reference_revision(
             "revision": resolved,
             "kind": kind,
             "review_protocol": protocol,
+            "rubric_sha256": archived_rubric_sha256,
+            "current_rubric_sha256": current_rubric_sha256,
             "label_status": "provisional",
             "case_count": len(cases),
             "case_ids": {
