@@ -172,10 +172,14 @@ Two groups give the same patches as an existing good case a different, specific 
   variant ("makes things better"). For example, "The repeated word confuses
   readers" explains why; "Replace the repeated word" only says what changed.
 - `omitted_change` (PRs 111–117): the Summary concretely describes only the first
-  of two files and never mentions the second. Compare with
-  `missing_change_description`, where nothing concrete is claimed. A description
-  that makes concrete claims but omits a change **fails** `description-coverage`;
-  one that makes no claim about the edits is `uncertain`.
+  of two files and never mentions the second. Check all files within one
+  `description-coverage` assessment; omitting a substantive change fails even
+  when another file is covered (for example, describing a code change but not
+  its added tests), and literal filenames are not required. Compare with
+  `missing_change_description`, where the body gives motivation and generic
+  Testing/Limitations text but makes no concrete edit claim, so coverage is
+  `uncertain`. A description that makes concrete claims but omits a change
+  **fails** `description-coverage`.
 
 `rubric.toml` now states these rules in the criterion instructions: restating
 edits fails `change-rationale`, an empty or non-specific description is
