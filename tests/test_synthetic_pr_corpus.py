@@ -464,6 +464,19 @@ def test_rubric_instructions_separate_failure_from_insufficient_evidence():
     assert "Each entry must identify review text" in review_instructions
     assert "Do not require literal filenames" in review_instructions
     assert "new required parameter" in instructions["change-triviality"]
+    assert (
+        next(
+            criterion
+            for criterion in rubric.criteria
+            if criterion.criterion_id == "change-triviality"
+        ).uncertain_below_confidence
+        == 0.8
+    )
+    assert all(
+        criterion.uncertain_below_confidence is None
+        for criterion in rubric.criteria
+        if criterion.criterion_id != "change-triviality"
+    )
 
 
 def test_what_not_why_cases_contrast_with_good_cases_on_the_same_patch():

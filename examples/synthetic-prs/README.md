@@ -563,7 +563,10 @@ at least six `max_choice_options`. Enforcement rules replace per-criterion
 `action` fields; the legacy rubric retains those fields for comparison.
 Classified scale labels map to `passed` and `uncertain` to `uncertain`; these
 statuses only report whether a classification was made, because enforcement
-rules match the native label.
+rules match the effective label. The synthetic rubric maps native triviality
+choices below `uncertain_below_confidence = 0.8` to `uncertain` for assessment
+and enforcement. This is a conservative threshold on self-reported, uncalibrated
+confidence, not a probability guarantee; the raw answer remains in the result.
 
 ## Router rubric benchmark
 

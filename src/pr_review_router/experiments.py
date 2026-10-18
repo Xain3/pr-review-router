@@ -86,6 +86,8 @@ def _rubric_fingerprint_config(rubric: AssessmentRubric) -> dict[str, Any]:
             del criterion["choices"]
         if criterion["action"] is None:
             del criterion["action"]
+        if criterion["uncertain_below_confidence"] is None:
+            del criterion["uncertain_below_confidence"]
     for key in ("routing_rules", "enforcement_rules"):
         if not config[key]:
             del config[key]

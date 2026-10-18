@@ -52,6 +52,7 @@ check = "semantic"
 target = "description"
 instructions = "Classify the actual supplied diff using the configured scale. Judge behavior and interface impact, not the title, description, commit messages, or line count. Choose uncertain when the supplied patches do not provide enough evidence for a classification. At adjacent levels: edits to comment, documentation, or link-target prose are editorial, while any edit to code, including a rename or a user-visible string, is at least mechanical. An edit is mechanical only when the patch shows behavior is preserved (for example a literal replaced by a named constant of the same value, or a local variable renamed everywhere it is used); changing a value, default, condition, or return that can alter the output for some input is bounded_behavior. Adding a public function or parameter, or changing security-sensitive behavior such as authentication, escaping, or permissions, is substantive. If previously valid callers or configurations would stop working (a removed or renamed public name, a new required parameter, a removed configuration entrypoint), choose incompatible even when the patch updates in-repo callers; backward-compatible additions are substantive."
 question_type = "choice"
+uncertain_below_confidence = 0.8
 suggestion = "Provide enough change evidence to support a triviality classification."
 # A status records whether the change was classified; enforcement rules match the native label.
 choices = [

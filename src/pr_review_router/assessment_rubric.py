@@ -134,6 +134,7 @@ class AssessmentCriterion(Contract):
     instructions: Text | None = None
     target: Literal["description", "review"] = "description"
     question_type: QuestionType = "choice"
+    uncertain_below_confidence: Probability | None = None
     fail_threshold: float | None = Field(default=None, ge=0, allow_inf_nan=False)
     pass_threshold: float | None = Field(default=None, ge=0, allow_inf_nan=False)
     levels: list[Text] | None = Field(default=None, min_length=2, max_length=10)
@@ -154,6 +155,10 @@ class AssessmentCriterion(Contract):
             valid = self.section is None and self.instructions is None
         if not valid or (self.check != "semantic" and self.target != "description"):
             raise ValueError("rubric check arguments are inconsistent")
+        if self.uncertain_below_confidence is not None and (
+            self.check != "semantic" or self.question_type != "choice"
+        ):
+            raise ValueError("confidence abstention requires a semantic choice criterion")
         if self.question_type == "choice":
             if any(
                 value is not None
@@ -166,6 +171,11 @@ class AssessmentCriterion(Contract):
                 labels = [choice.label for choice in self.choices]
                 if len(set(labels)) != len(labels):
                     raise ValueError("choice criteria require distinct labels")
+            if (
+                self.uncertain_below_confidence is not None
+                and sum(status == "uncertain" for status in self.choice_statuses.values()) != 1
+            ):
+                raise ValueError("confidence abstention requires exactly one uncertain choice")
         else:
             if self.check != "semantic":
                 raise ValueError("numeric question types require a semantic check")
@@ -418,6 +428,13 @@ def normalize_answer(criterion: AssessmentCriterion, answer: NativeAnswer) -> tu
     :returns: Status and deterministic explanation of its mapping.
     """
     if isinstance(answer, _ChoiceAnswer):
+        threshold = criterion.uncertain_below_confidence
+        if threshold is not None and answer.confidence < threshold:
+            return (
+                "uncertain",
+                f"Native choice confidence {answer.confidence} is below the configured "
+                f"abstention threshold {threshold}; the choice maps to uncertain.",
+            )
         status = criterion.choice_statuses[answer.choice]
         if status is None:
             return (
@@ -445,17 +462,27 @@ def normalize_answer(criterion: AssessmentCriterion, answer: NativeAnswer) -> tu
     )
 
 
-def _choice_labels(answers: dict[str, NativeAnswer]) -> dict[str, str]:
-    """Return the native choice label selected for each choice criterion.
+def _choice_labels(rubric: AssessmentRubric, answers: dict[str, NativeAnswer]) -> dict[str, str]:
+    """Return effective choice labels, applying configured confidence abstentions.
 
+    :param rubric: Criteria and per-question confidence thresholds.
     :param answers: Validated native answers, keyed by identifier.
-    :returns: Selected labels for choice answers only.
+    :returns: Effective labels for choice answers, keyed by identifier.
     """
-    return {
-        identifier: answer.choice
-        for identifier, answer in answers.items()
-        if isinstance(answer, _ChoiceAnswer)
-    }
+    criteria = {criterion.criterion_id: criterion for criterion in rubric.criteria}
+    labels = {}
+    for identifier, answer in answers.items():
+        if not isinstance(answer, _ChoiceAnswer):
+            continue
+        criterion = criteria[identifier]
+        threshold = criterion.uncertain_below_confidence
+        if threshold is None or answer.confidence >= threshold:
+            labels[identifier] = answer.choice
+            continue
+        labels[identifier] = next(
+            label for label, status in criterion.choice_statuses.items() if status == "uncertain"
+        )
+    return labels
 
 
 def _conditions_match(when: dict[str, list[str]], labels: dict[str, str]) -> bool:
@@ -479,7 +506,7 @@ def apply_choice_routing_rules(
     :param results: Mutable criterion assessments, keyed by identifier.
     :param answers: Validated native answers, keyed by identifier.
     """
-    labels = _choice_labels(answers)
+    labels = _choice_labels(rubric, answers)
     routed = set()
     for rule in rubric.routing_rules:
         if (
@@ -764,7 +791,7 @@ class RubricDecisionProvider:
                     native_answer=answer.model_dump(mode="json"),
                 )
             apply_choice_routing_rules(self.rubric, results, response.answers)
-            labels = _choice_labels(response.answers)
+            labels = _choice_labels(self.rubric, response.answers)
         self.assessment = combine_assessments(
             self.rubric,
             [results[item.criterion_id] for item in self.rubric.criteria],

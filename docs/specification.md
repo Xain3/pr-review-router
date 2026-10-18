@@ -361,6 +361,12 @@ mapped label receives its configured status. An unmapped label remains available
 to `routing_rules`; without a matching rule it maps conservatively to
 `uncertain`.
 
+A semantic choice criterion may set `uncertain_below_confidence` to a per-question
+cutoff in `[0, 1]`. Native confidence below the cutoff maps both the criterion
+status and effective routing label to `uncertain`; the raw choice and confidence
+remain recorded. This is a conservative policy over provider-reported,
+uncalibrated confidence, not a calibrated probability, and adds no provider calls.
+
 Each ordered `routing_rules` entry names a semantic choice
 `target_criterion_id`, a resulting stable `status`, and a nonempty `when`
 mapping. Every `when` key is a semantic choice criterion and its nonempty label
