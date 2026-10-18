@@ -8,6 +8,8 @@ from pathlib import Path
 
 import pytest
 
+from pr_review_router.corpus_references import REGISTRY
+
 pytestmark = pytest.mark.unit
 ROOT = Path(__file__).resolve().parents[1] / "examples" / "synthetic-prs"
 
@@ -31,12 +33,13 @@ def test_frozen_review_archives_remain_byte_identical(filename, digest):
 
 def test_expanded_development_archive_preserves_old_records_and_actual_new_judgments():
     validation = runpy.run_path(str(ROOT / "validate.py"))
-    index = json.loads((ROOT / "index.json").read_text())
-    active = json.loads((ROOT / validation["ACTIVE_REVIEW_ARCHIVES"]["development"]).read_text())
+    registry = json.loads((ROOT / REGISTRY).read_text())
+    revision = registry["revisions"]["review-2026-10-18"]
+    active = json.loads((ROOT / revision["archives"]["development"]).read_text())
     legacy = json.loads((ROOT / "independent-review/legacy-reviews.json").read_text())
     assert len(active["cases"]) == 133
     assert {case_id: active["cases"][case_id] for case_id in legacy["cases"]} == legacy["cases"]
-    assert len(validation["load_active_reviews"](ROOT, index)) == 157
+    assert len(validation["load_grading_references"](ROOT, "all", "review-2026-10-18").cases) == 157
     expected_levels = [
         "editorial",
         "mechanical",
@@ -89,7 +92,8 @@ def test_expanded_review_rejects_fabricated_or_incomplete_provenance(tmp_path, m
     root = tmp_path / "corpus"
     shutil.copytree(ROOT, root, ignore=shutil.ignore_patterns("__pycache__"))
     validation = runpy.run_path(str(root / "validate.py"))
-    path = root / validation["ACTIVE_REVIEW_ARCHIVES"]["development"]
+    registry = json.loads((root / REGISTRY).read_text())
+    path = root / registry["revisions"]["review-2026-10-18"]["archives"]["development"]
     archive = json.loads(path.read_text())
     label = archive["cases"]["pr-150"]["labels"]["title-format"]
     if mutation == "invented_history":
@@ -103,17 +107,18 @@ def test_expanded_review_rejects_fabricated_or_incomplete_provenance(tmp_path, m
             "Changed old assessment."
         )
     path.write_text(json.dumps(archive))
-    index = json.loads((root / "index.json").read_text())
     with pytest.raises(
-        ValueError, match="historical adjudication|cover exactly|blind judgment|Preserved"
+        ValueError,
+        match="historical adjudication|incomplete reference archive|blind judgment|Preserved",
     ):
-        validation["load_active_reviews"](root, index)
+        validation["load_grading_references"](root, "development", "review-2026-10-18")
 
 
 def test_fresh_legacy_review_covers_every_original_case_and_criterion():
     archive = json.loads((ROOT / "independent-review/legacy-reviews.json").read_text())
     historical = json.loads((ROOT / "independent-review/reviews.json").read_text())
     index = json.loads((ROOT / "index.json").read_text())
+    registry = json.loads((ROOT / REGISTRY).read_text())
     validation = runpy.run_path(str(ROOT / "validate.py"))
     selected = {
         **index,
@@ -122,7 +127,10 @@ def test_fresh_legacy_review_covers_every_original_case_and_criterion():
         ],
     }
     counts = validation["validate_independent_review"](
-        ROOT, selected, "independent-review/legacy-reviews.json"
+        ROOT,
+        selected,
+        "independent-review/legacy-reviews.json",
+        expected_rubric_sha256=registry["revisions"]["review-2026-10-17"]["rubric_sha256"],
     )
     assert counts["labels"] == 125 * 7
     assert set(archive["cases"]) == set(historical["cases"])
@@ -174,6 +182,7 @@ def test_legacy_review_rejects_incomplete_stale_or_inconsistent_records(tmp_path
         evidence.write_text(json.dumps(data))
     path.write_text(json.dumps(archive))
     index = json.loads((root / "index.json").read_text())
+    registry = json.loads((root / REGISTRY).read_text())
     selected = {
         **index,
         "cases": [
@@ -185,7 +194,12 @@ def test_legacy_review_rejects_incomplete_stale_or_inconsistent_records(tmp_path
         ValueError,
         match="cover exactly|blind judgment|re-review|historical archive|provenance",
     ):
-        validate(root, selected, "independent-review/legacy-reviews.json")
+        validate(
+            root,
+            selected,
+            "independent-review/legacy-reviews.json",
+            expected_rubric_sha256=registry["revisions"]["review-2026-10-17"]["rubric_sha256"],
+        )
 
 
 def test_legacy_arbitration_corrects_evidence_errors_and_keeps_ambiguous_families_uncertain():
@@ -207,10 +221,15 @@ def test_legacy_arbitration_corrects_evidence_errors_and_keeps_ambiguous_familie
     assert len(uncertain) == 35
 
 
-def test_benchmark_rejects_stale_grading_without_invalidating_prediction_bindings(tmp_path):
+@pytest.mark.parametrize("revision", ["review-2026-10-17", "review-2026-10-18", "latest"])
+def test_benchmark_rejects_stale_grading_without_invalidating_prediction_bindings(
+    tmp_path, revision
+):
     root = tmp_path / "corpus"
     shutil.copytree(ROOT, root, ignore=shutil.ignore_patterns("__pycache__"))
-    path = root / "independent-review/legacy-reviews.json"
+    registry = json.loads((root / REGISTRY).read_text())
+    resolved = registry["latest"] if revision == "latest" else revision
+    path = root / registry["revisions"][resolved]["archives"]["development"]
     archive = json.loads(path.read_text())
     archive["cases"]["pr-001"]["input_sha256"] = "0" * 64
     path.write_text(json.dumps(archive))
@@ -222,7 +241,7 @@ def test_benchmark_rejects_stale_grading_without_invalidating_prediction_binding
         "cases": [{"case_id": case["case_id"], "rubric": {}} for case in corpus["cases"]],
     }
     with pytest.raises(ValueError, match="re-review"):
-        namespace["score"](summary, "development")
+        namespace["score"](summary, "development", revision)
     # Review revisions affect grading, not immutable prediction inputs.
     namespace["input_binding"]("development", root / "policy.toml", root / "providers.toml")
 

@@ -168,7 +168,16 @@ def test_partition_validation_rejects_evidence_redirected_in_both_corpora(tmp_pa
         validate(root, json.loads((root / "index.json").read_text()))
 
 
-def test_triviality_scores_only_the_selected_partition_and_counts_abstention():
+@pytest.mark.parametrize(
+    "revision,confidence_support",
+    [
+        ("review-2026-10-18", {"contested": 14, "uncontested_ai": 10}),
+        ("latest", {"contested": 13, "uncontested_ai": 11}),
+    ],
+)
+def test_triviality_scores_only_the_selected_partition_and_counts_abstention(
+    revision, confidence_support
+):
     index = json.loads((ROOT / "index.json").read_text())
     predictions = {
         "schema_version": 1,
@@ -186,10 +195,10 @@ def test_triviality_scores_only_the_selected_partition_and_counts_abstention():
     assert sum(result["confusion_matrix"]["uncertain"]) == 1
     assert sum(group["support"] for group in result["by_scenario"].values()) == 24
 
-    latest = evaluate(ROOT, predictions, "evaluation", "latest")
+    reviewed = evaluate(ROOT, predictions, "evaluation", revision)
     assert {
-        group: metrics["support"] for group, metrics in latest["by_reference_confidence"].items()
-    } == {"contested": 14, "uncontested_ai": 10}
+        group: metrics["support"] for group, metrics in reviewed["by_reference_confidence"].items()
+    } == confidence_support
 
     with pytest.raises(ValueError, match="selected"):
         evaluate(ROOT, predictions, "all")
