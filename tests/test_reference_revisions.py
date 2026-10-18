@@ -114,9 +114,7 @@ def test_previous_review_snapshot_remains_frozen_and_uses_its_pinned_rubric():
         "504bfa4858976d8422b28d49b0fd90a4bbbeef20caec39326f57eddfa3f6f9d7"
     )
     assert previous.metadata["case_count"] == 157
-    assert sum(
-        case["triviality_level"] == "uncertain" for case in previous.cases.values()
-    ) == 41
+    assert sum(case["triviality_level"] == "uncertain" for case in previous.cases.values()) == 41
     assert previous.cases["pr-087"]["criteria"]["testing-explanation"] == "passed"
     assert latest.metadata["rubric_sha256"] != previous.metadata["rubric_sha256"]
     assert all(case["triviality_level"] != "uncertain" for case in latest.cases.values())
@@ -168,9 +166,7 @@ def test_registered_scope_cannot_hide_missing_or_invalid_review_coverage(tmp_pat
     shutil.copytree(ROOT, root, ignore=shutil.ignore_patterns("__pycache__"))
     registry = json.loads((root / REGISTRY).read_text())
     revision = (
-        "review-2026-10-18-rubric-refresh"
-        if corruption == "latest_subset"
-        else "review-2026-10-17"
+        "review-2026-10-18-rubric-refresh" if corruption == "latest_subset" else "review-2026-10-17"
     )
     definition = registry["revisions"][revision]
     if corruption == "latest_subset":

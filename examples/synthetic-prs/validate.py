@@ -146,9 +146,9 @@ def validate_independent_review(
         review["schema_version"] == 1 and review["label_status"] == "independent_ai_review",
         "Independent review must not claim human review",
     )
-    expected_rubric = expected_rubric_sha256 or hashlib.sha256(
-        (root / "rubric.toml").read_bytes()
-    ).hexdigest()
+    expected_rubric = (
+        expected_rubric_sha256 or hashlib.sha256((root / "rubric.toml").read_bytes()).hexdigest()
+    )
     require(
         review["rubric_sha256"] == expected_rubric,
         "Independent review predates the current rubric; re-review the cases",
@@ -960,7 +960,9 @@ def validate(root: Path) -> dict:
             root,
             {**index, "cases": [case for case in index["cases"] if case["split"] == "evaluation"]},
             "independent-review/authored-reviews.json",
-            expected_rubric_sha256=review_registry["revisions"]["review-2026-10-17"]["rubric_sha256"],
+            expected_rubric_sha256=review_registry["revisions"]["review-2026-10-17"][
+                "rubric_sha256"
+            ],
         ),
         "legacy_independent_review": validate_independent_review(
             root,
@@ -973,7 +975,9 @@ def validate(root: Path) -> dict:
                 ],
             },
             "independent-review/legacy-reviews.json",
-            expected_rubric_sha256=review_registry["revisions"]["review-2026-10-17"]["rubric_sha256"],
+            expected_rubric_sha256=review_registry["revisions"]["review-2026-10-17"][
+                "rubric_sha256"
+            ],
         ),
         "development_independent_review": validate_independent_review(
             root,
