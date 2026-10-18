@@ -167,9 +167,10 @@ tie to the patches. Because every enforcement rule enforces or soft-enforces
 Two groups give the same patches as an existing good case a different, specific text defect:
 
 - `what_not_why` (PRs 101–110): the Rationale section is present and concrete but
-  only repeats the Summary. Compare with `missing_rationale` (no section) and
-  the vague `additional_cases` variant ("makes things better"). A rationale says
-  why; a paraphrase of the edits does not.
+  only repeats the Summary, which fails regardless of the section heading.
+  Compare with `missing_rationale` (no section) and the vague `additional_cases`
+  variant ("makes things better"). For example, "The repeated word confuses
+  readers" explains why; "Replace the repeated word" only says what changed.
 - `omitted_change` (PRs 111–117): the Summary concretely describes only the first
   of two files and never mentions the second. Compare with
   `missing_change_description`, where nothing concrete is claimed. A description

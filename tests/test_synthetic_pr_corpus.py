@@ -447,11 +447,33 @@ def test_rubric_instructions_separate_failure_from_insufficient_evidence():
     instructions = {
         criterion.criterion_id: criterion.instructions or "" for criterion in rubric.criteria
     }
+    assert "distinct from a paraphrase" in instructions["change-rationale"]
+    assert "says what" in instructions["change-rationale"]
     assert "says why" in instructions["change-rationale"]
     assert "uncertain, not passed" in instructions["description-coverage"]
     assert "Choose failed" in instructions["description-coverage"]
     assert "Choose uncertain when no review is supplied" in instructions["review-coverage"]
     assert "new required parameter" in instructions["change-triviality"]
+
+
+def test_what_not_why_cases_contrast_with_good_cases_on_the_same_patch():
+    index = json.loads((CORPUS / "index.json").read_text())
+    cases_by_family = {}
+    for case in index["cases"]:
+        cases_by_family.setdefault(case["family_id"], {})[case["scenario"]] = case
+    contrast_cases = [case for case in index["cases"] if case["scenario"] == "what_not_why"]
+
+    assert len(contrast_cases) == 10
+    for contrast_case in contrast_cases:
+        good_case = cases_by_family[contrast_case["family_id"]]["good"]
+        good_evidence = json.loads((CORPUS / good_case["evidence"]).read_text())
+        contrast_evidence = json.loads((CORPUS / contrast_case["evidence"]).read_text())
+        good_annotations = json.loads((CORPUS / good_case["annotations"]).read_text())
+        contrast_annotations = json.loads((CORPUS / contrast_case["annotations"]).read_text())
+
+        assert good_evidence["files"] == contrast_evidence["files"]
+        assert good_annotations["criteria"]["rationale"]["status"] == "passed"
+        assert contrast_annotations["criteria"]["rationale"]["status"] == "failed"
 
 
 def _reviews():

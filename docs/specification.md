@@ -337,6 +337,10 @@ supplied review are untrusted state data;
 criterion instructions are separate. Document/review coverage is not proof of
 code correctness, and review-provider responsibilities remain unchanged.
 
+The synthetic PR rubric's `change-rationale` criterion requires a motivating
+problem, need, or constraint distinct from a paraphrase of the change. Its paired
+`good` and `what_not_why` fixtures guard that distinction with the same patch.
+
 Semantic criteria are batched through `/v1/systemone`. Each criterion selects
 `question_type`: `choice` (default), `noul`, `predicate`, or `score`. `predicate`
 is an alias for `noul`; Ollaya requests use its native `noul` type. By default,

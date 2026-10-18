@@ -18,7 +18,7 @@ criterion_id = "change-rationale"
 description = "The description explains why the changes are needed."
 check = "semantic"
 target = "description"
-instructions = "Does the PR description give a meaningful rationale for each substantive change visible in the diff? A rationale says why: the problem, need, or constraint that motivates the change. Text that only says what was done (paraphrasing or listing the edits, even under a Rationale heading), generic statements such as 'make things better', and an empty or placeholder description give no rationale and fail. A reason given for one substantive change does not cover another substantive change that has none."
+instructions = "Does the PR description explain why each substantive change is needed? Require a specific motivating problem, need, or constraint distinct from a paraphrase of the change. Compare the Rationale with the Summary: restating what changed fails, even under a Rationale heading. For example, 'Add an empty-input guard' says what; 'Empty batches currently raise ZeroDivisionError, but callers need a numeric result' says why. Generic claims such as 'make things better' and empty or placeholder descriptions also fail. A rationale for one change does not cover another substantive change without its own reason."
 suggestion = "Explain the problem each substantive change solves and why this approach was chosen."
 
 [[criteria]]
