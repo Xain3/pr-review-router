@@ -484,6 +484,11 @@ generated. Reports and prediction bindings record the seed, sampling method, siz
 and selected case IDs. Offline rescoring reuses the original sample without drawing
 again. The sampled corpus and its confined input snapshots are saved with outputs.
 Random cross-family samples do not constitute family-disjoint held-out evaluation.
+The benchmark also accepts repeated `--case-id` options for an explicit subset
+instead of random sampling. IDs must be unique and known; explicit selection
+cannot be combined with `--seed` or `--sample-size`. The selected IDs and input
+hashes are recorded for offline rescoring. This reruns model assessment and does
+not alter or replace the independent reference archives.
 The standalone triviality scorer retains its evaluation default. Explicit
 `--split evaluation`, `--split development`, and `--split all` remain available.
 Scoring requires exactly one result for

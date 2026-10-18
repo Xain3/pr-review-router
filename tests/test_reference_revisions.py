@@ -244,7 +244,13 @@ def test_random_cli_records_seed_and_reuses_sample_offline(tmp_path, monkeypatch
         return summary
 
     monkeypatch.setitem(namespace["main"].__globals__, "run_router", fake_run)
-    arguments = ["benchmark.py", "--output-dir", str(output)]
+    arguments = [
+        "benchmark.py",
+        "--reference-revision",
+        "original",
+        "--output-dir",
+        str(output),
+    ]
     if seed is not None:
         arguments += ["--seed", str(seed)]
     monkeypatch.setattr(namespace["sys"], "argv", arguments)
@@ -269,7 +275,67 @@ def test_random_cli_records_seed_and_reuses_sample_offline(tmp_path, monkeypatch
     monkeypatch.setattr(
         namespace["sys"],
         "argv",
-        ["benchmark.py", "--summary", str(output / "summary.json"), "--output-dir", str(rescored)],
+        [
+            "benchmark.py",
+            "--summary",
+            str(output / "summary.json"),
+            "--reference-revision",
+            "original",
+            "--output-dir",
+            str(rescored),
+        ],
+    )
+    namespace["main"]()
+    result = json.loads((rescored / "benchmark.json").read_text())
+    assert result["sampling"] == benchmark["sampling"]
+    assert result["selected_case_ids"] == benchmark["selected_case_ids"]
+
+
+def test_explicit_case_cli_records_selected_ids_and_reuses_them_offline(tmp_path, monkeypatch):
+    namespace = runpy.run_path(str(ROOT / "benchmark.py"))
+    predictions = _summary()
+    output = tmp_path / "selected"
+    selected_ids = ["pr-101", "pr-001"]
+
+    def fake_run(output_dir, **kwargs):
+        selected = kwargs["selected_case_ids"]
+        assert kwargs["split"] == "random"
+        summary = copy.deepcopy(predictions)
+        summary["cases"] = [case for case in summary["cases"] if case["case_id"] in selected]
+        summary["reference_labels"]["cases"] = [
+            case for case in summary["reference_labels"]["cases"] if case["case_id"] in selected
+        ]
+        output_dir.mkdir()
+        (output_dir / "summary.json").write_text(json.dumps(summary))
+        return summary
+
+    monkeypatch.setitem(namespace["main"].__globals__, "run_router", fake_run)
+    arguments = ["benchmark.py", "--reference-revision", "original", "--output-dir", str(output)]
+    for case_id in selected_ids:
+        arguments.extend(["--case-id", case_id])
+    monkeypatch.setattr(namespace["sys"], "argv", arguments)
+    namespace["main"]()
+    benchmark = json.loads((output / "benchmark.json").read_text())
+    assert benchmark["sampling"] == {
+        "method": "explicit_case_ids",
+        "seed": None,
+        "size": 2,
+    }
+    assert benchmark["selected_case_ids"] == ["pr-001", "pr-101"]
+
+    rescored = tmp_path / "rescored"
+    monkeypatch.setattr(
+        namespace["sys"],
+        "argv",
+        [
+            "benchmark.py",
+            "--summary",
+            str(output / "summary.json"),
+            "--reference-revision",
+            "original",
+            "--output-dir",
+            str(rescored),
+        ],
     )
     namespace["main"]()
     result = json.loads((rescored / "benchmark.json").read_text())

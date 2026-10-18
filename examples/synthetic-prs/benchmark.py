@@ -477,6 +477,12 @@ def main() -> None:
         "--seed", type=int, help="Reproduce a random sample; otherwise generate a seed."
     )
     parser.add_argument(
+        "--case-id",
+        dest="case_ids",
+        action="append",
+        help="Explicit case to evaluate; repeat for multiple cases, instead of sampling.",
+    )
+    parser.add_argument(
         "--reference-revision",
         default="latest",
         help="Grade latest adjudications (default), original author labels, or a named review revision.",
@@ -499,6 +505,8 @@ def main() -> None:
     sampling = None
     try:
         if args.summary:
+            if args.case_ids:
+                raise ValueError("--case-id cannot be combined with --summary")
             saved = json.loads(
                 args.summary.with_name("benchmark-inputs.json").read_text(encoding="utf-8")
             )
@@ -512,7 +520,19 @@ def main() -> None:
                     raise ValueError("Sample size differs from the original prediction sample")
         else:
             args.split = args.split or "random"
-            if args.split == "random":
+            if args.case_ids:
+                if args.split != "random":
+                    raise ValueError("--case-id requires the default random split")
+                if args.seed is not None or args.sample_size is not None:
+                    raise ValueError("--case-id cannot be combined with --seed or --sample-size")
+                select_cases("random", args.case_ids)
+                selected_case_ids = args.case_ids
+                sampling = {
+                    "method": "explicit_case_ids",
+                    "seed": None,
+                    "size": len(selected_case_ids),
+                }
+            elif args.split == "random":
                 seed = args.seed if args.seed is not None else random.SystemRandom().getrandbits(64)
                 size = args.sample_size if args.sample_size is not None else 60
                 selected_case_ids = sample_cases(size, seed)

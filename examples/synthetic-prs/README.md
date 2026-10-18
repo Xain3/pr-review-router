@@ -582,6 +582,11 @@ uv run python examples/synthetic-prs/benchmark.py --seed 42 \
   --replay-dir reports/synthetic-prs-benchmark \
   --output-dir reports/synthetic-prs-benchmark-replay
 
+# Re-evaluate an explicit set of PRs with the current rubric; repeat --case-id.
+uv run python examples/synthetic-prs/benchmark.py \
+  --case-id pr-001 --case-id pr-101 --reference-revision original --record \
+  --output-dir reports/synthetic-prs-rationale-rereview
+
 # Rescore the same bound summary against the latest review, offline.
 uv run python examples/synthetic-prs/benchmark.py \
   --summary reports/synthetic-prs-benchmark/summary.json \
