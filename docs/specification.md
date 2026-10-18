@@ -344,6 +344,9 @@ Its `description-coverage` criterion checks every changed file within one
 assessment; any omitted substantive change fails, without requiring literal file
 paths in the PR description. It first checks for a concrete edit claim in the
 description body; without one, it returns `uncertain` before comparing coverage.
+Its `review-coverage` criterion first distinguishes absent or unresolvable review
+text (`uncertain`) from assessable but generic or partial review text (`failed`),
+then checks each changed file within the same criterion.
 
 Semantic criteria are batched through `/v1/systemone`. Each criterion selects
 `question_type`: `choice` (default), `noul`, `predicate`, or `score`. `predicate`

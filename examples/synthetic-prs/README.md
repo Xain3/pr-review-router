@@ -157,7 +157,9 @@ PR text, so it never changes `expected_quality` or `failed_criteria`.
 An unresolved concern does not reduce coverage; coverage asks whether each
 change was addressed, not whether the review is satisfied. The `ambiguous` and
 `none` variants both map to `uncertain` for the router, since there is nothing to
-tie to the patches. Because every enforcement rule enforces or soft-enforces
+tie to the patches. A generic approval is assessable but addresses no change,
+so it fails. For an assessable review, check every changed file and its
+implications; filenames need not appear when the change is clear. Because every enforcement rule enforces or soft-enforces
 `review-coverage`, the oracle-derived recommendations include
 `skip_and_approve` and `suggest_changes` as well as `block` and
 `needs_human_review`.

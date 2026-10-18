@@ -456,7 +456,13 @@ def test_rubric_instructions_separate_failure_from_insufficient_evidence():
     assert "do not require the filename itself" in instructions["description-coverage"]
     assert "omitting its added test fails coverage" in instructions["description-coverage"]
     assert "Do not infer a description from the patches" in instructions["description-coverage"]
-    assert "Choose uncertain when no review is supplied" in instructions["review-coverage"]
+    review_instructions = instructions["review-coverage"]
+    assert "First decide whether the supplied review can be assessed" in review_instructions
+    assert "Choose uncertain when no review is supplied" in review_instructions
+    assert "generic approval or title restatement is assessable" in review_instructions
+    assert "one checklist entry per changed file" in review_instructions
+    assert "Each entry must identify review text" in review_instructions
+    assert "Do not require literal filenames" in review_instructions
     assert "new required parameter" in instructions["change-triviality"]
 
 
