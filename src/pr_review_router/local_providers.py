@@ -2,6 +2,7 @@
 
 import json
 import re
+from abc import ABC, abstractmethod
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
@@ -16,7 +17,7 @@ from .contracts import (
     ReviewResult,
     Text,
 )
-from .provider_config import DecisionSettings, LocalSettings, ReviewSettings
+from .provider_config import DecisionSettings, JevSettings, LocalSettings, ReviewSettings
 from .providers import DecisionProvider, Depth, request_decision
 from .transport import Session, TransportFailure, canonical_json, fingerprint
 
@@ -155,8 +156,8 @@ def supplement_instructions(
     return instructions
 
 
-class _LocalProvider[SettingsT: LocalSettings]:
-    """Lazily inspect model metadata after the engine has passed its evidence gates."""
+class _Provider[SettingsT: LocalSettings | JevSettings]:
+    """Share response validation and diagnostics across explicit model backends."""
 
     def __init__(self, settings: SettingsT, session: Session) -> None:
         """Bind independent model settings to the shared experiment session.
@@ -188,6 +189,24 @@ class _LocalProvider[SettingsT: LocalSettings]:
         except ValidationError:
             self.schema_failures += 1
             raise
+
+    def diagnostics(self) -> dict[str, Any]:
+        """Export experiment provenance without including full model templates.
+
+        :returns: Model identities and uncapped native response information.
+        """
+        return {
+            "models": {
+                name: {key: value for key, value in data.items() if key != "template"}
+                for name, data in self.metadata.items()
+            },
+            "responses": self.responses,
+            "schema_failures": self.schema_failures,
+        }
+
+
+class _LocalProvider[SettingsT: LocalSettings](_Provider[SettingsT]):
+    """Inspect only installed local models after evidence preflight."""
 
     def inspect_model(self, model: str) -> dict[str, Any]:
         """Capture the actual answering model's digest, version, and context information.
@@ -250,31 +269,44 @@ class _LocalProvider[SettingsT: LocalSettings]:
         self.metadata[model] = metadata
         return metadata
 
-    def diagnostics(self) -> dict[str, Any]:
-        """Export experiment provenance without including full model templates.
 
-        :returns: Model identities and uncapped native response information.
-        """
-        return {
-            "models": {
-                name: {key: value for key, value in data.items() if key != "template"}
-                for name, data in self.metadata.items()
-            },
-            "responses": self.responses,
-            "schema_failures": self.schema_failures,
-        }
+class SystemOneDecisionProvider[SettingsT: DecisionSettings | JevSettings](
+    _Provider[SettingsT], ABC
+):
+    """Map a System One routing classification to the decision-provider contract."""
 
+    def __init__(self, settings: SettingsT, session: Session) -> None:
+        """Bind shared System One decision behavior to explicit backend settings.
 
-class OllayaDecisionProvider(_LocalProvider[DecisionSettings]):
-    """Map a native routing classification to the decision-provider contract."""
-
-    def __init__(self, settings: DecisionSettings, session: Session) -> None:
-        """Bind the TypeSafe-compatible decision adapter.
-
-        :param settings: Explicit Ollaya model and local endpoint settings.
+        :param settings: Explicit decision model and endpoint settings.
         :param session: Experiment transport session.
         """
         super().__init__(settings, session)
+
+    @property
+    @abstractmethod
+    def backend_name(self) -> str:
+        """Name the concrete decision backend for report provenance.
+
+        :returns: Backend identifier included in the decision provider name.
+        """
+
+    @abstractmethod
+    def validate_backend_model(self, model: str) -> None:
+        """Validate requested and resolved model names using backend-specific rules.
+
+        :param model: Requested or resolved model name.
+        """
+
+    def evaluate(self, payload: dict[str, Any]) -> str:
+        """Evaluate a complete batch through the selected backend.
+
+        :param payload: Model, complete state, and named typed questions.
+        :returns: JSON envelope for strict caller-owned answer validation.
+        :raises TransportFailure: If model validation or transport fails.
+        """
+        self.validate_backend_model(self.settings.model)
+        return self.session.request(self.settings, "POST", "/v1/systemone", payload)
 
     def decide(self, evidence: PullRequestEvidence, *, strict_schema: bool = False) -> Decision:
         """Classify complete evidence without interpreting confidence as task calibration.
@@ -286,7 +318,6 @@ class OllayaDecisionProvider(_LocalProvider[DecisionSettings]):
         """
         if len(DECISION_CRITERIA) > self.settings.max_choice_options:
             raise TransportFailure("decision choices exceed the configured option limit")
-        self.inspect_model(self.settings.model)
         instructions = supplement_instructions(
             DECISION_INSTRUCTIONS,
             self.settings.instructions,
@@ -296,10 +327,7 @@ class OllayaDecisionProvider(_LocalProvider[DecisionSettings]):
             instructions += " Return exactly one of the three supplied routing labels."
         response = self.validate_json(
             _DecisionResponse,
-            self.session.request(
-                self.settings,
-                "POST",
-                "/v1/systemone",
+            self.evaluate(
                 {
                     "model": self.settings.model,
                     "state": evidence.model_dump(mode="json"),
@@ -320,14 +348,38 @@ class OllayaDecisionProvider(_LocalProvider[DecisionSettings]):
         answer = response.answers["route"]
         if set(answer.probabilities) != set(DECISION_CRITERIA):
             raise TransportFailure("decision response has inconsistent routing labels")
-        self.inspect_model(response.model)
+        self.validate_backend_model(response.model)
         self.responses.append(response.model_dump(mode="json"))
         return Decision(
             recommendation=answer.choice,
             confidence=Confidence(value=0.0, source="unavailable"),
-            reason=f"Ollaya selected {answer.choice}; PR-routing calibration is unavailable.",
-            provider=f"ollaya:{response.model}",
+            reason=(
+                f"{self.backend_name} selected {answer.choice}; "
+                "PR-routing calibration is unavailable."
+            ),
+            provider=f"{self.backend_name}:{response.model}",
         )
+
+
+class OllayaDecisionProvider(
+    SystemOneDecisionProvider[DecisionSettings], _LocalProvider[DecisionSettings]
+):
+    """Apply Ollaya's local model checks and identity to shared System One decisions."""
+
+    @property
+    def backend_name(self) -> str:
+        """Return Ollaya's provider identifier.
+
+        :returns: The configured backend name.
+        """
+        return "ollaya"
+
+    def validate_backend_model(self, model: str) -> None:
+        """Require Ollaya models to be installed and local.
+
+        :param model: Requested or resolved model name.
+        """
+        self.inspect_model(model)
 
 
 class OllamaReviewProvider(_LocalProvider[ReviewSettings]):

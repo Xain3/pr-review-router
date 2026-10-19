@@ -1,6 +1,6 @@
 # pr-review-router
 
-An advisory pull request review router with offline mocks and opt-in local model experiments.
+An advisory pull request review router with offline mocks and opt-in local or hosted model experiments.
 It accepts exported PR evidence, checks patch coverage, selects a review path,
 and emits a structured JSON report. Reports never approve, merge, or change a PR.
 
@@ -26,7 +26,7 @@ the automated route cannot safely resolve.
 
 “Provider” names the integration interface, not necessarily the technology
 behind it: the CLI defaults to offline mocks and can explicitly select local
-model adapters. `standard` and `deep` are review depths passed to the same review
+or hosted Jev decision adapters. `standard` and `deep` are review depths passed to the same review
 provider interface, not two different model roles. The mocks cannot perform a
 substantive code review.
 
@@ -181,6 +181,37 @@ and acceptance followed by feedback. Each behavior is independently configurable
 and can combine with PR-text/rubric gates. Defaults preserve the existing routes.
 Reports use schema version 4; acceptance/rejection remain advisory signals for
 consumers and never change a PR.
+
+## Hosted Jev Decisions
+
+The `jev` decision backend uses the synchronous TypeSafe SDK for routing and
+semantic rubric questions (`choice`, `noul`/`predicate`, and `score`). It does not
+generate explanations or free-form findings and cannot replace a substantive
+reviewer. Select a local Ollama reviewer separately, or hand substantive review
+to a human; the example's mock reviewer is demonstration-only.
+
+See [hosted configuration and commands](examples/jev/README.md). Hosted use
+requires `allow_network = true`, an environment-based API key, an HTTPS origin,
+and a version-pinned model. Recording additionally requires
+`allow_recording = true` and `--record`; tapes contain full evidence and must be
+sanitized before sharing. Obtain owner approval of TypeSafe data handling before
+sending private PR content. SDK payload logging is disabled in the router process.
+
+Jev supports up to 255 Choice options. Complete request and per-question UTF-8
+byte budgets conservatively bound input; overflow fails closed without removing
+evidence. The adapter reuses its SDK client within each experiment, honors
+`Retry-After` within configured retry limits, bounds responses, and retains resolved
+model, SDK version, request ID, usage, and attempt counts. Hosted replay needs no
+credentials or HTTP client and never falls back to live inference. Client setup
+failures are recorded with zero HTTP attempts, and response-schema failures receive
+the existing single strict-schema retry during live execution and replay.
+
+Choice/Score native confidence is distribution-derived, not a probability that
+a PR is safe. Noul supplies a proposition's yes-probability, not confidence.
+Task confidence remains `unavailable`; all skips remain shadowed and direct
+acceptance/rejection stays disabled. Rubrics may abstain on low Choice or Score
+confidence, but thresholds remain experimental until validated against
+human-reviewed PR labels. No hosted calibration or automated skips are enabled.
 
 ## Local models and reproducible CI
 

@@ -1,6 +1,7 @@
-"""Independent, explicit configuration for local model experiments."""
+"""Independent, explicit configuration for local and hosted model experiments."""
 
 import ipaddress
+import re
 import tomllib
 from pathlib import Path
 from typing import Annotated, Literal
@@ -81,6 +82,78 @@ class DecisionSettings(LocalSettings):
     max_choice_options: Annotated[int, Field(ge=2, le=100)] = 3
 
 
+class JevSettings(Contract):
+    """Explicit consent and bounded configuration for hosted System One inference."""
+
+    backend: Literal["jev"] = "jev"
+    allow_network: Literal[True]
+    allow_recording: bool = False
+    endpoint: Text = "https://api.typesafe.ai"
+    model: Text = "jev-1.14.0"
+    api_key_env: Text = "TYPESAFE_API_KEY"
+    instructions: str = ""
+    backend_instructions: str = ""
+    timeout_seconds: Annotated[float, Field(gt=0, le=600, allow_inf_nan=False)] = 30.0
+    retry_budget_seconds: Annotated[float, Field(gt=0, le=600, allow_inf_nan=False)] = 60.0
+    max_retries: Annotated[int, Field(ge=0, le=5)] = 2
+    max_response_bytes: Annotated[int, Field(gt=0, le=8_388_608)] = 1_048_576
+    max_request_bytes: Annotated[int, Field(gt=0, le=64_000)] = 60_000
+    max_question_bytes: Annotated[int, Field(gt=0, le=32_000)] = 30_000
+    max_choice_options: Annotated[int, Field(ge=3, le=255)] = 255
+
+    @field_validator("endpoint")
+    @classmethod
+    def hosted_endpoint(cls, value: str) -> str:
+        """Require an explicit HTTPS origin without secrets or routing suffixes.
+
+        :param value: Hosted API origin.
+        :returns: Normalized HTTPS origin.
+        :raises ValueError: If the URL is not a credential-free HTTPS origin.
+        """
+        parsed = urlsplit(value)
+        try:
+            _ = parsed.port
+        except ValueError:
+            raise ValueError("hosted endpoint has an invalid port") from None
+        if (
+            parsed.scheme != "https"
+            or not parsed.hostname
+            or parsed.username is not None
+            or parsed.password is not None
+            or parsed.path not in {"", "/"}
+            or parsed.query
+            or parsed.fragment
+        ):
+            raise ValueError("hosted endpoint must be a credential-free HTTPS origin")
+        return urlunsplit((parsed.scheme, parsed.netloc, "", "", ""))
+
+    @field_validator("model")
+    @classmethod
+    def pinned_model(cls, value: str) -> str:
+        """Require a versioned Jev model rather than a moving alias.
+
+        :param value: Requested model identifier.
+        :returns: Version-pinned Jev identifier.
+        :raises ValueError: If the model is not version pinned.
+        """
+        if re.fullmatch(r"jev-\d+\.\d+\.\d+", value) is None:
+            raise ValueError("hosted model must be a versioned Jev ID")
+        return value
+
+    @field_validator("api_key_env")
+    @classmethod
+    def credential_variable(cls, value: str) -> str:
+        """Accept a variable name, never a credential in configuration.
+
+        :param value: Environment variable containing the API key at runtime.
+        :returns: Valid variable name.
+        :raises ValueError: If the name is invalid.
+        """
+        if re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", value) is None:
+            raise ValueError("api_key_env must name an environment variable")
+        return value
+
+
 class ReviewSettings(LocalSettings):
     """Select one local model with distinct standard and deep prompts."""
 
@@ -107,9 +180,9 @@ class ReviewSettings(LocalSettings):
 class ProvidersConfig(Contract):
     """Provider selection separate from routing policy and its environment overrides."""
 
-    decision: Annotated[DecisionSettings | MockSettings, Field(discriminator="backend")] = Field(
-        default_factory=MockSettings
-    )
+    decision: Annotated[
+        DecisionSettings | JevSettings | MockSettings, Field(discriminator="backend")
+    ] = Field(default_factory=MockSettings)
     review: Annotated[ReviewSettings | MockSettings, Field(discriminator="backend")] = Field(
         default_factory=MockSettings
     )
