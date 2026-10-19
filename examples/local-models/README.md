@@ -165,6 +165,14 @@ owner-supplied assumptions, not server discovery or proof of review quality.
 
 ## Structured LLM decisions
 
+**Warning:** General LLM deciders are a non-optimal compatibility fallback.
+Prefer a native System One decider (`ollaya` or `jev`) for the decision role.
+Generated probabilities and confidence are self-reported, not native or
+calibrated. Both `review` and `evaluate` print this warning once to stderr when
+an LLM decider is selected, including through defaults, profiles, legacy files,
+and replay. JSON output and exit status are unaffected. LLM reviewers alone
+do not trigger the warning.
+
 The `llm` catalog profile uses a local LLM for both roles. After the server/model
 setup above, run:
 

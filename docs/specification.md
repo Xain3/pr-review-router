@@ -303,6 +303,14 @@ Native confidence/probabilities are retained separately; routing confidence is
 `unavailable` until identifiable task calibration exists. Upstream model
 calibration alone does not establish PR-routing calibration.
 
+**Warning:** General LLM deciders are a non-optimal compatibility fallback.
+Prefer a native System One decider (`ollaya` or `jev`) for the decision role.
+Generated probabilities and confidence are self-reported, not native or
+calibrated. Both `review` and `evaluate` print this warning once to stderr when
+an LLM decider is selected, including through defaults, profiles, legacy files,
+and replay. JSON output and exit status are unaffected. LLM reviewers alone
+do not trigger the warning.
+
 The Ollama decision adapter emulates the System One typed question interface
 through `POST /v1/chat/completions` with strict JSON-schema output. It supports
 batched choice (including custom labels), noul/predicate, and ordinal score

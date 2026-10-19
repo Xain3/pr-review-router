@@ -1,3 +1,5 @@
+# Non-optimal decision fallback: prefer a native System One decider.
+# Generated numeric answers are self-reported; this selection warns on stderr.
 # Opt-in live local LLM decision experiment; first install the example model alias.
 # Compatible with the existing standalone provider configuration format.
 shadow_skips = true

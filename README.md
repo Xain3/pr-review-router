@@ -127,6 +127,14 @@ calibration. Text-only review still requires a separate adapter; the current
 reviewer also requires structured output. Incompatible defaults, profiles, and
 CLI selections fail before inference. Capabilities cannot be setting overrides.
 
+**Warning:** General LLM deciders are a non-optimal compatibility fallback.
+Prefer a native System One decider (`ollaya` or `jev`) for the decision role.
+Generated probabilities and confidence are self-reported, not native or
+calibrated. Both `review` and `evaluate` print this warning once to stderr when
+an LLM decider is selected, including through defaults, profiles, legacy files,
+and replay. JSON output and exit status are unaffected. LLM reviewers alone
+do not trigger the warning.
+
 ```sh
 # Live local LLM decider and reviewer, after installing the model/server.
 uv run pr-review-router review --input examples/local-models/editorial.json --profile llm

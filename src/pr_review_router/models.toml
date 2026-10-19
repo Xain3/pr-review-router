@@ -45,6 +45,8 @@ reviewer = "local"
 decider = "winnow"
 reviewer = "local-high"
 
+# Non-optimal decision fallback: prefer a native System One decider.
+# Generated numeric answers are self-reported; selecting this profile warns on stderr.
 # One structured-output LLM can fill either role, with separate provider instances.
 [profiles.llm]
 decider = "local"

@@ -4,7 +4,7 @@ import json
 
 import httpx
 import pytest
-from local_model_helpers import SyntheticServer, completion, fixture_evidence
+from local_model_helpers import LOCAL, SyntheticServer, completion, fixture_evidence
 from test_cli import cli
 
 from pr_review_router.assessment_rubric import AssessmentRubric
@@ -345,6 +345,9 @@ def test_recording_replays_without_network_and_cli_accepts_legacy_llm_settings(t
         tmp_path / "experiment.json",
     )
     assert completed.returncode == 0, completed.stderr
+    assert completed.stderr.count("warning:") == 1
+    assert "non-optimal compatibility fallback" in completed.stderr
+    assert "Prefer a native System One decider" in completed.stderr
     assert json.loads(completed.stdout)["advisory_only"] is True
 
 
@@ -488,6 +491,9 @@ def test_catalog_cli_evaluates_a_rubric_via_llm_replay(tmp_path):
         tmp_path / "evaluation",
     )
     assert completed.returncode == 0, completed.stderr
+    assert completed.stderr.count("warning:") == 1
+    assert "non-optimal compatibility fallback" in completed.stderr
+    assert "not native or calibrated" in completed.stderr
     assert json.loads(completed.stdout)["case_count"] == 1
     artifact = json.loads((tmp_path / "evaluation/case.experiment.json").read_text())
     assert artifact["decision"]["answer_source"] == "llm_self_reported"
@@ -541,3 +547,53 @@ def test_formal_rubric_blocker_prevents_llm_inspection_and_generation():
     result = run(server, rubric=rubric, evidence=evidence)
     assert result.artifact["assessment_rubric"]["recommendation"] == "block"
     assert not server.requests
+
+
+@pytest.mark.parametrize(
+    "decider,reviewer,warns",
+    [
+        ("mock", "mock", False),
+        ("mock", "local", False),
+        ("winnow", "mock", False),
+        ("jev", "mock", False),
+        ("local", "mock", True),
+    ],
+)
+def test_cli_warning_applies_only_to_general_llm_deciders(tmp_path, decider, reviewer, warns):
+    # Incomplete evidence guarantees zero calls even for native/hosted selections.
+    completed = cli(
+        "review",
+        "--input",
+        LOCAL / "incomplete.json",
+        "--decider",
+        decider,
+        "--reviewer",
+        reviewer,
+        "--experiment-output",
+        tmp_path / "experiment.json",
+    )
+    assert completed.returncode == 0, completed.stderr
+    assert ("non-optimal compatibility fallback" in completed.stderr) is warns
+    assert completed.stderr.count("warning:") == int(warns)
+    assert json.loads(completed.stdout)["outcome"] == "needs_human_review"
+
+
+def test_cli_warns_for_llm_defaults_without_selection_flags(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "models.toml").write_text(
+        '[defaults]\ndecider="llm"\n'
+        '[models.mock]\nbackend="mock"\n'
+        '[models.llm]\nbackend="ollama"\nmodel="fixture-review:latest"\n'
+        'endpoint="http://localhost:11434"\n'
+    )
+    completed = cli(
+        "review",
+        "--input",
+        LOCAL / "incomplete.json",
+        "--experiment-output",
+        tmp_path / "experiment.json",
+    )
+    assert completed.returncode == 0, completed.stderr
+    assert completed.stderr.count("warning:") == 1
+    assert "non-optimal compatibility fallback" in completed.stderr
+    assert json.loads(completed.stdout)["advisory_only"] is True
