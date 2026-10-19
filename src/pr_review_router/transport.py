@@ -11,7 +11,7 @@ import httpx
 from pydantic import Field
 
 from .contracts import Contract, Text
-from .provider_config import LocalSettings
+from .provider_config import JevSettings, LocalSettings
 
 
 def canonical_json(value: Any) -> str:
@@ -58,6 +58,8 @@ class Exchange(Contract):
     body: str | None = None
     error: Literal["timeout", "network", "response_limit", "encoding"] | None = None
     elapsed_seconds: Annotated[float, Field(ge=0, allow_inf_nan=False)]
+    attempts: Annotated[int, Field(ge=1)] = 1
+    schema_failure: bool = False
 
 
 class Tape(Contract):
@@ -118,7 +120,7 @@ class Session:
 
     def request(
         self,
-        settings: LocalSettings,
+        settings: LocalSettings | JevSettings,
         method: Literal["GET", "POST"],
         path: str,
         body: dict[str, Any] | None = None,
@@ -143,6 +145,8 @@ class Session:
             exchange = self.tape.exchanges[self.cursor]
             self.cursor += 1
         else:
+            if isinstance(settings, JevSettings):
+                raise TransportFailure("hosted requests require the explicit SDK adapter")
             exchange = asyncio.run(self._live(settings, request))
         self.exchanges.append(exchange)
         if exchange.error:
