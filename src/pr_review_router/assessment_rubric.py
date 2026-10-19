@@ -156,9 +156,9 @@ class AssessmentCriterion(Contract):
         if not valid or (self.check != "semantic" and self.target != "description"):
             raise ValueError("rubric check arguments are inconsistent")
         if self.uncertain_below_confidence is not None and (
-            self.check != "semantic" or self.question_type != "choice"
+            self.check != "semantic" or self.question_type not in {"choice", "score"}
         ):
-            raise ValueError("confidence abstention requires a semantic choice criterion")
+            raise ValueError("confidence abstention requires a semantic choice or score criterion")
         if self.question_type == "choice":
             if any(
                 value is not None
@@ -444,6 +444,12 @@ def normalize_answer(criterion: AssessmentCriterion, answer: NativeAnswer) -> tu
         if answer.choice == status:
             return status, f"Model classified this criterion as {status}."
         return status, f"Model selected {answer.choice}, which maps to {status}."
+    if (
+        isinstance(answer, _ScoreAnswer)
+        and criterion.uncertain_below_confidence is not None
+        and answer.confidence < criterion.uncertain_below_confidence
+    ):
+        return "uncertain", "Native score confidence is below the configured abstention threshold."
     value = answer.noul if isinstance(answer, _NoulAnswer) else answer.score
     if criterion.fail_threshold is None or criterion.pass_threshold is None:
         raise ValueError("numeric criteria require explicit fail and pass thresholds")
@@ -757,15 +763,9 @@ class RubricDecisionProvider:
                 raise TransportFailure(
                     "complete rubric input exceeds the configured evidence budget"
                 )
-            self.provider.inspect_model(self.provider.settings.model)
             response = self.provider.validate_json(
                 _NativeResponse,
-                self.provider.session.request(
-                    self.provider.settings,
-                    "POST",
-                    "/v1/systemone",
-                    payload,
-                ),
+                self.provider.evaluate(payload),
                 context={
                     "criteria": {
                         item.criterion_id: item
@@ -776,8 +776,8 @@ class RubricDecisionProvider:
             )
             if response.state_truncated:
                 raise TransportFailure("rubric server truncated evidence")
-            self.provider.inspect_model(response.model)
-            provider_identity = f"rubric:ollaya:{response.model}"
+            self.provider.validate_backend_model(response.model)
+            provider_identity = f"rubric:{self.provider.backend_name}:{response.model}"
             self.provider.responses.append(response.model_dump(mode="json"))
             for identifier, answer in response.answers.items():
                 criterion = next(item for item in semantic if item.criterion_id == identifier)

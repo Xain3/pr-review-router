@@ -71,7 +71,7 @@ def _parse_args(
     parser.add_argument("--version", action="version", version=f"%(prog)s {_get_version()}")
     commands = parser.add_subparsers(dest="command")
     review = commands.add_parser(
-        "review", help="Route evidence with offline mocks or explicitly configured local models."
+        "review", help="Route evidence with mocks or explicitly configured local/hosted models."
     )
     review.add_argument("--input", type=Path, required=True, help="PR evidence JSON file.")
     review.add_argument(
@@ -90,7 +90,9 @@ def _parse_args(
     review.add_argument(
         "--experiment-output", type=Path, help="Write experiment provenance (default: reports/)."
     )
-    evaluate = commands.add_parser("evaluate", help="Evaluate a labeled corpus with local models.")
+    evaluate = commands.add_parser(
+        "evaluate", help="Evaluate a labeled corpus with explicit providers."
+    )
     evaluate.add_argument(
         "--corpus", type=Path, required=True, help="Sanitized labeled corpus JSON."
     )
@@ -183,8 +185,8 @@ def _evaluate(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
     except (OSError, ValueError):
         parser.error("could not read valid UTF-8 corpus, evidence, or policy")
     config = _provider_inputs(args.providers_config, policy, parser)
-    if rubric and config.decision.backend != "ollaya":
-        parser.error("semantic rubric evaluation requires an Ollaya decision provider")
+    if rubric and config.decision.backend not in {"ollaya", "jev"}:
+        parser.error("semantic rubric evaluation requires a System One decision provider")
     replay_paths = [
         args.replay_dir / f"{case.case_id}.tape.json" if args.replay_dir else None
         for case in corpus.cases

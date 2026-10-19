@@ -2,10 +2,12 @@
 
 import re
 import time
+from importlib.metadata import version
 from pathlib import Path
 from typing import Annotated, Any, Literal
 
 import httpx
+import httpx2
 from pydantic import Field, field_validator, model_validator
 
 from .assessment_rubric import (
@@ -19,6 +21,7 @@ from .assessment_rubric import (
 from .config import Policy
 from .contracts import Contract, Decision, PullRequestEvidence, ReviewReport, ReviewResult, Text
 from .engine import review_pull_request
+from .hosted_providers import JevDecisionProvider
 from .local_providers import (
     OllamaReviewProvider,
     OllayaDecisionProvider,
@@ -27,7 +30,7 @@ from .local_providers import (
     adapter_versions,
     versions_fingerprint,
 )
-from .provider_config import DecisionSettings, ProvidersConfig, ReviewSettings
+from .provider_config import DecisionSettings, JevSettings, ProvidersConfig, ReviewSettings
 from .providers import MockDecisionProvider, MockReviewProvider
 from .transport import Session, Tape, fingerprint
 
@@ -143,6 +146,7 @@ def run_experiment(
     replay: Path | None = None,
     record: bool = False,
     http_transport: httpx.AsyncBaseTransport | None = None,
+    hosted_transport: httpx2.BaseTransport | None = None,
     rubric: AssessmentRubric | None = None,
     review_text: str = "",
 ) -> ExperimentResult:
@@ -154,6 +158,7 @@ def run_experiment(
     :param replay: Optional exact offline HTTP recording.
     :param record: Whether to return a tape for explicit recording refresh.
     :param http_transport: Optional injectable transport for offline tests.
+    :param hosted_transport: Optional SDK-native hosted transport for offline tests.
     :param rubric: Optional formal and semantic evidence rubric for the decision provider.
     :param review_text: Supplied review text assessed by an optional rubric.
     :returns: Advisory report plus separate experiment artifacts.
@@ -163,8 +168,10 @@ def run_experiment(
         raise ValueError("local experiments require direct acceptance and rejection to be disabled")
     if replay and record:
         raise ValueError("recording and replay are mutually exclusive")
-    if rubric and not isinstance(config.decision, DecisionSettings):
-        raise ValueError("semantic rubric experiments require an Ollaya decision provider")
+    if rubric and not isinstance(config.decision, DecisionSettings | JevSettings):
+        raise ValueError("semantic rubric experiments require a System One decision provider")
+    if record and isinstance(config.decision, JevSettings) and not config.decision.allow_recording:
+        raise ValueError("hosted recording requires allow_recording=true for sanitized evidence")
     fingerprint_inputs = {
         "experiment_version": 1,
         "providers": _experiment_provider_inputs(config),
@@ -175,6 +182,11 @@ def run_experiment(
         "review_schema": ReviewResult.model_json_schema(),
         "report_schema": _experiment_report_schema(policy),
     }
+    if isinstance(config.decision, JevSettings):
+        fingerprint_inputs["hosted_adapter"] = {
+            "revision": "jev-sdk-logical-exchange-v1",
+            "sdk_version": version("typesafe-sdk"),
+        }
     if rubric:
         fingerprint_inputs["assessment_rubric"] = {
             "config": _rubric_fingerprint_config(rubric),
@@ -186,6 +198,8 @@ def run_experiment(
     decision = (
         OllayaDecisionProvider(config.decision, session)
         if isinstance(config.decision, DecisionSettings)
+        else JevDecisionProvider(config.decision, session, transport=hosted_transport)
+        if isinstance(config.decision, JevSettings)
         else MockDecisionProvider()
     )
     mock_reviewer = None
@@ -198,7 +212,7 @@ def run_experiment(
         RubricDecisionProvider(
             decision, rubric, review_text, max_input_bytes=policy.max_input_bytes
         )
-        if rubric is not None and isinstance(decision, OllayaDecisionProvider)
+        if rubric is not None and isinstance(decision, SystemOneDecisionProvider)
         else None
     )
     shadow = ShadowDecisionProvider(rubric_provider or decision)
@@ -221,9 +235,7 @@ def run_experiment(
                 item.model_dump(mode="json") for item in shadow.original_decisions
             ],
             "decision": (
-                decision.diagnostics()
-                if isinstance(decision, SystemOneDecisionProvider)
-                else None
+                decision.diagnostics() if isinstance(decision, SystemOneDecisionProvider) else None
             ),
             "review": reviewer.diagnostics()
             if isinstance(reviewer, OllamaReviewProvider)
@@ -232,7 +244,7 @@ def run_experiment(
             else None,
             "request_seconds": sum(item.elapsed_seconds for item in session.exchanges),
             "run_seconds": time.monotonic() - start,
-            "http_calls": len(session.exchanges),
+            "http_calls": sum(item.attempts for item in session.exchanges),
             "schema_failures": sum(
                 item.schema_failures
                 for item in (decision, reviewer)
@@ -258,6 +270,8 @@ def run_experiment(
             artifact["rubric_revision"] = fingerprint(rubric_versions())
         return ExperimentResult(report, artifact, session.recording() if record else None)
     finally:
+        if isinstance(decision, JevDecisionProvider):
+            decision.close()
         session.close()
 
 
