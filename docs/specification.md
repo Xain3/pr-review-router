@@ -236,6 +236,28 @@ an editable registry of supported adapter configurations, not model discovery.
 Shipped defaults select mock providers; live entries require available models
 or hosted credentials. Listing a hosted entry does not call it.
 
+Live catalog entries accept a `capabilities` table (inline or nested), separate
+from provider runtime settings. System One capabilities fix `text_generation`
+to false and `structured_output` to true; contradictory declarations are errors
+even for unused entries. LLM capabilities fix `text_generation` to true and
+accept an owner-declared `structured_output` boolean. Omitted capabilities
+preserve the existing adapter assumptions (structured System One decisions or
+structured LLM reviews). Mocks retain their synthetic behavior without claiming
+model capabilities. Declarations are not server discovery or evidence of quality.
+
+Decision selection requires structured output and an implemented decision
+adapter. Review selection requires text generation and an implemented review
+adapter. The current Ollama review adapter additionally requires structured
+output for its JSON findings/confidence contract. Accordingly, a structured LLM
+cannot yet be selected as a decider, and a text-only LLM can be registered but
+cannot yet be selected as a reviewer. Future LLM decision or text-only review
+adapters must supply their own prompt, normalization, validation, and confidence
+provenance; capability flags alone cannot enable those paths. Invalid default,
+profile, or explicit selections fail before HTTP calls or report writes.
+Capabilities are stripped before constructing `ProvidersConfig`, cannot be
+setting overrides, and do not alter runtime settings or replay fingerprints.
+Legacy provider files keep their existing schema and behavior.
+
 `[defaults]` contains `decider` and `reviewer` names (both default to `mock`).
 `[profiles.NAME]` optionally replaces either role, inheriting the other from
 catalog defaults. Names must exist and support their selected role. Selection

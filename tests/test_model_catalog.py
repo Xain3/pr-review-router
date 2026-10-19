@@ -1,12 +1,13 @@
 """Offline catalog precedence, validation, and CLI compatibility checks."""
 
 import json
+import tomllib
 
 import pytest
 from local_model_helpers import LOCAL
 from test_cli import ROOT, cli
 
-from pr_review_router.model_catalog import load_model_catalog, resolve_catalog_path
+from pr_review_router.model_catalog import ModelCatalog, load_model_catalog, resolve_catalog_path
 from pr_review_router.provider_config import load_providers_config
 
 pytestmark = pytest.mark.unit
@@ -205,3 +206,76 @@ def test_live_catalog_defaults_keep_preflight_offline(tmp_path, monkeypatch):
     artifact = json.loads((tmp_path / "experiment.json").read_text())
     assert artifact["http_calls"] == 0
     assert artifact["providers"]["decision"]["backend"] == "ollaya"
+
+
+@pytest.mark.parametrize("backend", ["winnow", "jev"])
+@pytest.mark.parametrize("field,value", [("text_generation", True), ("structured_output", False)])
+def test_system_one_capabilities_reject_contradictions(backend, field, value):
+    data = tomllib.loads((ROOT / "models.toml").read_text())
+    data["models"][backend]["capabilities"][field] = value
+    with pytest.raises(ValueError):
+        ModelCatalog.model_validate(data)
+
+
+@pytest.mark.parametrize(
+    "name,role,message",
+    [
+        ("winnow", "reviewer", "text-generating"),
+        ("jev", "reviewer", "text-generating"),
+        ("local", "decider", "no decision adapter"),
+    ],
+)
+def test_capability_role_errors_are_specific(name, role, message):
+    catalog = load_model_catalog(ROOT / "models.toml")
+    with pytest.raises(ValueError, match=message):
+        catalog.resolve(**{role: name})
+
+
+def test_text_only_llm_can_be_registered_but_current_adapters_reject_selection(tmp_path):
+    path = tmp_path / "models.toml"
+    path.write_text(
+        '[models.mock]\nbackend="mock"\n'
+        '[models.text_only]\nbackend="ollama"\nmodel="text-only"\n'
+        'endpoint="http://localhost:11434"\n'
+        "capabilities={text_generation=true, structured_output=false}\n"
+    )
+    catalog = load_model_catalog(path)
+    with pytest.raises(ValueError, match="decision requires structured-output"):
+        catalog.resolve(decider="text_only")
+    with pytest.raises(ValueError, match="text-only review is not implemented"):
+        catalog.resolve(reviewer="text_only")
+    completed = cli(
+        "review",
+        "--input",
+        LOCAL / "editorial.json",
+        "--models-config",
+        path,
+        "--reviewer",
+        "text_only",
+        "--output",
+        tmp_path / "report.json",
+    )
+    assert completed.returncode == 2
+    assert "text-only review is not implemented" in completed.stderr
+    assert not (tmp_path / "report.json").exists()
+    path.write_text(path.read_text() + '\n[profiles.invalid]\nreviewer="text_only"\n')
+    with pytest.raises(ValueError, match="text-only review is not implemented"):
+        load_model_catalog(path)
+    invalid_profile = cli(
+        "review",
+        "--input",
+        LOCAL / "editorial.json",
+        "--models-config",
+        path,
+    )
+    assert invalid_profile.returncode == 2
+    assert "text-only review is not implemented" in invalid_profile.stderr
+
+
+def test_capabilities_cannot_be_overridden_into_an_incompatible_role():
+    catalog = load_model_catalog(ROOT / "models.toml")
+    with pytest.raises(ValueError):
+        catalog.resolve(overrides=["decision.capabilities.text_generation=true"])
+    config = catalog.resolve(profile="local")
+    assert "capabilities" not in config.decision.model_dump()
+    assert "capabilities" not in config.review.model_dump()

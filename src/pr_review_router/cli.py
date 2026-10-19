@@ -21,7 +21,7 @@ from .experiments import (
     run_experiment,
     summarize_evaluation,
 )
-from .model_catalog import load_model_catalog, resolve_catalog_path
+from .model_catalog import CatalogSelectionError, load_model_catalog, resolve_catalog_path
 from .provider_config import MockSettings, ProvidersConfig, load_providers_config
 from .providers import MockDecisionProvider, MockReviewProvider
 from .transport import ReplayMismatch, fingerprint
@@ -147,6 +147,8 @@ def _parse_args(
                 overrides=args.model_override,
             )
         )
+    except CatalogSelectionError as error:
+        parser.error(str(error))
     except (OSError, ValueError):
         parser.error("could not read valid UTF-8 provider configuration or model catalog/selection")
     args.use_providers = bool(

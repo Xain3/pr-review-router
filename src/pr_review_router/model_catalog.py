@@ -2,9 +2,9 @@
 
 import tomllib
 from pathlib import Path
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 
-from pydantic import Field, model_validator
+from pydantic import Field, ValidationError, model_validator
 
 from .contracts import Contract, Text
 from .provider_config import (
@@ -14,6 +14,42 @@ from .provider_config import (
     ProvidersConfig,
     ReviewSettings,
 )
+
+
+class SystemOneCapabilities(Contract):
+    """Native structured decisions without generated review text."""
+
+    text_generation: Literal[False] = False
+    structured_output: Literal[True] = True
+
+
+class LLMCapabilities(Contract):
+    """Owner-declared capabilities of a particular LLM variant."""
+
+    text_generation: Literal[True] = True
+    structured_output: bool = True
+
+
+class CatalogDecisionSettings(DecisionSettings):
+    """Ollaya settings with explicit System One capabilities."""
+
+    capabilities: SystemOneCapabilities = Field(default_factory=SystemOneCapabilities)
+
+
+class CatalogJevSettings(JevSettings):
+    """Jev settings with explicit System One capabilities."""
+
+    capabilities: SystemOneCapabilities = Field(default_factory=SystemOneCapabilities)
+
+
+class CatalogReviewSettings(ReviewSettings):
+    """LLM settings with model-specific structured-output support."""
+
+    capabilities: LLMCapabilities = Field(default_factory=LLMCapabilities)
+
+
+class CatalogSelectionError(ValueError):
+    """A safe role or capability diagnostic without model settings or secrets."""
 
 
 class ModelSelection(Contract):
@@ -36,7 +72,7 @@ class ModelCatalog(Contract):
     models: dict[
         str,
         Annotated[
-            DecisionSettings | JevSettings | ReviewSettings | MockSettings,
+            CatalogDecisionSettings | CatalogJevSettings | CatalogReviewSettings | MockSettings,
             Field(discriminator="backend"),
         ],
     ]
@@ -88,7 +124,22 @@ class ModelCatalog(Contract):
         for selection, role in (("decider", "decision"), ("reviewer", "review")):
             if names[selection] not in self.models:
                 raise ValueError("unknown model name")
-            data[role] = self.models[names[selection]].model_dump()
+            model = self.models[names[selection]]
+            if not isinstance(model, MockSettings):
+                if role == "review" and not model.capabilities.text_generation:
+                    raise CatalogSelectionError("review requires a text-generating model")
+                if role == "decision" and not model.capabilities.structured_output:
+                    raise CatalogSelectionError("decision requires structured-output support")
+                if role == "decision" and isinstance(model, CatalogReviewSettings):
+                    raise CatalogSelectionError(
+                        "selected LLM backend has no decision adapter; use ollaya or jev"
+                    )
+                if role == "review" and not model.capabilities.structured_output:
+                    raise CatalogSelectionError(
+                        "ollama review adapter requires structured output; "
+                        "text-only review is not implemented"
+                    )
+            data[role] = model.model_dump(exclude={"capabilities"})
         # Validate capabilities before overrides: overrides cannot change model identity.
         ProvidersConfig.model_validate(data)
         seen = set()
@@ -129,4 +180,11 @@ def load_model_catalog(path: Path) -> ModelCatalog:
     :raises OSError: If the catalog cannot be read.
     :raises ValueError: If TOML or catalog settings are invalid.
     """
-    return ModelCatalog.model_validate(tomllib.loads(path.read_text(encoding="utf-8")))
+    try:
+        return ModelCatalog.model_validate(tomllib.loads(path.read_text(encoding="utf-8")))
+    except ValidationError as error:
+        for issue in error.errors(include_input=False, include_url=False):
+            cause = issue.get("ctx", {}).get("error")
+            if isinstance(cause, CatalogSelectionError):
+                raise cause from None
+        raise

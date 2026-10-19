@@ -9,24 +9,28 @@ backend = "mock"
 
 [models.winnow]
 backend = "ollaya"
+capabilities = { text_generation = false, structured_output = true }
 endpoint = "http://localhost:11435"
 model = "winnow:e4b"
 max_choice_options = 3
 
 [models.jev]
 backend = "jev"
+capabilities = { text_generation = false, structured_output = true }
 model = "jev-1.14.0"
 allow_network = true
 api_key_env = "TYPESAFE_API_KEY"
 
 [models.local]
 backend = "ollama"
+capabilities = { text_generation = true, structured_output = true }
 endpoint = "http://localhost:11434"
 model = "pr-review-local:latest"
 reasoning_effort = "none"
 
 [models.local-high]
 backend = "ollama"
+capabilities = { text_generation = true, structured_output = true }
 endpoint = "http://localhost:11434"
 model = "pr-review-local:latest"
 reasoning_effort = "high"

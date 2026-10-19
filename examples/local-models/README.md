@@ -155,3 +155,10 @@ names with `--decider` / `--reviewer`, or add partial `[profiles.NAME]` selectio
 Defaults are overridden by profiles, then explicit names, then setting overrides.
 Keep using `--providers-config` for existing standalone files and synthetic tapes;
 it bypasses the catalog and cannot be combined with catalog flags.
+
+The catalog declares `text_generation` and `structured_output` capabilities per
+live variant. System One entries cannot generate reviews. The current Ollama
+reviewer requires structured output as well as text generation; declaring a
+text-only variant does not provide a compatible reviewer adapter. Likewise,
+structured-output LLM decisions require a dedicated decision adapter, which is
+not currently implemented. These mismatches fail during selection, before calls.

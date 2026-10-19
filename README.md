@@ -110,6 +110,23 @@ as `local` and `local-high`. `[defaults]` selects `decider` and `reviewer` names
 `[profiles.NAME]` can replace either or both. The reviewer handles both standard
 and deep depth; these are not independent reviewer models.
 
+Each live entry declares model capabilities, for example
+`capabilities = { text_generation = true, structured_output = true }`.
+System One entries (`ollaya`, `jev`) require structured decisions and cannot
+generate review text. LLM entries declare whether they support structured output;
+that declaration is owner-supplied, not inferred from the model name or verified
+against a server. Omitted declarations retain the existing adapter assumptions.
+
+Capability checks and adapter support both apply. A decision needs structured
+output; a review needs generated text. Currently System One decision adapters
+and a structured-output Ollama review adapter are implemented. A structured-output
+LLM still needs a dedicated decision adapter before it can be selected as a
+decider. A text-only LLM can be registered with `structured_output = false`,
+but cannot be selected for the current JSON-schema review adapter. Text-only
+review requires a separate implementation; declaring capabilities does not add
+adapter support. Incompatible defaults, profiles, and CLI selections fail before
+inference. Capability declarations cannot be changed through setting overrides.
+
 Precedence, from lowest to highest: catalog defaults → named `--profile` →
 `--decider` / `--reviewer` → repeated `--model-override ROLE.FIELD=TOML`.
 Override roles are `decision` and `review`; values use TOML syntax, so string
