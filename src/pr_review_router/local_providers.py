@@ -270,10 +270,10 @@ class _LocalProvider[SettingsT: LocalSettings](_Provider[SettingsT]):
         return metadata
 
 
-class SystemOneDecisionProvider[SettingsT: DecisionSettings | JevSettings](
+class SystemOneDecisionProvider[SettingsT: DecisionSettings | JevSettings | ReviewSettings](
     _Provider[SettingsT], ABC
 ):
-    """Map a System One routing classification to the decision-provider contract."""
+    """Map a System One-compatible typed classification to the decision contract."""
 
     def __init__(self, settings: SettingsT, session: Session) -> None:
         """Bind shared System One decision behavior to explicit backend settings.
@@ -290,6 +290,14 @@ class SystemOneDecisionProvider[SettingsT: DecisionSettings | JevSettings](
 
         :returns: Backend identifier included in the decision provider name.
         """
+
+    @property
+    def answer_source(self) -> str:
+        """Distinguish native backend answers from generated emulation.
+
+        :returns: Provenance identifier for typed answer values.
+        """
+        return "native"
 
     @abstractmethod
     def validate_backend_model(self, model: str) -> None:
@@ -349,7 +357,10 @@ class SystemOneDecisionProvider[SettingsT: DecisionSettings | JevSettings](
         if set(answer.probabilities) != set(DECISION_CRITERIA):
             raise TransportFailure("decision response has inconsistent routing labels")
         self.validate_backend_model(response.model)
-        self.responses.append(response.model_dump(mode="json"))
+        response_data = response.model_dump(mode="json")
+        if self.answer_source != "native":
+            response_data["answer_source"] = self.answer_source
+        self.responses.append(response_data)
         return Decision(
             recommendation=answer.choice,
             confidence=Confidence(value=0.0, source="unavailable"),
@@ -382,7 +393,42 @@ class OllayaDecisionProvider(
         self.inspect_model(model)
 
 
-class OllamaReviewProvider(_LocalProvider[ReviewSettings]):
+class OllamaChatProvider(_LocalProvider[ReviewSettings]):
+    """Share conservative context validation across local chat roles."""
+
+    def _check_context(
+        self, metadata: dict[str, Any], payload: dict[str, Any], output: int
+    ) -> None:
+        """Require explicit server context and reserve conservative input/output space.
+
+        :param metadata: Local model settings retrieved from the server.
+        :param payload: Complete request including evidence, instructions, and schema.
+        :param output: Maximum generated tokens at this depth.
+        :raises TransportFailure: If explicit context is missing, inconsistent, or too small.
+        """
+        parameters = metadata["parameters"]
+        match = re.search(r"(?m)^\s*num_ctx\s+(\d+)\s*$", parameters)
+        if match is None or int(match[1]) != self.settings.context_tokens:
+            raise TransportFailure("Ollama model requires matching explicit num_ctx")
+        # UTF-8 bytes bound the input conservatively for byte-fallback tokenizers.
+        # Count schema/template bytes too; add headroom for the chat framing.
+        required = (
+            len(canonical_json(payload).encode("utf-8"))
+            + len(metadata["template"].encode("utf-8"))
+            + 512
+            + output
+        )
+        capacities = [self.settings.context_tokens]
+        capacities.extend(
+            value
+            for key, value in metadata["model_info"].items()
+            if key.endswith(".context_length") and isinstance(value, int) and value > 0
+        )
+        if required > min(capacities):
+            raise TransportFailure("complete review request does not fit the model context")
+
+
+class OllamaReviewProvider(OllamaChatProvider):
     """Request constrained JSON review using the local chat compatibility endpoint."""
 
     def __init__(self, settings: ReviewSettings, session: Session) -> None:
@@ -477,37 +523,6 @@ class OllamaReviewProvider(_LocalProvider[ReviewSettings]):
             }
         )
         return result
-
-    def _check_context(
-        self, metadata: dict[str, Any], payload: dict[str, Any], output: int
-    ) -> None:
-        """Require explicit server context and reserve conservative input/output space.
-
-        :param metadata: Local model settings retrieved from the server.
-        :param payload: Complete request including evidence, instructions, and schema.
-        :param output: Maximum generated tokens at this depth.
-        :raises TransportFailure: If explicit context is missing, inconsistent, or too small.
-        """
-        parameters = metadata["parameters"]
-        match = re.search(r"(?m)^\s*num_ctx\s+(\d+)\s*$", parameters)
-        if match is None or int(match[1]) != self.settings.context_tokens:
-            raise TransportFailure("Ollama model requires matching explicit num_ctx")
-        # UTF-8 bytes bound the input conservatively for byte-fallback tokenizers.
-        # Count schema/template bytes too; add headroom for the chat framing.
-        required = (
-            len(canonical_json(payload).encode("utf-8"))
-            + len(metadata["template"].encode("utf-8"))
-            + 512
-            + output
-        )
-        capacities = [self.settings.context_tokens]
-        capacities.extend(
-            value
-            for key, value in metadata["model_info"].items()
-            if key.endswith(".context_length") and isinstance(value, int) and value > 0
-        )
-        if required > min(capacities):
-            raise TransportFailure("complete review request does not fit the model context")
 
 
 class ShadowDecisionProvider:

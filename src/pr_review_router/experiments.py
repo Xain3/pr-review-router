@@ -22,6 +22,7 @@ from .config import Policy
 from .contracts import Contract, Decision, PullRequestEvidence, ReviewReport, ReviewResult, Text
 from .engine import review_pull_request
 from .hosted_providers import JevDecisionProvider
+from .llm_decisions import OllamaDecisionProvider, llm_decision_versions
 from .local_providers import (
     OllamaReviewProvider,
     OllayaDecisionProvider,
@@ -168,8 +169,8 @@ def run_experiment(
         raise ValueError("local experiments require direct acceptance and rejection to be disabled")
     if replay and record:
         raise ValueError("recording and replay are mutually exclusive")
-    if rubric and not isinstance(config.decision, DecisionSettings | JevSettings):
-        raise ValueError("semantic rubric experiments require a System One decision provider")
+    if rubric and not isinstance(config.decision, DecisionSettings | JevSettings | ReviewSettings):
+        raise ValueError("semantic rubric experiments require a typed decision provider")
     if record and isinstance(config.decision, JevSettings) and not config.decision.allow_recording:
         raise ValueError("hosted recording requires allow_recording=true for sanitized evidence")
     fingerprint_inputs = {
@@ -182,6 +183,8 @@ def run_experiment(
         "review_schema": ReviewResult.model_json_schema(),
         "report_schema": _experiment_report_schema(policy),
     }
+    if isinstance(config.decision, ReviewSettings):
+        fingerprint_inputs["llm_decision_adapter"] = llm_decision_versions()
     if isinstance(config.decision, JevSettings):
         fingerprint_inputs["hosted_adapter"] = {
             "revision": "jev-sdk-logical-exchange-v1",
@@ -200,6 +203,8 @@ def run_experiment(
         if isinstance(config.decision, DecisionSettings)
         else JevDecisionProvider(config.decision, session, transport=hosted_transport)
         if isinstance(config.decision, JevSettings)
+        else OllamaDecisionProvider(config.decision, session)
+        if isinstance(config.decision, ReviewSettings)
         else MockDecisionProvider()
     )
     mock_reviewer = None
@@ -223,7 +228,11 @@ def run_experiment(
         artifact = {
             "experiment_version": 1,
             "fingerprint": experiment_fingerprint,
-            "adapter_revision": versions_fingerprint(),
+            "adapter_revision": (
+                fingerprint({"native": adapter_versions(), "llm": llm_decision_versions()})
+                if isinstance(config.decision, ReviewSettings)
+                else versions_fingerprint()
+            ),
             "versions": {
                 key: value for key, value in adapter_versions().items() if key.endswith("_version")
             },
@@ -256,11 +265,18 @@ def run_experiment(
             ),
             "report": report.model_dump(mode="json"),
         }
+        if isinstance(decision, OllamaDecisionProvider):
+            artifact["versions"]["llm_decision_version"] = llm_decision_versions()["revision"]
         if rubric_provider:
             artifact["rubric_request_seconds"] = sum(
                 item.elapsed_seconds
                 for item in session.exchanges
                 if item.request.url.endswith("/v1/systemone")
+                or (item.request.body or {})
+                .get("response_format", {})
+                .get("json_schema", {})
+                .get("name")
+                == "typed_decisions"
             )
             artifact["rubric_schema_failures"] = rubric_provider.provider.schema_failures
             artifact["assessment_rubric"] = rubric_provider.artifact().model_dump(mode="json")

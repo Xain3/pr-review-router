@@ -22,7 +22,7 @@ from .experiments import (
     summarize_evaluation,
 )
 from .model_catalog import CatalogSelectionError, load_model_catalog, resolve_catalog_path
-from .provider_config import MockSettings, ProvidersConfig, load_providers_config
+from .provider_config import MockSettings, ProvidersConfig, ReviewSettings, load_providers_config
 from .providers import MockDecisionProvider, MockReviewProvider
 from .transport import ReplayMismatch, fingerprint
 
@@ -225,8 +225,8 @@ def _evaluate(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
     except (OSError, ValueError):
         parser.error("could not read valid UTF-8 corpus, evidence, or policy")
     config = _provider_inputs(args.provider_settings, policy, parser)
-    if rubric and config.decision.backend not in {"ollaya", "jev"}:
-        parser.error("semantic rubric evaluation requires a System One decision provider")
+    if rubric and config.decision.backend not in {"ollaya", "jev", "ollama"}:
+        parser.error("semantic rubric evaluation requires a typed decision provider")
     replay_paths = [
         args.replay_dir / f"{case.case_id}.tape.json" if args.replay_dir else None
         for case in corpus.cases
@@ -332,6 +332,12 @@ def main(argv: list[str] | None = None) -> int:
     args = _parse_args(parser, argv)
     if args is None:
         return 0
+    if isinstance(args.provider_settings.decision, ReviewSettings):
+        sys.stderr.write(
+            "warning: general LLM deciders are a non-optimal compatibility fallback. "
+            "Prefer a native System One decider (ollaya or jev); generated probabilities "
+            "and confidence are self-reported, not native or calibrated.\n"
+        )
     if args.command == "evaluate":
         return _evaluate(args, parser)
     policy, evidence = _load_inputs(args.input, args.config, parser)

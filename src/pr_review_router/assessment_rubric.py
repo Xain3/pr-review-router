@@ -664,7 +664,7 @@ class RubricDecisionProvider:
     ) -> None:
         """Bind the existing decision adapter to an explicit rubric and supplied review.
 
-        :param provider: System One decision adapter sharing the experiment HTTP session.
+        :param provider: Typed decision adapter sharing the experiment HTTP session.
         :param rubric: Formal and semantic criteria.
         :param review_text: Supplied review to compare with substantive diff changes.
         :param max_input_bytes: Budget for the complete rubric request, including the review.
@@ -778,17 +778,26 @@ class RubricDecisionProvider:
                 raise TransportFailure("rubric server truncated evidence")
             self.provider.validate_backend_model(response.model)
             provider_identity = f"rubric:{self.provider.backend_name}:{response.model}"
-            self.provider.responses.append(response.model_dump(mode="json"))
+            response_data = response.model_dump(mode="json")
+            if self.provider.answer_source != "native":
+                response_data["answer_source"] = self.provider.answer_source
+            self.provider.responses.append(response_data)
             for identifier, answer in response.answers.items():
                 criterion = next(item for item in semantic if item.criterion_id == identifier)
                 status, explanation = normalize_answer(criterion, answer)
+                answer_data = answer.model_dump(mode="json")
+                if self.provider.answer_source != "native":
+                    answer_data["source"] = self.provider.answer_source
+                    explanation += (
+                        " Numeric answers are LLM self-reports, not native probabilities."
+                    )
                 results[identifier] = CriterionAssessment(
                     criterion_id=identifier,
                     status=status,
                     source="model",
                     confidence=Confidence(value=0.0, source="unavailable"),
                     explanation=explanation + " Task calibration is unavailable.",
-                    native_answer=answer.model_dump(mode="json"),
+                    native_answer=answer_data,
                 )
             apply_choice_routing_rules(self.rubric, results, response.answers)
             labels = _choice_labels(self.rubric, response.answers)

@@ -118,14 +118,35 @@ that declaration is owner-supplied, not inferred from the model name or verified
 against a server. Omitted declarations retain the existing adapter assumptions.
 
 Capability checks and adapter support both apply. A decision needs structured
-output; a review needs generated text. Currently System One decision adapters
-and a structured-output Ollama review adapter are implemented. A structured-output
-LLM still needs a dedicated decision adapter before it can be selected as a
-decider. A text-only LLM can be registered with `structured_output = false`,
-but cannot be selected for the current JSON-schema review adapter. Text-only
-review requires a separate implementation; declaring capabilities does not add
-adapter support. Incompatible defaults, profiles, and CLI selections fail before
-inference. Capability declarations cannot be changed through setting overrides.
+output; a review needs generated text. Structured-output Ollama LLMs can fill
+either role. The decision adapter emulates System One's typed questions using
+JSON-schema chat completions, including routing and rubric choice, probability,
+and score assessments. Generated values are marked `llm_self_reported`, and task
+confidence remains unavailable. They are not native model probabilities or task
+calibration. Text-only review still requires a separate adapter; the current
+reviewer also requires structured output. Incompatible defaults, profiles, and
+CLI selections fail before inference. Capabilities cannot be setting overrides.
+
+**Warning:** General LLM deciders are a non-optimal compatibility fallback.
+Prefer a native System One decider (`ollaya` or `jev`) for the decision role.
+Generated probabilities and confidence are self-reported, not native or
+calibrated. Both `review` and `evaluate` print this warning once to stderr when
+an LLM decider is selected, including through defaults, profiles, legacy files,
+and replay. JSON output and exit status are unaffected. LLM reviewers alone
+do not trigger the warning.
+
+```sh
+# Live local LLM decider and reviewer, after installing the model/server.
+uv run pr-review-router review --input examples/local-models/editorial.json --profile llm
+uv run pr-review-router review --input examples/local-models/editorial.json --decider local --reviewer mock --model-override 'decision.standard_max_tokens=2048'
+```
+
+LLM decisions use the shared chat settings, including `standard_max_tokens` as
+the output budget for a complete batch, `context_tokens`, temperature, seed, and
+reasoning effort. Decision and review settings remain independent even when the
+same catalog name is selected for both; this is not independent model evidence.
+The legacy provider format also accepts `backend = "ollama"` under `[decision]`;
+see [the standalone LLM example](examples/local-models/llm.toml).
 
 Precedence, from lowest to highest: catalog defaults → named `--profile` →
 `--decider` / `--reviewer` → repeated `--model-override ROLE.FIELD=TOML`.
@@ -278,14 +299,15 @@ human-reviewed PR labels. No hosted calibration or automated skips are enabled.
 
 ## Local models and reproducible CI
 
-Use `review --providers-config PATH` to select Ollaya decisions and Ollama
-reviews independently. Provider TOML is separate from routing policy. Local
+Use `review --providers-config PATH` to select Ollaya or structured-output
+Ollama decisions and Ollama reviews independently. Provider TOML is separate from routing policy. Local
 experiments shadow skip recommendations and require direct decisions to be
 disabled. They retain original decisions and model provenance in separate
 artifacts without changing report schema version 4.
 Backend and endpoint settings are distinct from each selected model; optional
 `instructions` are model-specific, while `backend_instructions` covers special
-backend cases. The decision model's `max_choice_options` defaults to 3.
+backend cases. Ollaya's `max_choice_options` defaults to 3; Ollama decisions
+support up to 100 labels per question.
 
 ```sh
 # Exercise the real adapters offline using explicitly synthetic HTTP tapes.
@@ -296,7 +318,7 @@ See [local model setup and evaluation](examples/local-models/README.md) for
 installed-model selection, context configuration, live runs, explicit recording
 refresh, and network-free replay. Default tests never require a running model or
 paid inference. Replay protects integration behavior; live evaluation and
-human-reviewed labels are needed to assess model quality. Ollaya routing
+human-reviewed labels are needed to assess model quality. Local routing
 confidence remains unavailable until task calibration; reviewer confidence is
 self-reported.
 

@@ -36,7 +36,7 @@ def inputs(index=0):
 def test_configured_rubric_rejects_mock_decision_provider():
     _, evidence, rubric, review = inputs()
 
-    with pytest.raises(ValueError, match="semantic rubric experiments require a System One"):
+    with pytest.raises(ValueError, match="semantic rubric experiments require a typed"):
         run_experiment(evidence, Policy(), ProvidersConfig(), rubric=rubric, review_text=review)
 
 

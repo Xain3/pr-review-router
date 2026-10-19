@@ -130,10 +130,6 @@ class ModelCatalog(Contract):
                     raise CatalogSelectionError("review requires a text-generating model")
                 if role == "decision" and not model.capabilities.structured_output:
                     raise CatalogSelectionError("decision requires structured-output support")
-                if role == "decision" and isinstance(model, CatalogReviewSettings):
-                    raise CatalogSelectionError(
-                        "selected LLM backend has no decision adapter; use ollaya or jev"
-                    )
                 if role == "review" and not model.capabilities.structured_output:
                     raise CatalogSelectionError(
                         "ollama review adapter requires structured output; "

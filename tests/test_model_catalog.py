@@ -34,7 +34,6 @@ def test_profile_role_and_setting_precedence():
     [
         {"profile": "absent"},
         {"decider": "absent"},
-        {"decider": "local"},
         {"reviewer": "winnow"},
         {"overrides": ["review.temperature=3"]},
         {"overrides": ['review.backend="mock"']},
@@ -222,7 +221,6 @@ def test_system_one_capabilities_reject_contradictions(backend, field, value):
     [
         ("winnow", "reviewer", "text-generating"),
         ("jev", "reviewer", "text-generating"),
-        ("local", "decider", "no decision adapter"),
     ],
 )
 def test_capability_role_errors_are_specific(name, role, message):
@@ -279,3 +277,11 @@ def test_capabilities_cannot_be_overridden_into_an_incompatible_role():
     config = catalog.resolve(profile="local")
     assert "capabilities" not in config.decision.model_dump()
     assert "capabilities" not in config.review.model_dump()
+
+
+def test_structured_llm_catalog_variant_supports_both_roles():
+    catalog = load_model_catalog(ROOT / "models.toml")
+    config = catalog.resolve(decider="local", reviewer="local")
+    assert config.decision.backend == "ollama"
+    assert config.review.backend == "ollama"
+    assert config.decision is not config.review
