@@ -5,9 +5,9 @@
 Provide an offline CLI and a provider-independent engine for advisory PR review
 routing. Accept owner-supplied JSON evidence and optional TOML policy; produce
 validated JSON reports. The default mode uses deterministic mocks and makes no
-API calls. Explicit local experiments use separately configured model adapters.
+API calls. Explicit local or hosted experiments use separately configured model adapters.
 
-Hosted Jev/TypeSafe decisions and review adapters, GitHub evidence
+Hosted generative review adapters, GitHub evidence
 collection, PR comments, approval/merge operations, and a Docker Action are deferred.
 
 ## Evidence contract
@@ -223,10 +223,10 @@ discarded by a later clear response.
 
 `review --providers-config PATH` selects providers separately from policy TOML
 and its environment overrides. Without this option the default mock behavior
-remains. Each role independently selects `mock`, or `ollaya` for decisions and
-`ollama` for review. Local adapters require an explicit installed model and a
-loopback HTTP(S) origin without embedded credentials. Authenticated, hosted,
-and cloud/remote models remain deferred. The router does not manage models.
+remains. Each role independently selects `mock`, `ollaya` or hosted `jev` for
+decisions, and `ollama` for review. Local adapters require an explicit installed
+model and a loopback HTTP(S) origin without embedded credentials. Their remote
+model prohibitions remain unchanged. The router does not manage models.
 The endpoint/backend selection and model name are separate settings. Optional
 `instructions` supplement the selected model's prompt; optional
 `backend_instructions` handle backend-specific cases. Supplemental instructions
@@ -260,7 +260,7 @@ reject inputs that would fit after tokenization. Evidence is never silently
 summarized or truncated. Model version/digest inspection happens lazily after
 engine preflight, so failed gates prevent all HTTP calls.
 
-HTTP requests have a total deadline and bounded bodies, ignore system proxies,
+Local HTTP requests have a total deadline and bounded bodies, ignore system proxies,
 and do not redirect or automatically retry. The existing boundary catches schema
 errors from adapter normalization as well as returned payloads and retries once
 with `strict_schema=True`. Raw provider errors never enter advisory reports.
@@ -304,6 +304,63 @@ HTTP calls. Outputs are individually atomic/private; earlier case files can
 remain after a later failure, and summary is written only after completion.
 See [configuration and runnable commands](../examples/local-models/README.md).
 
+## Hosted Jev Decisions and Rubrics
+
+`decision.backend = "jev"` requires `allow_network = true`. The HTTPS endpoint
+must be a credential-free origin without a path, query, or fragment; it defaults
+to `https://api.typesafe.ai`. `model` defaults to `jev-1.14.0` and must be a pinned
+`jev-MAJOR.MINOR.PATCH` identifier, never a moving alias. The resolved model must
+match this pin. `api_key_env` names an environment variable (default
+`TYPESAFE_API_KEY`); literal keys are not configuration fields and never enter
+fingerprints, artifacts, or tapes. Credentials are read lazily after evidence
+preflight. Hosted data handling must receive owner review before private PR use.
+
+The adapter uses `TypeSafeClient.system_one()` from the synchronous Python SDK,
+with a separate `httpx2` injection boundary from local `httpx` transports. One
+client is reused within an experiment and closed afterward. Redirects, ambient
+proxy configuration, compression, and SDK payload logging are disabled.
+Timeouts default to 30 seconds per I/O operation. SDK retries default to two
+after the initial attempt, with a 60-second retry budget and `Retry-After`
+handling. The retry budget prevents scheduling over-budget retries and caps
+attempt I/O timeouts to remaining time; it is not a process-level cancellation
+deadline. Upstream errors and bodies are never included in failure reports.
+Authentication, context, network, exhausted retries, malformed responses, and
+response-budget failures yield no assessment and conservative human escalation.
+
+`max_choice_options` defaults to 255 (range 3-255); local Ollaya limits do not
+change. `max_request_bytes` defaults to 60000 (maximum 64000), including the
+complete request. `max_question_bytes` defaults to 30000 (maximum 32000), including
+the complete state and single-question envelope. These conservative UTF-8 byte
+budgets leave headroom by default against Jev's documented 64k request/32k
+question token limits; they are not an exact tokenizer. Server context failures
+still fail closed. Long-context mode is not enabled. The response budget defaults
+to 1048576 bytes. Evidence is never silently dropped, compressed into a summary,
+or truncated to fit.
+
+Routing and semantic rubric batches share `SystemOneDecisionProvider.evaluate`;
+only local adapters inspect installed model inventory. Every requested answer
+must be present with its expected type, including when the SDK skips unknown
+answer kinds. SDK integer Score maps are serialized back to JSON string keys
+before the existing strict rubric validator checks legends and distributions.
+Resolved model, SDK version, request ID when supplied, native answers, usage,
+and SDK attempt counts are retained in separate diagnostics. Choice/Score
+confidence remains native distribution-derived evidence, not PR-task calibration;
+Noul supplies only the proposition's yes-probability. Task confidence stays
+unavailable and all skip recommendations remain shadowed. Human-reviewed PR
+labels and identifiable task calibration are required before any later design
+can enable automated skips. No calibration is claimed by this integration.
+
+Hosted recording requires both `allow_recording = true` and an explicit record
+command. Tapes omit authentication headers and upstream error bodies, but include
+full request evidence and successful answers; only sanitized tapes may be shared.
+They store one final bounded exchange per SDK call, with an `attempts` count and
+schema-failure marker, rather than individual transient retry bodies. HTTP-call
+metrics count attempts; timing includes SDK retry delays. Hosted fingerprints
+also bind the SDK version and hosted adapter revision. Replay needs no credential,
+opens no SDK client, reproduces recorded failures, and never falls back to the
+network. Existing local tapes without the optional exchange fields still load.
+See [hosted examples](../examples/jev/README.md).
+
 ## Formal and semantic assessment rubric examples
 
 An evaluation corpus can optionally name `assessment_rubric`, a relative JSON
@@ -330,7 +387,7 @@ validators. Without `enforcement_rules`, a formal blocker prevents all HTTP call
 and leaves semantic criteria explicitly unassessed. With enforcement rules, formal
 results are evaluated like other criteria, because the enforced set may depend on
 semantic condition criteria. Semantic criteria carry instructions and a
-description/review target and use the configured Ollaya decision adapter. Every
+description/review target and use the configured Ollaya or Jev decision adapter. Every
 semantic question includes its configured description and criterion-specific
 instructions, regardless of question type. The entire PR evidence and separately
 supplied review are untrusted state data;
@@ -355,15 +412,15 @@ choices return `passed`, `failed`, or `uncertain`. A semantic choice criterion m
 configure a `choices` list, with two or more entries. Each entry has a unique
 lowercase `label`, provider-visible `description`, and optional canonical
 `status` of `passed`, `failed`, or `uncertain`. The selected decision provider's
-`max_choice_options` capability limits the number of entries (default `3`, from
-2 through 100). The provider returns the custom label and its distribution. A
+`max_choice_options` capability limits the number of entries (Ollaya defaults to
+3, range 2-100; Jev defaults to 255, range 3-255). The provider returns the custom label and its distribution. A
 mapped label receives its configured status. An unmapped label remains available
 to `routing_rules`; without a matching rule it maps conservatively to
 `uncertain`.
 
-A semantic choice criterion may set `uncertain_below_confidence` to a per-question
+A semantic choice or score criterion may set `uncertain_below_confidence` to a per-question
 cutoff in `[0, 1]`. Native confidence below the cutoff maps both the criterion
-status and effective routing label to `uncertain`; the raw choice and confidence
+status and, for choices, effective routing label to `uncertain`; the raw answer and confidence
 remain recorded. This is a conservative policy over provider-reported,
 uncalibrated confidence, not a calibrated probability, and adds no provider calls.
 

@@ -5,6 +5,8 @@ exported pull request evidence and produces an advisory report. Run commands
 from the repository root after installing the project with `uv sync --locked`.
 Mock and replay examples require no provider credentials or inference network
 access. Live local examples explicitly require running local model servers.
+Hosted Jev examples require explicit network consent and an environment-based
+credential, and can incur API charges. They are not run by default tests.
 
 The project uses **decision provider** for the route recommender and
 **review provider** for the diff assessor. `standard` and `deep` are review
@@ -20,6 +22,7 @@ depths, not separate provider roles. See the
 | [`pr-text/`](pr-text/README.md) | Optional Conventional Commits title and non-empty `Summary` and `Testing` section checks, including passing and failing inputs. | [PR-text examples](pr-text/README.md) |
 | [`rubric/`](rubric/README.md) | Weighted title/body criteria, hard and soft blockers, and the resulting aggregate score and routing behavior. | [Rubric examples](rubric/README.md) |
 | [`local-models/`](local-models/README.md) | Independent local adapters, shadow skips, provisional evaluation labels, and explicitly synthetic offline HTTP replay. | [Local models and replay](local-models/README.md) |
+| [`jev/`](jev/README.md) | Opt-in hosted decisions and semantic rubrics, pinned models, private recording, and credential-free replay. | [Hosted Jev guide](jev/README.md) |
 | [`rubric-review/`](rubric-review/README.md) | Assessment-rubric examples combining deterministic title/section checks with semantic questions about rationale, diff coverage, review coverage, and testing. Includes offline replay. | [PR and review rubric](rubric-review/README.md) |
 | [`synthetic-prs/`](synthetic-prs/README.md) | 157 fictional PRs across 30 families, including 24 independently authored held-out cases, supplied reviews, provisional labels, and scenario/criterion/triviality confusion reports. | [Corpus guide](synthetic-prs/README.md) and [index](synthetic-prs/INDEX.md) |
 
