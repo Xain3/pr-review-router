@@ -65,8 +65,9 @@ atomically; POSIX files are private to their owner. Input and policy paths canno
 be used as the output destination.
 
 Policy defaults are read from the packaged
-[defaults.toml](src/pr_review_router/defaults.toml); model defaults remain as
-hardcoded fallbacks for settings omitted from a config file. Set
+[defaults.toml](src/pr_review_router/defaults.toml); model selections come from
+the [model catalog](models.toml), with validated provider defaults for omitted
+settings. Set
 `PR_REVIEW_ROUTER_CONFIG` to select a config file when `--config` is not given.
 For individual policy settings, use `PR_REVIEW_ROUTER_<SETTING>` with the
 setting name uppercased, such as `PR_REVIEW_ROUTER_SKIP_CONFIDENCE=0.9` or
@@ -83,6 +84,68 @@ Exit status is 0 for every successful advisory report, including
 `needs_human_review`. Invalid evidence, policy, arguments, or file I/O produce
 status 2 and a concise diagnostic on stderr. Consumers should inspect the
 report's `outcome`, rather than treating CLI success as permission to merge.
+
+## Named models and profiles
+
+`review` and `evaluate` load `models.toml` from the current working directory,
+or the packaged catalog when it is absent. Use `--models-config PATH` for an
+explicit catalog; it replaces the entire catalog. There is no parent-directory
+search or model-setting environment override. The shipped defaults select
+**offline mocks**. Changing defaults to real models opts subsequent runs into
+inference. The catalog lists supported adapters with example model names, not an
+inventory of installed or every externally available model.
+
+```sh
+# Explicitly select offline mocks in experiment mode.
+uv run pr-review-router review --input examples/diff/evidence.json --decider mock --reviewer mock
+
+# Live local inference: first install the models and start the local servers.
+uv run pr-review-router review --input examples/local-models/editorial.json --profile local
+uv run pr-review-router review --input examples/local-models/editorial.json --profile thorough --reviewer local --model-override 'review.temperature=0.2'
+```
+
+Catalog `[models.NAME]` tables contain the existing provider settings, including
+`backend`. Multiple names can use the same model with different settings, such
+as `local` and `local-high`. `[defaults]` selects `decider` and `reviewer` names;
+`[profiles.NAME]` can replace either or both. The reviewer handles both standard
+and deep depth; these are not independent reviewer models.
+
+Each live entry declares model capabilities, for example
+`capabilities = { text_generation = true, structured_output = true }`.
+System One entries (`ollaya`, `jev`) require structured decisions and cannot
+generate review text. LLM entries declare whether they support structured output;
+that declaration is owner-supplied, not inferred from the model name or verified
+against a server. Omitted declarations retain the existing adapter assumptions.
+
+Capability checks and adapter support both apply. A decision needs structured
+output; a review needs generated text. Currently System One decision adapters
+and a structured-output Ollama review adapter are implemented. A structured-output
+LLM still needs a dedicated decision adapter before it can be selected as a
+decider. A text-only LLM can be registered with `structured_output = false`,
+but cannot be selected for the current JSON-schema review adapter. Text-only
+review requires a separate implementation; declaring capabilities does not add
+adapter support. Incompatible defaults, profiles, and CLI selections fail before
+inference. Capability declarations cannot be changed through setting overrides.
+
+Precedence, from lowest to highest: catalog defaults → named `--profile` →
+`--decider` / `--reviewer` → repeated `--model-override ROLE.FIELD=TOML`.
+Override roles are `decision` and `review`; values use TOML syntax, so string
+values need TOML quotes inside shell quotes, for example
+`--model-override 'review.reasoning_effort="high"'`. Overrides replace individual
+settings; duplicate keys, unknown fields/names, incompatible roles, and invalid
+values are errors. Select another catalog name to change `backend` or `model`;
+these identity fields cannot be overridden. Every catalog entry and profile is
+validated, even when unused. Optional settings use the existing provider defaults.
+
+The legacy `--providers-config PATH` format and behavior remain supported. It
+bypasses catalog loading entirely and cannot be combined with any catalog flag,
+avoiding implicit merges. Policy `--config` and its environment precedence are
+unchanged. Explicit catalog selections use the existing experiment safeguards
+(shadow skips, disabled direct decisions, provenance under `reports/`), even
+when selecting mocks. Automatically loaded all-mock defaults retain the original
+mock routing behavior. Both commands support catalog selection for replay and
+recording; resolved settings, rather than profile names, determine fingerprints.
+See [local setup and replay](examples/local-models/README.md).
 
 ## Routing behavior
 

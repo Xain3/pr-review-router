@@ -137,3 +137,28 @@ current model quality or speed.
 Hosted adapters can later reuse the corpus, contracts, and replay mechanism,
 with explicit credentials and provider capability tests. Task calibration and
 honoring model skips follow human-reviewed evaluation.
+
+## Catalog shortcuts
+
+The top-level [models.toml](../../models.toml) includes `local` and `thorough`
+profiles. After completing the local server/model setup above, run:
+
+```sh
+uv run pr-review-router review --input examples/local-models/editorial.json --profile local
+uv run pr-review-router review --input examples/local-models/editorial.json --profile thorough --reviewer local --model-override 'review.deep_max_tokens=3072'
+uv run pr-review-router evaluate --corpus examples/local-models/corpus.json --profile local --output-dir reports/catalog-evaluation
+```
+
+These commands perform live local inference. The catalog's default selection
+remains offline mocks. Add named variants under `[models.NAME]`, then select
+names with `--decider` / `--reviewer`, or add partial `[profiles.NAME]` selections.
+Defaults are overridden by profiles, then explicit names, then setting overrides.
+Keep using `--providers-config` for existing standalone files and synthetic tapes;
+it bypasses the catalog and cannot be combined with catalog flags.
+
+The catalog declares `text_generation` and `structured_output` capabilities per
+live variant. System One entries cannot generate reviews. The current Ollama
+reviewer requires structured output as well as text generation; declaring a
+text-only variant does not provide a compatible reviewer adapter. Likewise,
+structured-output LLM decisions require a dedicated decision adapter, which is
+not currently implemented. These mismatches fail during selection, before calls.

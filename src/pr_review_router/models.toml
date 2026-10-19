@@ -1,0 +1,46 @@
+# Named variants of supported provider adapters. Local names must be installed.
+# Offline demonstration defaults; selecting another entry opts into inference.
+[defaults]
+decider = "mock"
+reviewer = "mock"
+
+[models.mock]
+backend = "mock"
+
+[models.winnow]
+backend = "ollaya"
+capabilities = { text_generation = false, structured_output = true }
+endpoint = "http://localhost:11435"
+model = "winnow:e4b"
+max_choice_options = 3
+
+[models.jev]
+backend = "jev"
+capabilities = { text_generation = false, structured_output = true }
+model = "jev-1.14.0"
+allow_network = true
+api_key_env = "TYPESAFE_API_KEY"
+
+[models.local]
+backend = "ollama"
+capabilities = { text_generation = true, structured_output = true }
+endpoint = "http://localhost:11434"
+model = "pr-review-local:latest"
+reasoning_effort = "none"
+
+[models.local-high]
+backend = "ollama"
+capabilities = { text_generation = true, structured_output = true }
+endpoint = "http://localhost:11434"
+model = "pr-review-local:latest"
+reasoning_effort = "high"
+standard_max_tokens = 2048
+deep_max_tokens = 4096
+
+[profiles.local]
+decider = "winnow"
+reviewer = "local"
+
+[profiles.thorough]
+decider = "winnow"
+reviewer = "local-high"

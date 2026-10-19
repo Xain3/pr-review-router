@@ -219,11 +219,74 @@ Stage finding lists are also capped individually. Escalation examines the comple
 provider results before capping. Findings from earlier stages cannot be silently
 discarded by a later clear response.
 
+## Model catalog and selection precedence
+
+Both CLI commands resolve providers independently of routing policy. Unless
+`--providers-config PATH` is supplied, load explicit `--models-config PATH`,
+otherwise `./models.toml`, otherwise the packaged `models.toml`. A missing
+explicit file, unreadable local catalog, or invalid catalog fails with exit 2;
+there is no silent fallback, parent search, or merge between catalogs.
+
+Catalog `models` is a mapping of names to discriminated provider settings:
+`mock` is usable in either role, `ollaya` and `jev` only for decisions, `ollama`
+only for review. Named variants may share the same underlying model. Settings
+retain all existing validation and provider defaults; unknown fields are errors.
+Every variant and profile is validated before any provider call. The catalog is
+an editable registry of supported adapter configurations, not model discovery.
+Shipped defaults select mock providers; live entries require available models
+or hosted credentials. Listing a hosted entry does not call it.
+
+Live catalog entries accept a `capabilities` table (inline or nested), separate
+from provider runtime settings. System One capabilities fix `text_generation`
+to false and `structured_output` to true; contradictory declarations are errors
+even for unused entries. LLM capabilities fix `text_generation` to true and
+accept an owner-declared `structured_output` boolean. Omitted capabilities
+preserve the existing adapter assumptions (structured System One decisions or
+structured LLM reviews). Mocks retain their synthetic behavior without claiming
+model capabilities. Declarations are not server discovery or evidence of quality.
+
+Decision selection requires structured output and an implemented decision
+adapter. Review selection requires text generation and an implemented review
+adapter. The current Ollama review adapter additionally requires structured
+output for its JSON findings/confidence contract. Accordingly, a structured LLM
+cannot yet be selected as a decider, and a text-only LLM can be registered but
+cannot yet be selected as a reviewer. Future LLM decision or text-only review
+adapters must supply their own prompt, normalization, validation, and confidence
+provenance; capability flags alone cannot enable those paths. Invalid default,
+profile, or explicit selections fail before HTTP calls or report writes.
+Capabilities are stripped before constructing `ProvidersConfig`, cannot be
+setting overrides, and do not alter runtime settings or replay fingerprints.
+Legacy provider files keep their existing schema and behavior.
+
+`[defaults]` contains `decider` and `reviewer` names (both default to `mock`).
+`[profiles.NAME]` optionally replaces either role, inheriting the other from
+catalog defaults. Names must exist and support their selected role. Selection
+precedence is defaults, then `--profile`, then explicit `--decider` and
+`--reviewer`, then repeated `--model-override ROLE.FIELD=TOML` settings.
+The reviewer covers both standard/deep stages with the existing per-depth
+budgets; this feature adds no ensemble or independent reviewer vote.
+Overrides use role names `decision` and `review`, parse values as TOML, reject
+duplicate keys and unknown fields, and cannot change `backend` or `model`.
+The complete resolved configuration is revalidated after overrides.
+
+Legacy `--providers-config` is a standalone configuration that bypasses catalog
+loading and retains existing semantics. Combining it with any catalog option
+is an error rather than an implicit merge. Policy environment precedence is
+unchanged and does not apply to model settings. Automatically selected all-mock
+defaults preserve original mock routing, including explicit direct-policy demos.
+Any explicit catalog selection or non-mock default uses experiment safeguards,
+including shadow skips and prohibition of direct decisions. Existing experiment
+artifacts record complete resolved provider settings, so profile aliases do not
+change fingerprints when effective settings are identical. Replay never falls
+back to live inference. Catalog paths join existing protected source paths for
+all outputs, including evaluation artifacts and derived experiment filenames.
+
 ## Local model experiments and replay
 
 `review --providers-config PATH` selects providers separately from policy TOML
-and its environment overrides. Without this option the default mock behavior
-remains. Each role independently selects `mock`, `ollaya` or hosted `jev` for
+and its environment overrides. Without this option the model catalog described
+above supplies the selections; shipped all-mock defaults retain mock behavior.
+Each role independently selects `mock`, `ollaya` or hosted `jev` for
 decisions, and `ollama` for review. Local adapters require an explicit installed
 model and a loopback HTTP(S) origin without embedded credentials. Their remote
 model prohibitions remain unchanged. The router does not manage models.
@@ -273,7 +336,8 @@ and native decisions, uncapped reviews, model metadata, generation settings,
 prompt/schema revision, usage, timing, and schema/transport failure counts.
 
 `review` supports `--record PATH`, `--replay PATH`, and `--experiment-output PATH`
-only with provider configuration. Artifact output defaults to
+with explicit provider configuration or catalog selection (or non-mock catalog
+defaults). Artifact output defaults to
 `reports/experiment-PR_NUMBER-HEAD_HASH.json`. Explicit recording writes a
 version-1 tape containing origin, experiment fingerprint, and ordered HTTP
 request/response or failure exchanges, including retry sequences. Private
@@ -286,7 +350,7 @@ position must match. Header/request mismatches and missing/unused exchanges
 produce status 2, even if the engine caught a replay exception and escalated.
 There is no live fallback or implicit refresh.
 
-`evaluate --corpus PATH --providers-config PATH [--config PATH]` runs validated
+`evaluate --corpus PATH [--providers-config PATH] [--config PATH]` runs validated
 cases and writes per-case reports/artifacts and `summary.json` beneath
 `--output-dir` (default `reports/evaluation`). `--record` writes case tapes;
 `--replay-dir PATH` replays them. Corpus version 1 requires unique safe case IDs,
@@ -638,7 +702,7 @@ rules and clearly label confidence as mock-derived.
 ## CLI and acceptance
 
 `pr-review-router review --input PATH [--config PATH] [--output PATH]` returns JSON
-with mocks unless explicit provider configuration is supplied.
+using the resolved catalog defaults unless explicit provider selection is supplied.
 Help/version work without credentials. Successful advisory runs exit 0; invalid
 input/policy or I/O exits 2. File writes are atomic, and validation failures leave
 an existing report untouched. Evidence/policy cannot be overwritten by the report.
