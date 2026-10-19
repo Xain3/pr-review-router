@@ -326,6 +326,34 @@ def test_hosted_connection_failures_are_bounded_and_private(hosted_config, failu
     assert "private connection detail" not in result.report.model_dump_json()
 
 
+@pytest.mark.parametrize("failure", ["missing_key", "client_initialization"])
+def test_hosted_setup_failures_record_and_replay(hosted_config, monkeypatch, tmp_path, failure):
+    """Record setup failures without credentials or fictitious HTTP attempts."""
+    if failure == "missing_key":
+        monkeypatch.delenv("TYPESAFE_API_KEY")
+    else:
+
+        def broken_client(**kwargs):
+            raise ValueError("private initialization detail")
+
+        monkeypatch.setattr("pr_review_router.hosted_providers.TypeSafeClient", broken_client)
+
+    original = run_hosted(hosted_config, record=True)
+    exchange = original.tape.exchanges[0]
+    assert exchange.error == "configuration"
+    assert exchange.attempts == 0
+    assert original.artifact["http_calls"] == 0
+    assert "private initialization detail" not in original.tape.model_dump_json()
+    assert "synthetic-private-key" not in original.tape.model_dump_json()
+
+    tape = tmp_path / "setup-failure.tape.json"
+    tape.write_text(original.tape.model_dump_json())
+    replay = run_hosted(hosted_config, replay=tape)
+    assert replay.report == original.report
+    for key in ("http_calls", "schema_failures", "transport_failures", "request_seconds"):
+        assert replay.artifact[key] == original.artifact[key]
+
+
 def test_hosted_sdk_client_is_reused_and_closed(hosted_config, monkeypatch):
     """Reuse one SDK client across schema retry and release it after the experiment."""
     from pr_review_router.hosted_providers import TypeSafeClient
@@ -356,6 +384,39 @@ def test_hosted_sdk_client_is_reused_and_closed(hosted_config, monkeypatch):
     assert len(requests) == 2
     assert clients[0].closed
     assert result.artifact["original_decisions"]
+
+
+@pytest.mark.parametrize("malformed", ["json", "answer_type"])
+def test_hosted_schema_failure_retries_and_replays(hosted_config, monkeypatch, tmp_path, malformed):
+    """Retry malformed hosted answers once and reproduce that retry during replay."""
+    requests = []
+
+    def handle(request):
+        requests.append(request)
+        if len(requests) == 1 and malformed == "json":
+            return httpx2.Response(200, content=b"not-json")
+        body = hosted_response(request).json()
+        if len(requests) == 1 and malformed == "answer_type":
+            body["answers"]["route"] = {"type": "noul", "noul": 0.5}
+        return httpx2.Response(200, json=body)
+
+    original = run_hosted(hosted_config, handle, record=True)
+    assert len(requests) == 2
+    assert (
+        "Return exactly one"
+        in json.loads(requests[1].content)["questions"]["route"]["instructions"]
+    )
+    assert original.tape.exchanges[0].schema_failure
+    assert original.artifact["schema_failures"] == 1
+    assert original.artifact["http_calls"] == 2
+
+    tape = tmp_path / "schema-retry.tape.json"
+    tape.write_text(original.tape.model_dump_json())
+    monkeypatch.delenv("TYPESAFE_API_KEY")
+    replay = run_hosted(hosted_config, replay=tape)
+    assert replay.report == original.report
+    for key in ("http_calls", "schema_failures", "transport_failures", "request_seconds"):
+        assert replay.artifact[key] == original.artifact[key]
 
 
 @pytest.mark.parametrize("malformed", [False, True])

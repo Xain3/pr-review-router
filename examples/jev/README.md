@@ -76,4 +76,7 @@ configuration used to make the recording. Fingerprints bind all settings,
 evidence, schemas/prompts, and SDK version; changed inputs or unused/missing
 exchanges reject replay without live fallback. Hosted tapes store one final
 exchange per SDK call and its attempt count, not transient retry response bodies.
+Credential-free client setup failures are recorded as zero-attempt configuration
+exchanges. Schema-failure markers preserve the provider's single strict-schema
+retry during replay.
 No live recording or hosted quality claim is included in these examples.

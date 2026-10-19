@@ -56,9 +56,11 @@ class Exchange(Contract):
     request: Request
     status: int | None = None
     body: str | None = None
-    error: Literal["timeout", "network", "response_limit", "encoding"] | None = None
+    error: Literal["configuration", "timeout", "network", "response_limit", "encoding"] | None = (
+        None
+    )
     elapsed_seconds: Annotated[float, Field(ge=0, allow_inf_nan=False)]
-    attempts: Annotated[int, Field(ge=1)] = 1
+    attempts: Annotated[int, Field(ge=0)] = 1
     schema_failure: bool = False
 
 

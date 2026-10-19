@@ -8,6 +8,7 @@ from importlib.metadata import version
 from typing import Any
 
 import httpx2
+from pydantic import ValidationError
 from typesafe_sdk import (
     RetryPolicy,
     TypeSafeAPIError,
@@ -20,6 +21,24 @@ from typesafe_sdk import (
 from .local_providers import SystemOneDecisionProvider
 from .provider_config import JevSettings
 from .transport import Exchange, Request, Session, TransportFailure, canonical_json
+
+
+def _schema_error() -> ValidationError:
+    """Create a sanitized validation signal for a hosted response schema failure.
+
+    :returns: Validation error safe to pass through the provider retry boundary.
+    """
+    return ValidationError.from_exception_data(
+        "JevResponse",
+        [
+            {
+                "type": "value_error",
+                "loc": ("response",),
+                "input": None,
+                "ctx": {"error": ValueError("hosted response does not match its schema")},
+            }
+        ],
+    )
 
 
 class _BoundedTransport(httpx2.BaseTransport):
@@ -154,6 +173,7 @@ class JevDecisionProvider(SystemOneDecisionProvider[JevSettings]):
 
         :param payload: Model, complete evidence state, and typed questions.
         :returns: Normalized JSON with all requested answers and safe call provenance.
+        :raises pydantic.ValidationError: If the hosted response fails schema validation.
         :raises TransportFailure: If budgets, SDK validation, or hosted inference fail.
         """
         self.validate_backend_model(payload["model"])
@@ -171,6 +191,10 @@ class JevDecisionProvider(SystemOneDecisionProvider[JevSettings]):
         if self.session.tape:
             try:
                 content = self.session.request(self.settings, "POST", "/v1/systemone", payload)
+            except TransportFailure:
+                if self.session.exchanges and self.session.exchanges[-1].schema_failure:
+                    raise _schema_error() from None
+                raise
             finally:
                 if self.session.exchanges and self.session.exchanges[-1].schema_failure:
                     self.schema_failures += 1
@@ -197,17 +221,30 @@ class JevDecisionProvider(SystemOneDecisionProvider[JevSettings]):
 
         :param payload: Bounded, complete request.
         :returns: Strictly normalized response JSON.
+        :raises pydantic.ValidationError: If the hosted response fails schema validation.
         :raises TransportFailure: On any SDK, response, or transport failure.
         """
+        start = time.monotonic()
         try:
             client = self._client()
-        except (TypeSafeError, httpx2.HTTPError, ValueError):
+        except Exception:
+            self.session.exchanges.append(
+                Exchange(
+                    request=Request(
+                        method="POST", url=self.settings.endpoint + "/v1/systemone", body=payload
+                    ),
+                    error="configuration",
+                    elapsed_seconds=time.monotonic() - start,
+                    attempts=0,
+                )
+            )
             raise TransportFailure("hosted client configuration is invalid") from None
         start = time.monotonic()
         status = None
         content = None
         error = None
         schema_failure = False
+        schema_error = None
         try:
             assert self.bounded_transport is not None
             self.bounded_transport.attempts = 0
@@ -215,16 +252,17 @@ class JevDecisionProvider(SystemOneDecisionProvider[JevSettings]):
             result = client.system_one(
                 state=payload["state"], questions=payload["questions"], model=payload["model"]
             )
+            status = result.raw_http_response.status_code
             raw = result.raw_http_response.json()
             if not isinstance(raw, dict) or raw.get("state_truncated", False) is not False:
                 raise TransportFailure("hosted server truncated or invalidated evidence")
             if set(result.answers) != set(payload["questions"]) or set(
                 raw.get("answers", {})
             ) != set(result.answers):
-                raise TransportFailure("hosted response does not answer every requested question")
+                raise _schema_error()
             for identifier, question in payload["questions"].items():
                 if result.answers[identifier].type != question["type"]:
-                    raise TransportFailure("hosted answer type differs from the requested type")
+                    raise _schema_error()
             self.validate_backend_model(result.model)
             data = result.model_dump(mode="json")
             data["usage"] = {
@@ -240,6 +278,17 @@ class JevDecisionProvider(SystemOneDecisionProvider[JevSettings]):
             self.schema_failures += 1
             schema_failure = True
             error = "encoding"
+            schema_error = _schema_error()
+        except ValidationError as failure:
+            self.schema_failures += 1
+            schema_failure = True
+            error = "encoding"
+            schema_error = failure
+        except json.JSONDecodeError:
+            self.schema_failures += 1
+            schema_failure = True
+            error = "encoding"
+            schema_error = _schema_error()
         except TypeSafeAPITimeoutError:
             error = "timeout"
         except TypeSafeAPIError as failure:
@@ -260,6 +309,8 @@ class JevDecisionProvider(SystemOneDecisionProvider[JevSettings]):
             )
         )
         if content is None:
+            if schema_error is not None:
+                raise schema_error from None
             raise TransportFailure("hosted inference failed; no assessment is available") from None
         return content
 

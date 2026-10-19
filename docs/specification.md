@@ -358,7 +358,11 @@ schema-failure marker, rather than individual transient retry bodies. HTTP-call
 metrics count attempts; timing includes SDK retry delays. Hosted fingerprints
 also bind the SDK version and hosted adapter revision. Replay needs no credential,
 opens no SDK client, reproduces recorded failures, and never falls back to the
-network. Existing local tapes without the optional exchange fields still load.
+network. Client setup failures are recorded without credentials as configuration
+exchanges with zero HTTP attempts. Hosted response-schema failures retain a
+sanitized schema marker and receive the provider boundary's single strict-schema
+retry during both live execution and replay. Existing local tapes without the
+optional exchange fields still load.
 See [hosted examples](../examples/jev/README.md).
 
 ## Formal and semantic assessment rubric examples

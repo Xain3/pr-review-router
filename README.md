@@ -202,7 +202,9 @@ byte budgets conservatively bound input; overflow fails closed without removing
 evidence. The adapter reuses its SDK client within each experiment, honors
 `Retry-After` within configured retry limits, bounds responses, and retains resolved
 model, SDK version, request ID, usage, and attempt counts. Hosted replay needs no
-credentials or HTTP client and never falls back to live inference.
+credentials or HTTP client and never falls back to live inference. Client setup
+failures are recorded with zero HTTP attempts, and response-schema failures receive
+the existing single strict-schema retry during live execution and replay.
 
 Choice/Score native confidence is distribution-derived, not a probability that
 a PR is safe. Noul supplies a proposition's yes-probability, not confidence.
