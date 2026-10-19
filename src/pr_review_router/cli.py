@@ -21,7 +21,8 @@ from .experiments import (
     run_experiment,
     summarize_evaluation,
 )
-from .provider_config import ProvidersConfig, load_providers_config
+from .model_catalog import load_model_catalog, resolve_catalog_path
+from .provider_config import MockSettings, ProvidersConfig, load_providers_config
 from .providers import MockDecisionProvider, MockReviewProvider
 from .transport import ReplayMismatch, fingerprint
 
@@ -96,7 +97,7 @@ def _parse_args(
     evaluate.add_argument(
         "--corpus", type=Path, required=True, help="Sanitized labeled corpus JSON."
     )
-    evaluate.add_argument("--providers-config", type=Path, required=True)
+    evaluate.add_argument("--providers-config", type=Path)
     evaluate.add_argument("--config", type=Path, help="Existing routing policy TOML.")
     evaluate.add_argument(
         "--assessment-rubric",
@@ -108,6 +109,18 @@ def _parse_args(
     evaluate.add_argument(
         "--record", action="store_true", help="Explicitly refresh tapes in the output directory."
     )
+    for command in (review, evaluate):
+        command.add_argument("--models-config", type=Path, help="Named model catalog TOML.")
+        command.add_argument("--profile", help="Catalog profile name.")
+        command.add_argument("--decider", help="Catalog decision-model name.")
+        command.add_argument("--reviewer", help="Catalog review-model name (both depths).")
+        command.add_argument(
+            "--model-override",
+            action="append",
+            default=[],
+            metavar="ROLE.FIELD=TOML",
+            help="Override a decision/review setting; repeat for distinct fields.",
+        )
     args = parser.parse_args(argv)
     if args.command is None:
         parser.print_help()
@@ -116,15 +129,43 @@ def _parse_args(
         args.config = resolve_config_path(args.config)
     except ValueError as error:
         parser.error(str(error))
+    catalog_options = bool(
+        args.models_config or args.profile or args.decider or args.reviewer or args.model_override
+    )
+    if args.providers_config and catalog_options:
+        parser.error("--providers-config cannot be combined with catalog options")
+    catalog_path = resolve_catalog_path(args.models_config)
+    args.catalog_path = None if args.providers_config else catalog_path
+    try:
+        args.provider_settings = (
+            load_providers_config(args.providers_config)
+            if args.providers_config
+            else load_model_catalog(catalog_path).resolve(
+                profile=args.profile,
+                decider=args.decider,
+                reviewer=args.reviewer,
+                overrides=args.model_override,
+            )
+        )
+    except (OSError, ValueError):
+        parser.error("could not read valid UTF-8 provider configuration or model catalog/selection")
+    args.use_providers = bool(
+        args.providers_config
+        or catalog_options
+        or not isinstance(args.provider_settings.decision, MockSettings)
+        or not isinstance(args.provider_settings.review, MockSettings)
+    )
     if args.command == "review":
-        if not args.providers_config and (args.record or args.replay or args.experiment_output):
-            parser.error("experiment options require --providers-config")
+        if not args.use_providers and (args.record or args.replay or args.experiment_output):
+            parser.error(
+                "experiment options require --providers-config or explicit catalog selection"
+            )
         if args.record and args.replay:
             parser.error("--record and --replay are mutually exclusive")
         _protect_paths(
             parser,
             [args.output, args.record, args.experiment_output],
-            [args.input, args.config, args.providers_config, args.replay],
+            [args.input, args.config, args.providers_config, args.catalog_path, args.replay],
         )
     elif args.record and args.replay_dir:
         parser.error("--record and --replay-dir are mutually exclusive")
@@ -150,11 +191,11 @@ def _protect_paths(
 
 
 def _provider_inputs(
-    path: Path, policy: Policy, parser: argparse.ArgumentParser
+    config: ProvidersConfig, policy: Policy, parser: argparse.ArgumentParser
 ) -> ProvidersConfig:
     """Validate explicit provider selection and the local experiment policy.
 
-    :param path: Provider TOML path.
+    :param config: Resolved provider settings.
     :param policy: Existing policy to enforce experiment restrictions against.
     :param parser: CLI diagnostic parser.
     :returns: Validated independent provider configuration.
@@ -162,10 +203,7 @@ def _provider_inputs(
     """
     if policy.allow_direct_acceptance or policy.allow_direct_rejection:
         parser.error("local experiments require direct acceptance and rejection to be disabled")
-    try:
-        return load_providers_config(path)
-    except (OSError, ValueError):
-        parser.error("could not read valid UTF-8 provider configuration")
+    return config
 
 
 def _evaluate(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
@@ -184,7 +222,7 @@ def _evaluate(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
         )
     except (OSError, ValueError):
         parser.error("could not read valid UTF-8 corpus, evidence, or policy")
-    config = _provider_inputs(args.providers_config, policy, parser)
+    config = _provider_inputs(args.provider_settings, policy, parser)
     if rubric and config.decision.backend not in {"ollaya", "jev"}:
         parser.error("semantic rubric evaluation requires a System One decision provider")
     replay_paths = [
@@ -201,7 +239,15 @@ def _evaluate(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
     _protect_paths(
         parser,
         output_paths,
-        [args.corpus, args.config, args.providers_config, *sources, *rubric_sources, *replay_paths],
+        [
+            args.corpus,
+            args.config,
+            args.providers_config,
+            args.catalog_path,
+            *sources,
+            *rubric_sources,
+            *replay_paths,
+        ],
     )
     metrics = []
     try:
@@ -289,8 +335,8 @@ def main(argv: list[str] | None = None) -> int:
     policy, evidence = _load_inputs(args.input, args.config, parser)
     result = None
     artifact_path = None
-    if args.providers_config:
-        config = _provider_inputs(args.providers_config, policy, parser)
+    if args.use_providers:
+        config = _provider_inputs(args.provider_settings, policy, parser)
         # Derive a safe default name even when supplied commit identifiers contain path syntax.
         artifact_path = args.experiment_output or Path(
             f"reports/experiment-{evidence.number}-{fingerprint(evidence.head_sha)[:12]}.json"
@@ -298,7 +344,7 @@ def main(argv: list[str] | None = None) -> int:
         _protect_paths(
             parser,
             [args.output, args.record, artifact_path],
-            [args.input, args.config, args.providers_config, args.replay],
+            [args.input, args.config, args.providers_config, args.catalog_path, args.replay],
         )
         try:
             result = run_experiment(
