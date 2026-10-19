@@ -32,6 +32,9 @@ substantive code review.
 
 ## Install and run
 
+See the [quickstart guide](docs/quickstart.md) for exporting a real PR, configuring review
+providers, using the CLI and Python API, and interpreting report outputs.
+
 Use Python 3.12+ and [uv](https://docs.astral.sh/uv/).
 
 ```sh
