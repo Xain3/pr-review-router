@@ -225,8 +225,8 @@ def _evaluate(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
     except (OSError, ValueError):
         parser.error("could not read valid UTF-8 corpus, evidence, or policy")
     config = _provider_inputs(args.provider_settings, policy, parser)
-    if rubric and config.decision.backend not in {"ollaya", "jev"}:
-        parser.error("semantic rubric evaluation requires a System One decision provider")
+    if rubric and config.decision.backend not in {"ollaya", "jev", "ollama"}:
+        parser.error("semantic rubric evaluation requires a typed decision provider")
     replay_paths = [
         args.replay_dir / f"{case.case_id}.tape.json" if args.replay_dir else None
         for case in corpus.cases

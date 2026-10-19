@@ -155,7 +155,7 @@ class JevSettings(Contract):
 
 
 class ReviewSettings(LocalSettings):
-    """Select one local model with distinct standard and deep prompts."""
+    """Configure local chat generation for decision or review roles."""
 
     backend: Literal["ollama"] = "ollama"
     context_tokens: PositiveInt = 32768
@@ -164,6 +164,14 @@ class ReviewSettings(LocalSettings):
     temperature: Annotated[float, Field(ge=0, le=2, allow_inf_nan=False)] = 0.0
     seed: int = 0
     reasoning_effort: Text | None = "none"
+
+    @property
+    def max_choice_options(self) -> int:
+        """Bound categorical schemas generated for the decision adapter.
+
+        :returns: Maximum number of categorical options per question.
+        """
+        return 100
 
     @model_validator(mode="after")
     def output_fits_context(self) -> "ReviewSettings":
@@ -181,7 +189,8 @@ class ProvidersConfig(Contract):
     """Provider selection separate from routing policy and its environment overrides."""
 
     decision: Annotated[
-        DecisionSettings | JevSettings | MockSettings, Field(discriminator="backend")
+        DecisionSettings | JevSettings | ReviewSettings | MockSettings,
+        Field(discriminator="backend"),
     ] = Field(default_factory=MockSettings)
     review: Annotated[ReviewSettings | MockSettings, Field(discriminator="backend")] = Field(
         default_factory=MockSettings

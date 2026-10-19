@@ -1,7 +1,7 @@
 # Local models and offline replay
 
-Mocks remain the CLI default. Explicit provider configuration selects Ollaya
-for routing decisions and Ollama for substantive diff review. Reports remain
+Mocks remain the CLI default. Explicit provider configuration selects Ollaya or a
+structured-output Ollama LLM for routing decisions and Ollama for substantive diff review. Reports remain
 advisory, and no command fetches, posts to, approves, or merges a PR.
 
 ## Offline example
@@ -159,6 +159,31 @@ it bypasses the catalog and cannot be combined with catalog flags.
 The catalog declares `text_generation` and `structured_output` capabilities per
 live variant. System One entries cannot generate reviews. The current Ollama
 reviewer requires structured output as well as text generation; declaring a
-text-only variant does not provide a compatible reviewer adapter. Likewise,
-structured-output LLM decisions require a dedicated decision adapter, which is
-not currently implemented. These mismatches fail during selection, before calls.
+text-only variant does not provide a compatible reviewer adapter. Structured-output
+LLMs support both roles through separate chat adapters. These declarations are
+owner-supplied assumptions, not server discovery or proof of review quality.
+
+## Structured LLM decisions
+
+The `llm` catalog profile uses a local LLM for both roles. After the server/model
+setup above, run:
+
+```sh
+uv run pr-review-router review --input examples/local-models/editorial.json --profile llm
+uv run pr-review-router evaluate --corpus examples/rubric-review/corpus.json --decider local --reviewer local-high --model-override 'decision.standard_max_tokens=4096' --output-dir reports/llm-rubric
+uv run pr-review-router review --input examples/local-models/editorial.json --providers-config examples/local-models/llm.toml
+```
+
+These are opt-in live commands, not offline replay. The standalone
+[llm.toml](llm.toml) selects a real LLM decider and a demonstration mock reviewer.
+The adapter translates typed choice, noul/predicate, and score questions into
+strict JSON-schema chat completions. `standard_max_tokens` controls the output
+budget for the whole decision batch; increase it for larger rubrics while
+keeping complete context and output within the configured model context.
+
+Generated probabilities, confidence, and scores are labeled `llm_self_reported`;
+they are not native probabilities or task calibration. Task confidence stays
+unavailable, skips stay shadowed, and incomplete/invalid responses escalate.
+Using the same model for both roles does not supply independent model agreement.
+Synthetic test recordings exercise both CLI commands without inference or
+credentials; existing System One recordings remain usable.

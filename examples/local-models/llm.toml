@@ -1,0 +1,19 @@
+# Opt-in live local LLM decision experiment; first install the example model alias.
+# Compatible with the existing standalone provider configuration format.
+shadow_skips = true
+
+[decision]
+backend = "ollama"
+endpoint = "http://localhost:11434"
+model = "pr-review-local:latest"
+context_tokens = 32768
+# Budget for the entire generated batch, including rubric answers.
+standard_max_tokens = 4096
+deep_max_tokens = 4096
+temperature = 0.0
+seed = 0
+reasoning_effort = "none"
+
+[review]
+# Demonstration rules only; no substantive code review.
+backend = "mock"

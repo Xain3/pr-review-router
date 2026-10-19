@@ -44,3 +44,8 @@ reviewer = "local"
 [profiles.thorough]
 decider = "winnow"
 reviewer = "local-high"
+
+# One structured-output LLM can fill either role, with separate provider instances.
+[profiles.llm]
+decider = "local"
+reviewer = "local-high"

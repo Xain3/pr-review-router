@@ -228,8 +228,8 @@ explicit file, unreadable local catalog, or invalid catalog fails with exit 2;
 there is no silent fallback, parent search, or merge between catalogs.
 
 Catalog `models` is a mapping of names to discriminated provider settings:
-`mock` is usable in either role, `ollaya` and `jev` only for decisions, `ollama`
-only for review. Named variants may share the same underlying model. Settings
+`mock` and structured-output `ollama` models are usable in either role;
+`ollaya` and `jev` are only usable for decisions. Named variants may share the same underlying model. Settings
 retain all existing validation and provider defaults; unknown fields are errors.
 Every variant and profile is validated before any provider call. The catalog is
 an editable registry of supported adapter configurations, not model discovery.
@@ -242,18 +242,16 @@ to false and `structured_output` to true; contradictory declarations are errors
 even for unused entries. LLM capabilities fix `text_generation` to true and
 accept an owner-declared `structured_output` boolean. Omitted capabilities
 preserve the existing adapter assumptions (structured System One decisions or
-structured LLM reviews). Mocks retain their synthetic behavior without claiming
+structured LLM chat generation). Mocks retain their synthetic behavior without claiming
 model capabilities. Declarations are not server discovery or evidence of quality.
 
 Decision selection requires structured output and an implemented decision
 adapter. Review selection requires text generation and an implemented review
-adapter. The current Ollama review adapter additionally requires structured
-output for its JSON findings/confidence contract. Accordingly, a structured LLM
-cannot yet be selected as a decider, and a text-only LLM can be registered but
-cannot yet be selected as a reviewer. Future LLM decision or text-only review
-adapters must supply their own prompt, normalization, validation, and confidence
-provenance; capability flags alone cannot enable those paths. Invalid default,
-profile, or explicit selections fail before HTTP calls or report writes.
+adapter. Both Ollama role adapters require structured output: the decision
+adapter implements the typed-question protocol using generated JSON, and the
+review adapter requires JSON findings/confidence. A text-only LLM can be
+registered but cannot be selected with these adapters. Invalid default, profile,
+or explicit selections fail before HTTP calls or report writes.
 Capabilities are stripped before constructing `ProvidersConfig`, cannot be
 setting overrides, and do not alter runtime settings or replay fingerprints.
 Legacy provider files keep their existing schema and behavior.
@@ -286,8 +284,8 @@ all outputs, including evaluation artifacts and derived experiment filenames.
 `review --providers-config PATH` selects providers separately from policy TOML
 and its environment overrides. Without this option the model catalog described
 above supplies the selections; shipped all-mock defaults retain mock behavior.
-Each role independently selects `mock`, `ollaya` or hosted `jev` for
-decisions, and `ollama` for review. Local adapters require an explicit installed
+Each role independently selects `mock`, `ollaya`, hosted `jev`, or `ollama`
+for decisions, and `mock` or `ollama` for review. Local adapters require an explicit installed
 model and a loopback HTTP(S) origin without embedded credentials. Their remote
 model prohibitions remain unchanged. The router does not manage models.
 The endpoint/backend selection and model name are separate settings. Optional
@@ -304,6 +302,47 @@ truncation fails closed. Reasons deterministically describe the selected label.
 Native confidence/probabilities are retained separately; routing confidence is
 `unavailable` until identifiable task calibration exists. Upstream model
 calibration alone does not establish PR-routing calibration.
+
+The Ollama decision adapter emulates the System One typed question interface
+through `POST /v1/chat/completions` with strict JSON-schema output. It supports
+batched choice (including custom labels), noul/predicate, and ordinal score
+questions, for routing and assessment rubrics. Trusted question instructions and
+criteria are in the system message; complete PR/review state is isolated in the
+user message. The model authors only typed answer fields. Provider identity,
+score legends, task-confidence provenance, and completion status are adapter-owned.
+
+Runtime validation independently requires exact question IDs and types, configured
+choice labels, finite bounded numbers, exact probability label sets, distributions
+summing to one within 0.000001, and scores within their configured scale. Invalid
+JSON, extra fields (including forged provenance), wrong types/labels, missing or
+extra answers trigger the existing single schema retry, then conservative human
+escalation. Refusal, tool use, incomplete generation, or a different answering
+model cannot yield a decision. These failures have no System One or live fallback.
+
+LLM numbers are generated self-reports, never native/logit probabilities or task
+calibration. Task confidence remains `unavailable` (zero); normal experiment
+shadow skips and escalation apply. LLM diagnostics and stored answer batches carry
+`answer_source = "llm_self_reported"`; rubric `native_answer` retains its existing
+container name but adds `source = "llm_self_reported"`, with an explicit explanation.
+Existing criterion thresholds and confidence cutoffs apply conservatively to
+these self-reports without establishing model calibration. Formal checks remain
+deterministic and use their existing preflight and no-call behavior.
+
+Both standalone `[decision] backend = "ollama"` and catalog LLM selections use
+existing chat settings. `standard_max_tokens` reserves the output budget for the
+whole decision batch; both configured output budgets must still fit context.
+There is a fixed maximum of 100 categorical options per question. The context
+check includes schema, instructions, state, template, framing, and reserved output.
+Local inventory/digest/version checks and explicit matching `num_ctx` apply to the
+decider too. Selection of the same LLM for both roles creates separate provider
+instances/settings and does not provide independent corroboration.
+
+LLM-only prompt/schema versions join the experiment fingerprint and adapter
+revision when this adapter is selected. Existing native System One and reviewer
+recordings keep their fingerprints and remain replayable. Experiment diagnostics
+retain model metadata, self-reported answers, usage, and schema-failure counts.
+Rubric timing includes only typed-decision generation requests, excluding reviewer
+calls even when both use the same endpoint. Report schema version 4 is unchanged.
 
 Ollama uses `POST /v1/chat/completions`, separate instructions and untrusted
 evidence messages, JSON-schema output, and configurable generation settings.
@@ -455,7 +494,8 @@ validators. Without `enforcement_rules`, a formal blocker prevents all HTTP call
 and leaves semantic criteria explicitly unassessed. With enforcement rules, formal
 results are evaluated like other criteria, because the enforced set may depend on
 semantic condition criteria. Semantic criteria carry instructions and a
-description/review target and use the configured Ollaya or Jev decision adapter. Every
+description/review target and use the configured Ollaya, Jev, or structured-output
+Ollama decision adapter. Every
 semantic question includes its configured description and criterion-specific
 instructions, regardless of question type. The entire PR evidence and separately
 supplied review are untrusted state data;
@@ -473,7 +513,8 @@ Its `review-coverage` criterion first distinguishes absent or unresolvable revie
 text (`uncertain`) from assessable but generic or partial review text (`failed`),
 then checks each changed file within the same criterion.
 
-Semantic criteria are batched through `/v1/systemone`. Each criterion selects
+Semantic criteria are batched through `/v1/systemone` for native adapters or
+emulated with structured chat completions for Ollama. Each criterion selects
 `question_type`: `choice` (default), `noul`, `predicate`, or `score`. `predicate`
 is an alias for `noul`; Ollaya requests use its native `noul` type. By default,
 choices return `passed`, `failed`, or `uncertain`. A semantic choice criterion may instead
@@ -481,7 +522,8 @@ configure a `choices` list, with two or more entries. Each entry has a unique
 lowercase `label`, provider-visible `description`, and optional canonical
 `status` of `passed`, `failed`, or `uncertain`. The selected decision provider's
 `max_choice_options` capability limits the number of entries (Ollaya defaults to
-3, range 2-100; Jev defaults to 255, range 3-255). The provider returns the custom label and its distribution. A
+3, range 2-100; Jev defaults to 255, range 3-255; Ollama supports up to 100). The
+provider returns the custom label and its distribution. A
 mapped label receives its configured status. An unmapped label remains available
 to `routing_rules`; without a matching rule it maps conservatively to
 `uncertain`.
@@ -541,8 +583,9 @@ and exact choice labels or configured score legends/probability labels. Score
 values outside the configured scale are invalid. Numeric thresholds are
 experimental policy bands, not task calibration. A middle score may mean
 partial satisfaction; it is mapped to human assessment without claiming model
-uncertainty. Noul is a native probability of the configured proposition, not a
-validated probability of a correct PR decision. Native typed answers are retained
+uncertainty. For native backends, noul is a native probability of the configured proposition,
+not a validated probability of a correct PR decision. For Ollama, noul and all
+other numeric answers are generated self-reports, not native probabilities. Native typed answers are retained
 per criterion in artifacts and evaluation summaries, alongside mapped statuses.
 `--assessment-rubric` evaluates an alternative rubric against the same corpus
 evidence, supplied reviews, and reference labels; its path is protected from
