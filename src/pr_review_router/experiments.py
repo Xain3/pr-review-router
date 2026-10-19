@@ -23,6 +23,7 @@ from .local_providers import (
     OllamaReviewProvider,
     OllayaDecisionProvider,
     ShadowDecisionProvider,
+    SystemOneDecisionProvider,
     adapter_versions,
     versions_fingerprint,
 )
@@ -220,7 +221,9 @@ def run_experiment(
                 item.model_dump(mode="json") for item in shadow.original_decisions
             ],
             "decision": (
-                decision.diagnostics() if isinstance(decision, OllayaDecisionProvider) else None
+                decision.diagnostics()
+                if isinstance(decision, SystemOneDecisionProvider)
+                else None
             ),
             "review": reviewer.diagnostics()
             if isinstance(reviewer, OllamaReviewProvider)
@@ -233,7 +236,7 @@ def run_experiment(
             "schema_failures": sum(
                 item.schema_failures
                 for item in (decision, reviewer)
-                if isinstance(item, OllayaDecisionProvider | OllamaReviewProvider)
+                if isinstance(item, SystemOneDecisionProvider | OllamaReviewProvider)
             ),
             "transport_failures": sum(
                 item.error is not None or item.status is None or not 200 <= item.status < 300

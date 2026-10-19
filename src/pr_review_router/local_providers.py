@@ -2,6 +2,7 @@
 
 import json
 import re
+from abc import ABC, abstractmethod
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
@@ -265,16 +266,31 @@ class _LocalProvider[SettingsT: LocalSettings]:
         }
 
 
-class OllayaDecisionProvider(_LocalProvider[DecisionSettings]):
-    """Map a native routing classification to the decision-provider contract."""
+class SystemOneDecisionProvider(_LocalProvider[DecisionSettings], ABC):
+    """Map a System One routing classification to the decision-provider contract."""
 
     def __init__(self, settings: DecisionSettings, session: Session) -> None:
-        """Bind the TypeSafe-compatible decision adapter.
+        """Bind shared System One decision behavior to local experiment settings.
 
-        :param settings: Explicit Ollaya model and local endpoint settings.
+        :param settings: Explicit decision model and local endpoint settings.
         :param session: Experiment transport session.
         """
         super().__init__(settings, session)
+
+    @property
+    @abstractmethod
+    def backend_name(self) -> str:
+        """Name the concrete decision backend for report provenance.
+
+        :returns: Backend identifier included in the decision provider name.
+        """
+
+    @abstractmethod
+    def validate_backend_model(self, model: str) -> None:
+        """Validate requested and resolved model names using backend-specific rules.
+
+        :param model: Requested or resolved model name.
+        """
 
     def decide(self, evidence: PullRequestEvidence, *, strict_schema: bool = False) -> Decision:
         """Classify complete evidence without interpreting confidence as task calibration.
@@ -286,7 +302,7 @@ class OllayaDecisionProvider(_LocalProvider[DecisionSettings]):
         """
         if len(DECISION_CRITERIA) > self.settings.max_choice_options:
             raise TransportFailure("decision choices exceed the configured option limit")
-        self.inspect_model(self.settings.model)
+        self.validate_backend_model(self.settings.model)
         instructions = supplement_instructions(
             DECISION_INSTRUCTIONS,
             self.settings.instructions,
@@ -320,14 +336,36 @@ class OllayaDecisionProvider(_LocalProvider[DecisionSettings]):
         answer = response.answers["route"]
         if set(answer.probabilities) != set(DECISION_CRITERIA):
             raise TransportFailure("decision response has inconsistent routing labels")
-        self.inspect_model(response.model)
+        self.validate_backend_model(response.model)
         self.responses.append(response.model_dump(mode="json"))
         return Decision(
             recommendation=answer.choice,
             confidence=Confidence(value=0.0, source="unavailable"),
-            reason=f"Ollaya selected {answer.choice}; PR-routing calibration is unavailable.",
-            provider=f"ollaya:{response.model}",
+            reason=(
+                f"{self.backend_name} selected {answer.choice}; "
+                "PR-routing calibration is unavailable."
+            ),
+            provider=f"{self.backend_name}:{response.model}",
         )
+
+
+class OllayaDecisionProvider(SystemOneDecisionProvider):
+    """Apply Ollaya's local model checks and identity to shared System One decisions."""
+
+    @property
+    def backend_name(self) -> str:
+        """Return Ollaya's provider identifier.
+
+        :returns: The configured backend name.
+        """
+        return "ollaya"
+
+    def validate_backend_model(self, model: str) -> None:
+        """Require Ollaya models to be installed and local.
+
+        :param model: Requested or resolved model name.
+        """
+        self.inspect_model(model)
 
 
 class OllamaReviewProvider(_LocalProvider[ReviewSettings]):

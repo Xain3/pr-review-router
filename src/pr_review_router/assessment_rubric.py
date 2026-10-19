@@ -10,7 +10,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, model_validat
 from .config import Policy, RubricCriterion
 from .contracts import Confidence, Contract, Decision, Probability, PullRequestEvidence, Text
 from .engine import assess_pr_text, assess_pr_text_rubric
-from .local_providers import OllayaDecisionProvider, supplement_instructions
+from .local_providers import SystemOneDecisionProvider, supplement_instructions
 from .transport import TransportFailure, canonical_json
 
 Status = Literal["passed", "failed", "uncertain"]
@@ -650,7 +650,7 @@ class RubricDecisionProvider:
 
     def __init__(
         self,
-        provider: OllayaDecisionProvider,
+        provider: SystemOneDecisionProvider,
         rubric: AssessmentRubric,
         review_text: str,
         *,
@@ -658,7 +658,7 @@ class RubricDecisionProvider:
     ) -> None:
         """Bind the existing decision adapter to an explicit rubric and supplied review.
 
-        :param provider: Ollaya decision adapter sharing the experiment HTTP session.
+        :param provider: System One decision adapter sharing the experiment HTTP session.
         :param rubric: Formal and semantic criteria.
         :param review_text: Supplied review to compare with substantive diff changes.
         :param max_input_bytes: Budget for the complete rubric request, including the review.
