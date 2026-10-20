@@ -7,10 +7,10 @@ security review, and implementation recommendations are outside its scope.
 The implemented CLI currently accepts exported PR evidence and emits advisory
 JSON reports using offline mocks or opt-in local/hosted experiments. The decider,
 deterministic checks, semantic rubric, confidence provenance, and patch validation
-remain reusable. A legacy diff-review stage still affects routing; the planned
-reporter and consumer CI check are not implemented yet. This scope correction
-changes documentation only; commands, schemas, prompts, mocks, and recordings
-retain their behavior. Reports never approve, merge, or change a PR.
+now support the `assess` command, which returns a final communication verdict
+without invoking a reviewer. Legacy `review`/`evaluate` behavior and recordings
+remain available. The reporter and consumer CI integration are not implemented.
+Reports never approve, merge, or change a PR.
 
 ## Terminology and roles
 
@@ -20,8 +20,8 @@ The future CI consumer enforces the machine result independently of reporter tex
 
 | Role | Intended responsibility | Current implementation |
 | --- | --- | --- |
-| Decider / decision provider | Assess configured criteria against the evidence. | Decision adapters and mixed deterministic/semantic assessment rubrics are implemented. |
-| Engine / router | Apply rulesets and confidence requirements to determine the check result. | Evidence validation and policy routing exist; legacy review results can still affect outcomes. |
+| Decider / decision provider | Assess configured criteria against the evidence. | Decision adapters and mixed deterministic/semantic rubrics power `assess`. |
+| Engine / router | Apply rulesets and confidence requirements to determine the check result. | `assess` finalizes communication gates; legacy `review` still uses review results. |
 | Reporter | Explain the finalized report, distinguishing recorded facts from qualified interpretations of likely issues. | Planned; `ReviewProvider` is not a reporter. |
 
 The reporter must cover early deterministic failures and direct rejections too.
@@ -46,8 +46,22 @@ override a failed gate or unresolved relevant evidence. Passing title syntax alo
 does not resolve an accuracy check that needs a missing patch. Acceptance applies
 only to this communication check and does not approve or merge the PR.
 
-The current CLI exits 0 whenever a valid advisory report is generated, including
-rejection and human handoff. It does not yet enforce the intended CI gate.
+`assess` returns `accepted`, `rejected`, or `unresolved`, with suggestions separate
+from the verdict. Its reports retain `automation_authorized: false`.
+The `assess` command uses these exit codes:
+
+| Exit code | Assessment result | Suggested CI handling |
+| --- | --- | --- |
+| `0` | Accepted without suggestions | Success |
+| `3` | Accepted with suggestions | Success with warnings |
+| `1` | Rejected | Failure |
+| `4` | Unresolved | Block acceptance pending resolution |
+| `2` | Invalid invocation, configuration, input, replay, or output error | Failure |
+
+Code `3` is nonzero: CI must explicitly map it to success with warnings rather
+than relying on the shell's default failure handling. Reports are written before
+returning an assessment status; output failures return `2` instead. Legacy
+`review` and `evaluate` retain their existing exit behavior.
 See the [target architecture and examples](docs/specification.md#intended-pr-communication-check)
 and [transition increments](docs/implementation-handoff.md#subsequent-implementation-increments).
 
@@ -55,7 +69,16 @@ and [transition increments](docs/implementation-handoff.md#subsequent-implementa
 
 See the [quickstart guide](docs/quickstart.md) for exporting PR evidence, running
 the current pipeline, using the CLI and Python API, and interpreting reports.
-The commands below demonstrate current routing, including legacy review stages.
+Start with a deterministic communication assessment; this example needs no model:
+
+```sh
+uv run pr-review-router assess --input examples/pr-text/valid.json --assessment-rubric examples/pr-text/assessment.toml
+```
+
+Use `--assessment-rubric examples/synthetic-prs/communication-rubric.toml` for
+semantic title/description checks, and select a typed `--decider` explicitly for
+live inference. Offline mocks leave unsupported semantic gates unresolved.
+The commands below also retain examples of legacy review routing.
 
 Use Python 3.12+ and [uv](https://docs.astral.sh/uv/).
 
@@ -271,13 +294,15 @@ The [synthetic PR corpus](examples/synthetic-prs/README.md) provides 157 fiction
 PRs across 30 change families with reusable title/description annotations,
 metadata, commits, complete patches, and provisional 0–4 triviality labels.
 Supplied reviews and review-coverage criteria are legacy experiment dimensions.
-A [separately versioned communication benchmark](examples/synthetic-prs/README.md#communication-quality-benchmark-planned)
-can reuse existing communication labels, extending them only where needed while
-preserving reference history and withholding oracle annotations from model inputs.
+The [separate communication benchmark](examples/synthetic-prs/README.md#communication-quality-benchmark)
+uses existing canonical title/description labels under `author-communication-v1`,
+preserves reference history, and withholds oracle annotations from model inputs.
 Its fixed [partitions](examples/synthetic-prs/splits.json) reserve 24 independently
 authored cases from 12 new families for evaluation; 133 cases are for development.
-Scorers report confusion by scenario, criterion, reference triviality level, and
-their intersections, with support counts and explicit uncertainty.
+Criterion confusion/agreement uses normalized canonical annotations independently
+of engine-derived expected verdicts. Scorers report confusion by scenario,
+criterion, reference triviality level, and their intersections, with support
+counts and explicit uncertainty.
 The [index](examples/synthetic-prs/INDEX.md) includes family and author provenance.
 Both partitions have fresh blind review under the same seven-criterion rubric;
 the [review guide](examples/synthetic-prs/README.md#independent-review) explains
@@ -375,7 +400,7 @@ The [six-criterion PR and review rubric](examples/rubric-review/README.md)
 combines reusable title format, Summary structure, rationale, description/diff
 coverage, and testing-explanation criteria with legacy supplied-review coverage.
 The supplied review is not a reporter output, and this experiment is not the
-planned communication-only benchmark. It shows
+separate communication-only benchmark. It shows
 blocking failures, suggestions, uncertainty, and all-pass advisory skip/approval
 recommendations while preserving shadow mode. Semantic criteria support `choice`,
 `noul` (also named `predicate` in rubric configuration), and ordinal `score`
@@ -433,9 +458,9 @@ See the [specification](docs/specification.md),
 [diff-routing examples](examples/diff/README.md),
 [PR-text examples](examples/pr-text/README.md), and
 [contribution guide](CONTRIBUTING.md).
-Local and hosted decision adapters are implemented. Subsequent increments add
-the communication benchmark, a mock reporter pipeline, consumer CI enforcement,
-and live reporter generation. Integrated PR collection/posting remains future
+Local/hosted decision adapters, the assessment runtime, and the communication
+benchmark are implemented. Consumer CI enforcement and reporter generation
+remain separate future increments. Integrated PR collection/posting remains future
 work; the current CLI does not change PRs.
 
 Licensing is pending owner selection.

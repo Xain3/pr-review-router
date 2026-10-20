@@ -11,8 +11,30 @@ These deterministic checks are reusable for the intended communication-quality
 gate. The remaining review routing below is legacy behavior. Passing format
 checks alone does not establish semantic consistency or the intended gate's
 acceptance: all applicable gates must pass without unresolved relevant evidence.
-The planned reporter and CI consumer are described in the
+Reporter generation and CI enforcement remain future work, described in the
 [specification](../../docs/specification.md#intended-pr-communication-check).
+
+## Assessment without a reviewer
+
+```sh
+uv run pr-review-router assess --input examples/pr-text/valid.json --assessment-rubric examples/pr-text/assessment.toml
+uv run pr-review-router assess --input examples/pr-text/invalid.json --assessment-rubric examples/pr-text/assessment.toml
+```
+
+`assessment.toml` requires a Conventional Commits title and populated Summary
+section; its Testing-section check is advisory. The valid input is `accepted`;
+the invalid title is `rejected` and its empty Testing section yields a separate
+suggestion. Formal checks make no model or metadata calls. These examples assess
+structure only, not semantic accuracy. Use the separate
+[communication rubric](../synthetic-prs/communication-rubric.toml) with a typed
+decider for meaningfulness and consistency against changes. Offline semantic
+mocks leave required semantic gates `unresolved`.
+
+Reports use `report_type: "pr_communication"`, schema version `"1"`, and
+`automation_authorized: false`. CLI status 0 means the report was emitted,
+including rejected/unresolved verdicts; status 2 means invalid arguments,
+configuration, replay, or I/O. No reviewer or reporter runs. The legacy policy
+examples below keep their original behavior and report schema.
 
 ## PR-text validation pipeline
 

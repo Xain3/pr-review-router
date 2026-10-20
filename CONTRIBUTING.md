@@ -19,8 +19,11 @@ and qualified interpretations of likely issues. It cannot change outcomes,
 confidence, or CI status. Current `ReviewProvider` implementations assess diffs
 and can drive escalation; they are legacy behavior, not the reporter. Preserve
 their API names, configuration, prompts, schemas, and recordings until a
-separate runtime migration. CLI status 0 currently means a report was generated;
-the consumer CI check is future work. See the
+separate runtime migration. Legacy CLI status 0 means a report was generated;
+`assess` distinguishes accepted (0), accepted with suggestions (3), rejected (1),
+unresolved (4), and command errors (2). Consumer CI must explicitly map 3 to
+success with warnings. The new `assess` runtime returns final
+communication reports without a reviewer or reporter. See the
 [target architecture](docs/specification.md#intended-pr-communication-check).
 
 The synthetic corpus and its title/description annotations remain reusable.
@@ -51,6 +54,8 @@ uv run pytest
 uv build
 uv run pr-review-router --help
 uv run pr-review-router --version
+uv run pr-review-router assess --input examples/pr-text/valid.json --assessment-rubric examples/pr-text/assessment.toml
+uv run python examples/synthetic-prs/benchmark_communication.py --split evaluation
 uv run pr-review-router review --input examples/diff/evidence.json --config examples/diff/policy.toml
 uv run pr-review-router evaluate --corpus examples/local-models/corpus.json --providers-config examples/local-models/replay.toml --replay-dir examples/local-models/recordings --output-dir reports/replay-evaluation
 uv run pr-review-router evaluate --corpus examples/rubric-review/corpus.json --providers-config examples/local-models/replay.toml --replay-dir examples/rubric-review/recordings --output-dir reports/rubric-review-replay

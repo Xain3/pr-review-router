@@ -4,7 +4,7 @@ import tomllib
 from pathlib import Path
 from typing import Annotated, Any, Literal
 
-from pydantic import Field, ValidationError, model_validator
+from pydantic import Field, TypeAdapter, ValidationError, model_validator
 
 from .contracts import Contract, Text
 from .provider_config import (
@@ -184,3 +184,73 @@ def load_model_catalog(path: Path) -> ModelCatalog:
             if isinstance(cause, CatalogSelectionError):
                 raise cause from None
         raise
+
+
+def load_decider_settings(
+    path: Path,
+    *,
+    profile: str | None = None,
+    decider: str | None = None,
+    overrides: list[str] | None = None,
+) -> DecisionSettings | JevSettings | ReviewSettings | MockSettings:
+    """Resolve only the assessment decider without validating legacy reviewer roles.
+
+    :param path: Existing named model catalog.
+    :param profile: Optional partial profile selecting a decider.
+    :param decider: Explicit model name overriding defaults and profile.
+    :param overrides: Decision-only typed TOML setting overrides.
+    :returns: Validated settings for the selected decision adapter.
+    :raises ValueError: If the selected name, capabilities, or overrides are invalid.
+    """
+    raw = tomllib.loads(path.read_text(encoding="utf-8"))
+    if set(raw) - {"models", "defaults", "profiles"}:
+        raise ValueError("unknown model catalog fields")
+    defaults_raw = raw.get("defaults", {})
+    if not isinstance(defaults_raw, dict):
+        raise ValueError("catalog defaults must be a table")
+    defaults = ModelSelection.model_validate({"decider": defaults_raw.get("decider", "mock")})
+    if not isinstance(raw.get("models"), dict):
+        raise ValueError("catalog models must be a table")
+    name = defaults.decider
+    if profile is not None:
+        profiles = raw.get("profiles", {})
+        if not isinstance(profiles, dict):
+            raise ValueError("catalog profiles must be a table")
+        if profile not in profiles:
+            raise ValueError("unknown model profile")
+        selected_profile = profiles[profile]
+        if not isinstance(selected_profile, dict):
+            raise ValueError("model profile must be a table")
+        name = (
+            ModelProfile.model_validate({"decider": selected_profile.get("decider")}).decider
+            or name
+        )
+    name = decider or name
+    if name not in raw.get("models", {}):
+        raise ValueError("unknown model name")
+    adapter = TypeAdapter(
+        Annotated[
+            CatalogDecisionSettings | CatalogJevSettings | CatalogReviewSettings | MockSettings,
+            Field(discriminator="backend"),
+        ]
+    )
+    model = adapter.validate_python(raw["models"][name])
+    if not isinstance(model, MockSettings) and not model.capabilities.structured_output:
+        raise CatalogSelectionError("decision requires structured-output support")
+    values = model.model_dump(exclude={"capabilities"})
+    seen = set()
+    for override in overrides or []:
+        key, separator, raw_value = override.partition("=")
+        role, dot, field = key.partition(".")
+        if (
+            not separator
+            or not dot
+            or role != "decision"
+            or field not in values
+            or field in {"backend", "model"}
+            or key in seen
+        ):
+            raise ValueError("invalid or duplicate decision override")
+        seen.add(key)
+        values[field] = tomllib.loads(f"value = {raw_value}")["value"]
+    return ProvidersConfig.model_validate({"decision": values}).decision

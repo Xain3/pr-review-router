@@ -3,8 +3,8 @@
 Export a GitHub PR and read the current router's advisory report. The intended
 product checks title/description quality, consistency between them, and accuracy
 against changes. The existing diff-review stages are legacy behavior; the
-reporter and consumer CI gate are planned. This guide describes implemented
-commands and outputs, not a completed communication-quality check. See the
+`assess` command emits the final communication verdict without running those
+stages. Reporter generation and consumer CI enforcement remain planned. See the
 [target architecture](specification.md#intended-pr-communication-check).
 
 The router currently consumes JSON exports; PR collection is an external step.
@@ -85,7 +85,47 @@ Keep exports under `reports/`; they can contain private source and PR text.
 Do not commit them. The [evidence contract](specification.md#evidence-contract)
 is the reference if you already have your own exporter.
 
-## 3. Run the current pipeline
+## 3. Assess communication quality
+
+Supply an explicit, non-empty rubric. The following format-only example uses
+no model and emits the final `accepted`, `rejected`, or `unresolved` verdict:
+
+```sh
+uv run pr-review-router assess --input reports/pr-123/evidence.json --assessment-rubric examples/pr-text/assessment.toml --output reports/pr-123/assessment.json
+```
+
+For semantic quality and consistency checks, use
+`examples/synthetic-prs/communication-rubric.toml` and an explicitly selected
+`--decider`. The default offline mock leaves unsupported semantic criteria
+unresolved. No reviewer configuration or review server is required. All
+applicable gates must pass without unresolved relevant evidence; suggestions
+are separate and non-blocking. Reports are advisory and do not authorize
+external automation. `assess` exits `0` for accepted without suggestions, `3`
+for accepted with suggestions, `1` for rejected, `4` for unresolved, and `2` for
+command/configuration/input/replay/output errors. CI should treat `0` and `3`
+as passing, displaying warnings for `3`; all other codes block acceptance.
+A bare shell step treats `3` as failure, so capture and map the status explicitly.
+The JSON retains the verdict, suggestions, and evidence for the check summary.
+
+For a shell-based CI step, capture the status before mapping it:
+
+```sh
+status=0
+uv run pr-review-router assess --input reports/pr-123/evidence.json --assessment-rubric examples/pr-text/assessment.toml --output reports/pr-123/assessment.json || status=$?
+case "$status" in
+  0) exit 0 ;;
+  3) echo "PR communication accepted with suggestions; see assessment.json"; exit 0 ;;
+  *) exit "$status" ;;
+esac
+```
+
+Python callers can use `assess_pull_request(evidence, policy, rubric)` from
+`pr_review_router.assessment_engine` for offline formal assessment, or
+`run_assessment` from `pr_review_router.assessment_runtime` with decider settings
+for semantic assessment, recording, and replay. See the
+[assessment contract](specification.md#communication-assessment-runtime).
+
+### Legacy routing workflow
 
 Start with offline mocks to check the export and routing plumbing. For PR 123:
 
@@ -236,8 +276,8 @@ with no unresolved relevant evidence, under the configured rules and confidence
 requirements. Non-blocking suggestions cannot override a failed or unresolved
 gate. That acceptance applies only to this check; it is not a GitHub approval or
 permission to merge. The reporter explains the finalized result and cannot
-change the CI status. Neither the reporter nor consumer CI enforcement is
-implemented by this scope correction.
+change the CI status. `assess` now supplies the finalized machine report;
+reporter generation and consumer CI enforcement remain future work.
 
 File output creates parent directories and replaces the destination atomically.
 Input and policy files cannot be output destinations. Keep private evidence and

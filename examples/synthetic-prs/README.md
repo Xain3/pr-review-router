@@ -11,67 +11,73 @@ or credentials.
 
 Start with the [human-readable index](INDEX.md) or [machine-readable manifest](index.json).
 
-## Communication quality benchmark (planned)
+## Communication quality benchmark
 
-All 157 cases already carry annotations for meaningful titles, consistency
-between title and description, and consistency of each with the actual patches.
-Reuse this evidence and the suitable annotations for a separately versioned
-benchmark of the [intended communication check](../../docs/specification.md#intended-pr-communication-check).
-The existing router benchmark still uses the legacy review-coverage dimension;
-this documentation change does not change its rubric, scripts, labels, or results.
+All 157 cases carry reusable title/description annotations. The separate
+`communication-v1` benchmark runs the new `assess` runtime and scores its final
+communication verdict using canonical author labels under
+`author-communication-v1`. The existing router benchmark, supplied reviews, and
+review-reference archives remain unchanged. Reporter generation and consumer CI
+enforcement are not implemented.
 
-The reusable canonical annotations include:
+```sh
+# Offline mocks: formal criteria run; unsupported semantics remain unresolved.
+uv run python examples/synthetic-prs/benchmark_communication.py --split evaluation
 
-| Assessment | Existing criterion IDs |
-| --- | --- |
-| Title syntax and meaning | `title_format`, `title_meaningful` |
-| Title agrees with changes | `title_diff_consistency` |
-| Substantive description and concrete change account | `description_present`, `changes_described` |
-| Title and description agree | `description_title_consistency` |
-| Description accurately covers the patches | `description_diff_consistency` |
-| Motivation, scope limits, compatibility disclosure, and validation explanation | `rationale`, `limitations`, `breaking_changes`, `testing` |
-| Optional format and requirement selection | `summary-section`, `change_triviality` |
+# Explicit live decision inference after installing/configuring the selected model.
+uv run python examples/synthetic-prs/benchmark_communication.py --split development --decider winnow --record --output-dir reports/communication-live
 
-Some canonical annotations have rubric-ID mirrors, such as `title-format` and
-`description-coverage`; do not count both copies as independent criteria.
-`description_commit_consistency` is also available if a benchmark explicitly
-includes companion commit metadata; the current router evidence does not ingest
-commit lists. Change triviality can select appropriate communication requirements,
-without judging code safety. A testing explanation is a communication claim,
-not evidence that the benchmark executed tests.
+# Exact assessment-only replay, with no live fallback.
+uv run python examples/synthetic-prs/benchmark_communication.py --split development --decider winnow --replay-dir reports/communication-live --output-dir reports/communication-replay
+```
 
-The subsequent benchmark increment should:
+`communication-rubric.toml` selects these existing canonical annotation IDs:
 
-- Select and version its communication criteria and enforcement rules explicitly.
-  Exclude supplied `review.md` text and `review-coverage` from model inputs and
-  acceptance rules. Retain the legacy benchmark and all historical artifacts.
-- Reuse matching annotations and extend them only where required communication
-  criteria lack suitable labels. Reuse adjudications only when definitions match;
-  the existing seven-criterion review snapshots do not cover every canonical
-  communication criterion. Preserve status, explanation, evidence references,
-  provisional provenance, and reference versions rather than overwriting them.
-- Keep failures, `not_assessable`/uncertain evidence, and `not_applicable` distinct.
-  A criterion that cannot be assessed must not become a pass when it is needed
-  for an applicable gate. Applicability exclusions must be explicit in the new
-  ruleset. Acceptance requires all applicable gates to pass with no unresolved
-  relevant evidence; suggestions cannot compensate for a failed or unresolved gate.
-- Preserve case identities and family-based partitions: 133 development cases
-  and 24 evaluation cases. Keep matched variants in their original partition.
-  Random samples across both partitions are not held-out evaluation.
-- Pass only the declared evidence to models. Withhold annotations, reference
-  summaries, scenario/quality tags, expected outcomes, and other oracle metadata.
-- Measure criterion agreement, final decision agreement, false acceptance, and
-  unresolved assessments, including support counts by scenario and family.
-  Compare results only under identified rubric/reference versions. Labels remain
-  provisional until human validation and cannot establish task calibration.
+| Assessment | Criterion IDs | Enforcement |
+| --- | --- | --- |
+| Title syntax and meaningfulness | `title_format`, `title_meaningful` | Required |
+| Title agrees with patches | `title_diff_consistency` | Required |
+| Substantive description | `description_present` | Required |
+| Title and description agree | `description_title_consistency` | Required |
+| Description covers every substantive patch change | `description_diff_consistency` | Required |
+| Concrete motivation | `rationale` | Required |
+| Relevant validation explanation | `testing` | Advisory |
 
-Benchmark checks should include gibberish titles with valid syntax, meaningful
-titles that contradict the patches, conflicting title/body claims, omitted
-changes, and missing/truncated evidence. For identical title, description, and
-patches, changing or removing only legacy supplied review text must leave
-communication assessments and decisions unchanged. A failed legacy
-`review-coverage` label alone must not fail this future benchmark's communication
-check.
+The default split is the preserved 24-case evaluation partition. Development
+contains 133 cases; `--split all` selects all 157. Family assignments and matched
+variants stay intact. Model inputs contain only evidence and criterion questions:
+no supplied `review.md`, annotations, scenario tags, expected outcomes, reference
+summaries, or other oracle metadata. Reviewing labels and changing review text
+cannot influence assessment fingerprints or communication decisions.
+
+Outputs include per-case `*.assessment.json` and `*.provenance.json`, optional
+`*.tape.json`, and `summary.json`. The summary records rubric, split, and reference
+hashes; criterion confusion/agreement; final decision agreement; false acceptance;
+unresolved assessments; family/scenario support; and each case's expected and
+actual statuses. Criterion metrics compare against independently normalized
+annotation statuses; final expected verdicts still come from the assessment engine.
+Original reference statuses remain visible. `not_assessable`, `uncertain`, and
+`not_applicable` are never converted into passing gates: without an explicit
+applicability rule, they score as unresolved. Reports must be written outside the
+preserved corpus.
+
+Version 1 accepts communication-only rubrics with explicit `block`/`suggest`
+actions and matching canonical annotation IDs; the runtime itself also supports
+ordered enforcement and `any_of` rules. Alternate rubrics can be selected with
+`--assessment-rubric`, and decider/profile settings with the usual catalog flags.
+Rubric-ID mirrors are not independently counted. No annotations are rewritten.
+Existing adjudications are not silently substituted for canonical criteria with
+different definitions; these labels remain provisional until human validation.
+Agreement with them does not establish task calibration or authorize automation.
+
+Additional annotations remain available for future rubric versions, including
+`changes_described`, `limitations`, `breaking_changes`, and `change_triviality`.
+`description_commit_consistency` additionally requires companion commit metadata,
+which the current evidence contract does not ingest. Extend annotations only
+where required communication criteria lack matching labels, preserving provenance
+and historical reference versions. Change scope can select communication
+requirements without asserting code safety; testing explanations do not prove
+that tests were actually executed.
 
 ## Layout and loading
 
@@ -644,8 +650,8 @@ confidence, not a probability guarantee; the raw answer remains in the result.
 ## Router rubric benchmark
 
 This existing benchmark retains supplied-review coverage as a legacy dimension.
-It is separate from the planned [communication quality benchmark](#communication-quality-benchmark-planned),
-which will reuse the corpus without making supplied review text a requirement.
+It is separate from the [communication quality benchmark](#communication-quality-benchmark),
+which reuses the corpus without making supplied review text a requirement.
 
 `generate.py` also writes `corpus.json`, a router `evaluate` corpus for
 `rubric.toml`. Its expected criterion statuses come from the oracle

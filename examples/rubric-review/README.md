@@ -7,7 +7,7 @@ check. Supplied review text is an input to this experiment, not the planned
 reporter's explanation of a finalized report. Current fixtures, expectations,
 recordings, and routing remain unchanged. See the
 [target architecture](../../docs/specification.md#intended-pr-communication-check)
-and the [planned communication benchmark](../synthetic-prs/README.md#communication-quality-benchmark-planned).
+and the [communication benchmark](../synthetic-prs/README.md#communication-quality-benchmark).
 
 This use case evaluates a PR title, description, full diff, and separately
 supplied review against six criteria. The PR has two substantive changes:
