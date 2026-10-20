@@ -1,0 +1,64 @@
+rubric_version = 1
+
+[[criteria]]
+criterion_id = "title_format"
+description = "The title follows Conventional Commits."
+check = "conventional_title"
+action = "block"
+suggestion = "Use a Conventional Commits title."
+
+[[criteria]]
+criterion_id = "title_meaningful"
+description = "The title conveys an intelligible, concrete change."
+check = "semantic"
+instructions = "Assess whether the title names a meaningful change, regardless of syntax. Gibberish or generic placeholders fail."
+action = "block"
+suggestion = "Name the concrete change in the title."
+
+[[criteria]]
+criterion_id = "title_diff_consistency"
+description = "The title agrees with the actual patches."
+check = "semantic"
+instructions = "Compare the title's concrete change claim with the patches. Contradictions fail; an unintelligible title or insufficient evidence is uncertain. Do not judge code correctness."
+action = "block"
+suggestion = "Make the title accurately describe the supplied changes."
+
+[[criteria]]
+criterion_id = "description_present"
+description = "The description contains substantive change information."
+check = "semantic"
+instructions = "Assess whether the body contains meaningful prose about the changes. Empty headings, TODOs, and generic placeholders fail."
+action = "block"
+suggestion = "Describe the changes in the PR body."
+
+[[criteria]]
+criterion_id = "description_title_consistency"
+description = "The title and description agree."
+check = "semantic"
+instructions = "Compare the title and body. Contradictory change accounts fail. If either lacks an intelligible account to compare, choose uncertain."
+action = "block"
+suggestion = "Align the title and description's change claims."
+
+[[criteria]]
+criterion_id = "description_diff_consistency"
+description = "The description accurately covers the changes in all patches."
+check = "semantic"
+instructions = "Check all supplied patches, including tests and documentation. Missing or false accounts of substantive changes fail. If the body makes no concrete edit claim, choose uncertain. Do not judge code correctness or require literal file names."
+action = "block"
+suggestion = "Accurately describe every substantive change."
+
+[[criteria]]
+criterion_id = "rationale"
+description = "The description explains why the changes are needed."
+check = "semantic"
+instructions = "Require a concrete motivating problem, need, or constraint for each substantive change. Restating what changed or generic improvement claims fails."
+action = "block"
+suggestion = "Explain the problem motivating each change."
+
+[[criteria]]
+criterion_id = "testing"
+description = "The description explains relevant validation."
+check = "semantic"
+instructions = "Assess whether relevant validation is described or specifically justified as unnecessary. A heading or generic tests-pass statement is insufficient. Do not claim tests were actually executed."
+action = "suggest"
+suggestion = "Describe relevant validation for the changes."

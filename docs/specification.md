@@ -9,16 +9,17 @@ evidence for those comparisons. Assessing code correctness, security defects,
 or implementation improvements is outside this check's scope.
 
 The existing decider adapters, deterministic checks, semantic assessment rubric,
-confidence provenance, and evidence validation remain reusable. The current CLI
-and engine still implement an advisory routing pipeline with a legacy review
-stage. That stage can influence routing, and the optional Ollama review adapter
+confidence provenance, and evidence validation power the new assessment runtime.
+The legacy `review` and `evaluate` commands retain an advisory routing pipeline
+with a review stage. That stage can influence routing, and the optional Ollama review adapter
 explicitly assesses code defects; neither is the intended reporter.
 
-This scope correction changes documentation only. Public APIs, commands, flags,
-configuration, prompts, report schema version 4, mocks, fixtures, labels, and
-recording fingerprints retain their behavior. The default mode remains offline;
-local and hosted inference are explicit experiments. The intended architecture
-below is planned. Subsequent sections document the current implementation.
+The `assess` command implements the communication decision without a reviewer
+or reporter. Its new `AssessmentReport` schema version 1 is independent of the
+legacy `ReviewReport` schema version 4. Legacy commands, policies, prompts,
+fixtures, labels, and recording fingerprints retain their behavior. The default
+mode remains offline; local and hosted inference require explicit selection.
+Reporter generation and consumer CI enforcement are still planned.
 
 ## Intended PR communication check
 
@@ -44,9 +45,9 @@ establishing code safety.
 The final assessment report is the authority for the CI consumer. It must retain
 gate results, criterion identifiers and statuses, blocking reasons, suggestions,
 unresolved evidence, and confidence provenance, including early deterministic
-failures where no model ran. This describes the required information, not a new
-wire schema. Today semantic rubric assessments live in separate experiment
-artifacts; `ReviewReport` is still the current routing report.
+failures where no model ran. `AssessmentReport` now supplies this final machine
+result. Legacy review experiments still store their separate rubric assessments
+in experiment artifacts alongside `ReviewReport`.
 
 The **reporter** consumes that finalized report and communicates it to a human.
 It explains which criteria failed or remain unresolved and what could improve
@@ -73,7 +74,8 @@ for resolution; it is not an observed failure of the PR's claims. No average
 score, fluent explanation, or unsupported confidence claim can override these
 conditions.
 
-The following are target behavior examples, not new CLI outcomes or fixtures:
+The following illustrate the communication gate semantics. Actual semantic
+judgments depend on the configured decider and remain subject to its limitations:
 
 | Evidence and configured requirements | Check result and explanation |
 | --- | --- |
@@ -88,26 +90,98 @@ A future CI consumer enforces the finalized result independently of reporter
 generation. Passing this check is not a GitHub approval, permission to merge, or
 an assessment of code correctness. Current CLI exit status 0 means report
 generation succeeded, including rejected and unresolved reports; the consumer
-integration and reporter contract are not implemented by this documentation
-change. Existing mock confidence and live experiment restrictions still apply.
+integration and reporter generation remain separate future work. The new
+`assess` command also exits 0 for every emitted verdict, including unresolved
+results, and 2 for invalid invocation or file/configuration errors. Its reports
+retain `automation_authorized: false`; native values do not establish task calibration.
 
 ### Transition and benchmark reuse
 
-Preserve the decider work and current contracts while migrating in separate
-increments: introduce a communication-quality benchmark, replace outcome-changing
-review stages with a mock reporter, add consumer CI enforcement, then add live
-reporter generation. Concrete interfaces and compatibility migrations belong
-to those increments; this correction adds no `--reporter` flag or provider alias.
+The assessment-only runtime and communication benchmark now coexist with legacy
+review routing. They stop at the final machine-readable report: no mock reporter
+is constructed. Consumer CI enforcement and reporter generation remain future
+increments; no `--reporter` flag or provider alias is introduced.
 
-The [synthetic corpus](../examples/synthetic-prs/README.md#communication-quality-benchmark-planned)
-is a reusable asset. Its title/description annotations can seed a separately
-versioned benchmark. Supplied review text and `review-coverage` are legacy
+The [synthetic corpus](../examples/synthetic-prs/README.md#communication-quality-benchmark)
+supplies existing title/description annotations to the separately versioned
+`communication-v1` benchmark. Supplied review text and `review-coverage` are legacy
 dimensions and must not affect that benchmark's communication decisions.
 Preserve evidence, case identities, family splits, labels and reference history;
 extend annotations only where required communication criteria lack suitable
 labels. Existing label adjudications apply only where their criterion definitions
 match. Labels remain provisional until human validation, and reference
 annotations must never enter model inputs.
+
+## Communication assessment runtime
+
+`pr-review-router assess --input PATH --assessment-rubric PATH` requires an
+explicit, non-empty JSON/TOML assessment rubric. Reuse the existing question
+formats, numeric bands, choice-confidence abstention, ordered enforcement rules,
+and `any_of` alternatives. Supplied-review targets are rejected. Semantic
+questions receive only PR evidence; reference annotations and legacy supplied
+reviews are never model input. Instructions assess communication against changes,
+not code correctness.
+
+`assess_pull_request(evidence, policy, rubric, assessment_provider=None)` returns
+`AssessmentReport` from `assessment_engine.py`. The optional provider supplies a
+`CriterionBatch` containing ordered criterion results, effective choice labels,
+and provider identity. Missing providers leave semantics uncertain. Existing
+`RubricDecisionProvider.assess()` now exposes these results directly; legacy
+`decide()` still reduces them to the same historical routing recommendation.
+
+Report version `"1"`, identified by `report_type: "pr_communication"`, includes:
+
+- PR repository/number and base/head identifiers; `advisory_only: true` and
+  `automation_authorized: false`.
+- `verdict`: `accepted`, `rejected`, or `unresolved`; `suggestions` are separate.
+- `coverage`, `pr_text`, `nonsemantic_checks`, and `policy_rubric` results.
+- Complete ordered `criteria`, confidence provenance, native answers, `gates`,
+  the zero-based `selected_enforcement_rule`, `blockers`, relevant `unresolved`
+  gate IDs, safe `diagnostics`, and provider identity.
+
+Coverage, export integrity, and budgets remain mandatory preflight gates in this
+version, including formal-only assessments. Known deterministic policy failures
+reject; missing/incomplete evidence and unavailable check execution remain
+unresolved. Preflight failure prevents model calls. Formal-only rubrics need no
+model, metadata calls, or calibrated score. The offline semantic mock cannot
+accept via editorial-change rules or synthetic decision markers.
+
+Known failed gates take precedence over unresolved gates; both reason lists are
+retained. Uncertainty in advisory-only criteria does not block acceptance. One
+passing alternative satisfies an `any_of` gate. Unresolved rule selection produces
+an unresolved applicability gate rather than assuming all criteria are required.
+Earlier potentially matching rules are resolved before later ones are selected.
+No average or legacy route-confidence score overrides failed/unresolved gates.
+
+The `assess` CLI supports `--config`, `--output`, `--models-config`, `--profile`,
+`--decider`, decision-only `--model-override`, `--experiment-output`, and mutually
+exclusive `--record PATH` / `--replay PATH`. It does not accept `--reviewer` or
+`--providers-config`. Catalog resolution validates the selected decider only;
+unused reviewer selections and capabilities are not required. Legacy full-catalog
+validation is unchanged. Structured-output Ollama LLM deciders remain supported,
+with explicit self-reported numeric provenance and an stderr warning.
+
+`run_assessment` from `assessment_runtime.py` instantiates only typed decision
+adapters and returns the final report, separate provenance, and optional tape.
+Formal-only rubrics construct no adapter. Provenance defaults to
+`reports/assessment-PR_NUMBER-HEAD_HASH.json`. Outputs retain the CLI's atomic,
+private writes and input-path protections. Schema failures receive one retry;
+provider exceptions cannot expose raw response/exception content or silently pass
+required semantics. Complete native probabilities and task confidence remain
+separate; existing hosted consent, pinning, budgets, and transport safeguards apply.
+
+Recordings use the isolated `pr-communication-v1` fingerprint namespace covering
+PR evidence, policy, rubric, decider settings, prompts, adapters, and report schema.
+They exclude reviewers and reference labels. Legacy tapes cannot be replayed as
+assessment runs; mismatched, missing, or unused exchanges fail with status 2 and
+never fall back to live inference. Hosted recording still requires separate
+consent. Replaying needs no credentials or live clients.
+
+The [communication benchmark](../examples/synthetic-prs/README.md#communication-quality-benchmark)
+uses the same runtime with preserved canonical annotations. Benchmark version
+`communication-v1` and reference version `author-communication-v1` retain
+provisional author labels, frozen family splits, and independent provenance;
+they do not replace legacy reference revisions or establish calibration.
 
 ## Evidence contract
 
@@ -621,7 +695,7 @@ supplied review are untrusted state data;
 criterion instructions are separate. Description quality and consistency checks
 are reusable for the intended scope. Supplied-review coverage is a legacy
 experiment dimension, separate from assessing title/description quality; it is
-not a requirement for the planned communication benchmark or an assessment of
+not a requirement for the communication benchmark or an assessment of
 the reporter. Current review-provider behavior is unchanged.
 
 The synthetic PR rubric's `change-rationale` criterion requires a motivating

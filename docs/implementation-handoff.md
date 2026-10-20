@@ -6,13 +6,14 @@ semantic assessment rubric, confidence provenance, and evidence validation remai
 reusable. The [specification](specification.md#intended-pr-communication-check)
 defines the intended architecture and acceptance conditions.
 
-The current advisory router is implemented with mocks and opt-in local/hosted
-experiments. Its review stage is legacy behavior: it assesses diffs and can
+The `assess` runtime is implemented with direct criterion results and final
+communication verdicts, without a reviewer or reporter. The legacy advisory
+router remains available with mocks and opt-in local/hosted experiments. Its review stage is legacy behavior: it assesses diffs and can
 influence escalation, while the optional Ollama review adapter looks for code
 defects. Code correctness review is outside the intended product scope. The
 planned reporter instead explains a finalized assessment and cannot change its
-outcome, confidence, or CI status. This documentation correction preserves all
-runtime behavior, public names, prompts, fixtures, and recordings.
+outcome, confidence, or CI status. The new path preserves legacy runtime
+behavior, public names, prompts, fixtures, and recordings.
 
 Runnable current inputs are in [legacy diff-routing examples](../examples/diff/README.md),
 [PR-text format examples](../examples/pr-text/README.md), and
@@ -38,7 +39,10 @@ underlying model. The engine applies deterministic gates and thresholds.
 | `providers.py` | Decision and legacy review protocols and deterministic mocks |
 | `engine.py` | Coverage, PR-text, and rubric preflight; threshold routing, escalation, and finding limits |
 | `cli.py` | Argument parsing, evidence loading, mock wiring, and JSON/file output |
-| `assessment_rubric.py` | Mixed deterministic/semantic criteria, enforcement rules, and separate assessment artifacts |
+| `assessment_rubric.py` | Reusable criterion assessment and unchanged legacy routing reduction |
+| `assessment_engine.py` | Final communication report, applicable gates, verdict, and suggestions |
+| `assessment_runtime.py` | Decider-only execution, provenance, and isolated recording/replay |
+| `communication_benchmark.py` | Communication-only scoring using preserved canonical annotations |
 
 The engine receives provider instances; it contains no mock-specific decision
 rules and does not depend on provider transport SDKs. To integrate a real
@@ -54,7 +58,7 @@ malformed output gets one retry (passing `strict_schema=True` when the adapter
 accepts it), then fails closed according to `unresolved_outcome` with value-free diagnostics. Confidence provenance
 must reflect the adapter's actual source.
 
-## Current routing invariants
+## Legacy routing invariants
 
 Coverage, budget, PR-text format, or deterministic policy-rubric gate failures
 prevent provider calls.
@@ -84,31 +88,28 @@ environment. Action commits were resolved from official release refs.
 
 ## Subsequent implementation increments
 
-The first increment is this documentation-only scope correction. Keep
-`review_pull_request`, `ReviewProvider`, `--reviewer`, model catalogs, policy
-semantics, schema version 4, and replay fingerprints unchanged. The following
-work requires separate implementation and compatibility plans, in this order:
+The assessment runtime and communication benchmark are implemented alongside
+legacy routing. The new public entry point is
+`assess_pull_request(evidence, policy, rubric, assessment_provider=None)`; the
+`assess` CLI and `run_assessment` select only the decider. A separate report
+schema version 1 holds the final verdict. Legacy `review_pull_request`,
+`ReviewProvider`, `--reviewer`, schema version 4, prompts, and replay remain intact.
 
-1. **Communication-quality benchmark.** Reuse the
-   [synthetic corpus and its existing communication annotations](../examples/synthetic-prs/README.md#communication-quality-benchmark-planned)
-   under a separate benchmark version. Exclude supplied reviews and
-   `review-coverage` from inputs and acceptance rules. Preserve case/family splits,
-   reference history, and provisional provenance; add labels only where needed.
-2. **Mock reporter pipeline.** Finalize the machine assessment from deterministic
-   results, semantic criteria, rulesets, confidence provenance, and unresolved
-   relevant evidence before reporting. Replace outcome-changing review stages
-   with a mock reporter that consumes that report, covering preflight failures
-   and direct rejection too. Keep recorded facts distinct from explanatory
-   hypotheses. Reporter failure must retain the decision and allow a
-   deterministic explanation. Specify the new interfaces and migration then.
-3. **Consumer CI integration.** Enforce acceptance only when all applicable gates
-   pass with no unresolved relevant evidence. Suggestions remain non-blocking
-   and cannot override those conditions. Use the machine assessment independently
-   of reporter text; current CLI status 0 is only report-generation success.
-   Acceptance is for this check alone and does not approve or merge the PR.
-4. **Live reporter generation.** Add human-readable explanations using the same
-   explanation-only contract; do not reintroduce code-defect assessment or a
-   second vote on the result.
+1. **Assessment runtime and benchmark: implemented.** Complete machine reports
+   include preflight failures, ordered criteria, native confidence provenance,
+   selected requirements, gate statuses, blockers, suggestions, and relevant
+   unresolved evidence. No reviewer or mock reporter is constructed. The
+   [communication benchmark](../examples/synthetic-prs/README.md#communication-quality-benchmark)
+   preserves labels and family splits under separate benchmark/reference versions.
+2. **Consumer CI integration: future.** Enforce acceptance only when all
+   applicable gates pass without unresolved relevant evidence. Suggestions cannot
+   override those conditions. Current CLI status 0 means a report was emitted,
+   and reports retain `automation_authorized: false`.
+3. **Reporter: future.** Consume the finalized machine assessment, covering early
+   failures as well as accepted/rejected/unresolved results. Distinguish recorded
+   facts from hypotheses. Reporter failure cannot change the decision or CI
+   status; retain a deterministic rendering of recorded facts. No code-defect
+   assessment or second vote on the decision is needed.
 
 Benchmark validation should include inconsistent title/body pairs, omitted
 changes, missing or truncated evidence, and unchanged communication judgments

@@ -14,8 +14,9 @@ the finalized result without changing it. These examples still use the current
 **legacy review provider**, whose diff assessments can affect routing.
 `standard` and `deep` are legacy review depths, not reporter roles. See the
 [terminology and roles guide](../README.md#terminology-and-roles).
-The reporter and consumer CI check are not implemented by the scope correction.
-Current commands and outputs remain compatibility examples.
+The `assess` command now returns final communication verdicts without a reviewer.
+Reporter generation and consumer CI enforcement remain future work; the legacy
+commands remain compatibility examples.
 
 ## Example sets
 
@@ -23,12 +24,12 @@ Current commands and outputs remain compatibility examples.
 | --- | --- | --- |
 | [`direct/`](direct/README.md) | Direct decider acceptance/rejection and legacy non-blocking review feedback; feedback does not implement the reporter contract. | [Direct-routing examples](direct/README.md) |
 | [`diff/`](diff/README.md) | Reusable patch-coverage checks and legacy review routing with synthetic concerns and escalation. | [Legacy diff-review examples](diff/README.md) |
-| [`pr-text/`](pr-text/README.md) | Optional Conventional Commits title and non-empty `Summary` and `Testing` section checks, including passing and failing inputs. | [PR-text examples](pr-text/README.md) |
+| [`pr-text/`](pr-text/README.md) | Offline `assess` rubric and legacy policy checks for title/body structure, including required gates and advisory suggestions. | [PR-text examples](pr-text/README.md) |
 | [`rubric/`](rubric/README.md) | Weighted title/body criteria, hard and soft blockers, and the resulting aggregate score and routing behavior. | [Rubric examples](rubric/README.md) |
 | [`local-models/`](local-models/README.md) | Reusable decision adapters and legacy code-review experiments, with shadow skips and synthetic offline replay. | [Local models and replay](local-models/README.md) |
 | [`jev/`](jev/README.md) | Opt-in hosted decisions and semantic rubrics, pinned models, private recording, and credential-free replay. | [Hosted Jev guide](jev/README.md) |
 | [`rubric-review/`](rubric-review/README.md) | Reusable deterministic/semantic communication checks alongside a legacy supplied-review criterion and review pipeline. | [PR and review rubric](rubric-review/README.md) |
-| [`synthetic-prs/`](synthetic-prs/README.md) | 157 fictional PRs with reusable title/description annotations and family splits; supplied reviews are a legacy dimension. A communication-only benchmark is planned separately. | [Corpus guide](synthetic-prs/README.md) and [index](synthetic-prs/INDEX.md) |
+| [`synthetic-prs/`](synthetic-prs/README.md) | 157 fictional PRs with reusable title/description annotations and family splits; supplied reviews are a legacy dimension. A separate communication benchmark uses canonical annotations without supplied reviews. | [Corpus guide](synthetic-prs/README.md) and [index](synthetic-prs/INDEX.md) |
 
 ## Run the examples
 

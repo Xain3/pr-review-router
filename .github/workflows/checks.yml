@@ -63,6 +63,8 @@ jobs:
           cd /tmp
           /tmp/router-wheel/bin/pr-review-router --help
           /tmp/router-wheel/bin/pr-review-router --version
+          /tmp/router-wheel/bin/pr-review-router assess --input "$GITHUB_WORKSPACE/examples/pr-text/valid.json" --assessment-rubric "$GITHUB_WORKSPACE/examples/pr-text/assessment.toml" --experiment-output /tmp/router-wheel-assessment.json
+          /tmp/router-wheel/bin/python "$GITHUB_WORKSPACE/examples/synthetic-prs/benchmark_communication.py" --split evaluation --output-dir /tmp/router-wheel-communication
           /tmp/router-wheel/bin/pr-review-router review --input "$GITHUB_WORKSPACE/examples/diff/evidence.json" --config "$GITHUB_WORKSPACE/examples/diff/policy.toml"
           /tmp/router-wheel/bin/pr-review-router evaluate --corpus "$GITHUB_WORKSPACE/examples/local-models/corpus.json" --providers-config "$GITHUB_WORKSPACE/examples/local-models/replay.toml" --replay-dir "$GITHUB_WORKSPACE/examples/local-models/recordings" --output-dir /tmp/router-wheel-replay
           /tmp/router-wheel/bin/pr-review-router evaluate --corpus "$GITHUB_WORKSPACE/examples/rubric-review/corpus.json" --providers-config "$GITHUB_WORKSPACE/examples/local-models/replay.toml" --replay-dir "$GITHUB_WORKSPACE/examples/rubric-review/recordings" --output-dir /tmp/router-wheel-rubric
