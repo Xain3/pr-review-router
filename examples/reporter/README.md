@@ -33,7 +33,10 @@ There is no default live model. The server must use a loopback HTTP(S) origin.
 The model receives only a finalized report snapshot and recorded facts, never
 a decision callback or raw patches. It orders facts and selects a qualified
 clarification template for recorded uncertainty. The renderer owns verdict and
-reason text; arbitrary generated prose is excluded. Invalid, incomplete, or
+reason text. Both modes include proposed solutions: deterministic remedies for
+recorded failures/uncertainty and optional reasoned model advice with concrete
+steps and a rationale. Model proposals must reference actionable recorded facts;
+they cannot become new findings or change the verdict. Invalid, incomplete, or
 unavailable responses fall back to the exact offline Markdown. JSON output
 records the mode, safe diagnostic, and original assessment fingerprint.
 
@@ -42,3 +45,36 @@ or `explain_assessment(report, OllamaReporter(settings))` for explicit generatio
 from `pr_review_router.reporter`. This role is separate from deciders and legacy
 `ReviewProvider` / `--reviewer` adapters. It cannot change the assessment,
 confidence, gates, CI meaning, or PR state, and does not run tests or review code.
+
+For example, a deterministic title-format remedy can read:
+
+> Rewrite the PR title as type(scope): description, choosing a type, optional
+> scope, and concise description that match the actual changes.
+
+A model proposal for recorded description-accuracy uncertainty might read:
+
+> Compare each Summary claim with the supplied changes. Add an explanation
+> linking each claim to the affected behavior; ask the author to clarify any
+> claim you cannot substantiate.
+>
+> Rationale: Connecting claims to changed behavior may help resolve the recorded
+> accuracy uncertainty without assuming a defect.
+
+That model example is illustrative, not a live inference result. Both are advice
+for the author to verify, not promises of acceptance. Deterministic baseline
+remedies are retained alongside model advice. JSON exposes each action separately:
+
+```json
+{
+  "fact_ids": ["fact:2"],
+  "steps": ["Compare each Summary claim with the supplied changes."],
+  "rationale": "This may help clarify the recorded accuracy uncertainty.",
+  "source": "model",
+  "proposed": true
+}
+```
+
+The full output wraps these objects in `next_steps` alongside `markdown` and the
+assessment fingerprint. They do not change the machine assessment's suggestions,
+confidence, gates, or CI meaning. When no issue or suggestion is recorded, the
+report proposes no corrective action.

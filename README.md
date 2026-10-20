@@ -26,8 +26,11 @@ uv run pr-review-router report --input reports/assessment.json --reporter-config
 explanation artifact with the assessment fingerprint, rendering mode, and safe
 fallback diagnostic. Both `qwen-coding` and `qwen-general` are opt-in choices;
 see the [reporter examples](examples/reporter/README.md). The model organizes
-recorded facts and selects qualified framing templates; unrestricted generated
-prose is deliberately excluded to enforce grounding. Invalid or unavailable
+recorded facts and can add reasoned, actionable proposals tied to recorded issues.
+Both modes include suggested next steps: broad remedies for deterministic checks,
+and optional model advice with concrete steps and rationale. Advice is explicitly
+proposed, separate from authoritative facts, and must be verified against the PR.
+The JSON artifact exposes these as `next_steps` with evidence references and origin. Invalid or unavailable
 model output falls back to the complete deterministic explanation.
 
 The saved assessment remains authoritative and unchanged. `report` returns 0

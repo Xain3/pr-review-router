@@ -140,8 +140,9 @@ provenance, suggestions, diagnostics, coverage, PR-text validation, deterministi
 check results, and policy rubric results. These are recorded evidence metadata;
 raw patches and new evidence are neither collected nor required. The returned
 artifact carries the fingerprint of the original finalized report, separately
-from Markdown and rendering diagnostics. No reporter-supplied verdict, status,
-confidence, CI meaning, or free-form factual claim is accepted.
+from Markdown and rendering diagnostics. Reporter-supplied prose is never
+accepted as authoritative assessment evidence, verdict, status, confidence, or
+CI meaning. Generated remedies remain separately attributed proposals.
 
 The deterministic renderer always summarizes the verdict, blockers, unresolved
 gates, and non-blocking suggestions, and quotes the recorded facts with escaped
@@ -149,8 +150,34 @@ Markdown/HTML. Recorded explanations are attributed data, not newly verified
 claims. The model may reorder all fact IDs exactly once, and may select the
 `clarification_may_help` interpretation template only for recorded uncertainty.
 Interpretations are explicitly qualified, separated from facts, and never new
-rejection reasons. This initial constrained generation deliberately excludes
-free-form paraphrases: JSON structure alone cannot prove arbitrary prose faithful.
+rejection reasons. The verdict, findings, and recorded explanations remain
+renderer-owned rather than generated paraphrases.
+
+Both modes also provide actionable proposed remedies in a separate **Suggested
+next steps** section. Deterministic advice covers each failed/unresolved gate and
+recorded non-blocking suggestion: for example, rewrite a Conventional Commits
+title, populate required description sections, re-export complete patches, or
+clarify an uncertain criterion before reassessment. It does not claim that a
+proposed edit guarantees acceptance. Passed reports without suggestions have no
+corrective actions.
+
+The model may supplement these baseline remedies through `ReporterPlan.solutions`.
+Each solution supplies existing actionable `fact_ids`, one to six proposed
+`steps`, and a reasoned `rationale`. References must identify a failed/unresolved
+gate, a non-passed criterion relevant to such a gate, or a recorded suggestion.
+Unknown, duplicate, empty, or passed-only references are invalid. Text is bounded
+and recognized execution/approval/verdict-override claims are rejected. Prompts
+require communication/evidence remedies, conditional framing where context is
+missing, no invented facts or code defects, and no promises of a passing result.
+The model receives recorded explanation metadata, not original PR text or raw
+patches; it must ask the author to verify details it cannot substantiate.
+
+Model prose is explicitly attributed as proposed advice, separate from recorded
+facts; reference and phrase checks do not prove its semantic correctness. It
+cannot add authoritative findings or rejection reasons. The author should verify
+proposals against the PR. Baseline deterministic actions remain visible even
+when model advice is available; invalid model advice triggers the complete
+deterministic fallback.
 
 Default rendering is deterministic and offline. Live use requires both
 `--reporter-config PATH` and `--reporter ALIAS`. The separate TOML catalog has
@@ -170,7 +197,11 @@ input validation errors are command errors, rather than model fallback.
 
 `ReporterOutput` schema version `"1"` has type `pr_communication_explanation`, an
 `assessment_fingerprint`, `mode` (`deterministic`, `model`, or `fallback`), optional
-`diagnostic` (`reporter_unavailable_or_invalid`), and `markdown`. Output is atomic;
+`diagnostic` (`reporter_unavailable_or_invalid`), `markdown`, and `next_steps`.
+Each next-step object contains `fact_ids`, `steps`, `rationale`, its `source`
+(`deterministic` or `model`), and `proposed: true`. These advice objects do not
+modify the assessment's separate `suggestions` list, gates, or CI status.
+Output is atomic;
 input and configuration paths are protected from overwrite. Reporting status 0
 means explanation generation completed, including fallback; status 2 means a
 command or I/O error. These are not assessment/CI verdict codes. A reporter never

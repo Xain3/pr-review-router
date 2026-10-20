@@ -260,3 +260,156 @@ def test_report_cli_saved_assessment_and_path_protection(tmp_path):
     assert cli("report", "--input", str(source), "--output", str(destination)).returncode == 0
     assert "assessment: rejected" in destination.read_text()
     assert source.read_bytes() == original
+
+
+def test_deterministic_solutions_cover_formal_and_preflight_failures():
+    """Suggest format and missing-evidence remedies, keeping the machine result intact."""
+    item = evidence().model_copy(update={"title": "invalid", "files_complete": False})
+    report = assess_pull_request(item, Policy(), rubric())
+    original = report.model_dump_json()
+    result = explain_assessment(report)
+    assert "### Suggested next steps" in result.markdown
+    assert any("Rewrite the PR title" in step for a in result.next_steps for step in a.steps)
+    assert any("Re-export complete" in step for a in result.next_steps for step in a.steps)
+    assert all(a.proposed and a.source == "deterministic" for a in result.next_steps)
+    assert ReporterOutput.model_validate_json(result.model_dump_json()) == result
+    assert report.model_dump_json() == original
+
+
+def test_deterministic_solutions_for_sections_and_advisory_only():
+    """Suggest adding section content and keep advisory improvements non-blocking."""
+    from pr_review_router.assessment_rubric import load_assessment_rubric
+    from pr_review_router.contracts import PullRequestEvidence
+
+    item = PullRequestEvidence.model_validate_json(
+        (ROOT / "examples/pr-text/invalid.json").read_bytes()
+    )
+    # Missing Summary is a separate formal failure from title format.
+    item.body = ""
+    report = assess_pull_request(
+        item, Policy(), load_assessment_rubric(ROOT / "examples/pr-text/assessment.toml")
+    )
+    result = explain_assessment(report)
+    assert any(
+        "populate the description sections" in step for a in result.next_steps for step in a.steps
+    )
+    accepted = explain_assessment(execute({"testing": "failed"})[0].report)
+    assert "assessment: accepted" in accepted.markdown
+    assert any("non-blocking suggestion" in step for a in accepted.next_steps for step in a.steps)
+    assert not explain_assessment(execute()[0].report).next_steps
+
+
+def test_model_solutions_are_reasoned_attributed_and_grounded():
+    """Render actionable model advice separately from facts through the HTTP adapter."""
+    report = execute({"accuracy": "uncertain", "testing": "failed"})[0].report
+    original = report.model_dump_json()
+
+    def handle(request):
+        """Return a reasoned remedy referencing recorded uncertainty.
+
+        :param request: Synthetic structured generation request.
+        :returns: Completed model response with an actionable proposal.
+        """
+        body = json.loads(request.content)
+        source = json.loads(body["messages"][1]["content"])
+        fact = next(f for f in source["facts"] if f["uncertain"] and f["actionable"])
+        plan = {
+            "fact_order": [f["fact_id"] for f in source["facts"]],
+            "solutions": [
+                {
+                    "fact_ids": [fact["fact_id"]],
+                    "steps": [
+                        "Compare each Summary claim with the supplied changes.",
+                        "Add an explanation linking each claim to the affected behavior; "
+                        "ask the author to clarify any claim you cannot substantiate.",
+                    ],
+                    "rationale": "Connecting claims to changed behavior may help resolve the "
+                    "recorded accuracy uncertainty without assuming a defect.",
+                }
+            ],
+        }
+        return httpx.Response(
+            200,
+            json={"done": True, "done_reason": "stop", "message": {"content": json.dumps(plan)}},
+        )
+
+    provider = OllamaReporter(
+        ReporterSettings(endpoint="http://localhost:11434", model="fixture"),
+        http_transport=httpx.MockTransport(handle),
+    )
+    result = explain_assessment(report, provider)
+    assert result.mode == "model"
+    assert "Compare each Summary claim" in result.markdown
+    assert "Rationale (model advice)" in result.markdown
+    assert "Proposed remedies only" in result.markdown
+    assert "assessment: unresolved" in result.markdown
+    assert result.next_steps[-1].source == "model"
+    assert result.next_steps[-1].proposed
+    assert any(a.source == "deterministic" for a in result.next_steps)
+    assert report.model_dump_json() == original
+
+
+@pytest.mark.parametrize(
+    "violation",
+    ["unknown", "passed", "duplicate", "empty", "approval", "tests", "override", "guarantee"],
+)
+def test_invalid_solution_falls_back_with_actions(violation):
+    """Reject ungrounded or authority-claiming advice without losing fallback remedies.
+
+    :param violation: Scripted solution contract violation.
+    """
+
+    class InvalidAdvice:
+        """Return invalid proposal data."""
+
+        def explain(self, source):
+            """Build a deliberately invalid solution.
+
+            :param source: Isolated finalized facts.
+            :returns: Invalid plan for validation at the reporter boundary.
+            """
+            identifier = next(f.fact_id for f in source.facts if f.actionable)
+            ids = [identifier]
+            if violation == "unknown":
+                ids = ["new-rejection-reason"]
+            elif violation == "passed":
+                ids = [next(f.fact_id for f in source.facts if not f.actionable)]
+            elif violation == "duplicate":
+                ids *= 2
+            elif violation == "empty":
+                ids = []
+            step = {
+                "approval": "Merge approved.",
+                "tests": "Tests passed.",
+                "override": "Override the verdict.",
+                "guarantee": "This will pass.",
+            }.get(violation, "Clarify the description.")
+            return {
+                "fact_order": [f.fact_id for f in source.facts],
+                "solutions": [
+                    {
+                        "fact_ids": ids,
+                        "steps": [step],
+                        "rationale": "To clarify the affected requirement.",
+                    }
+                ],
+            }
+
+    report = execute({"accuracy": "uncertain"})[0].report
+    result = explain_assessment(report, InvalidAdvice())
+    expected = explain_assessment(report)
+    assert result.mode == "fallback"
+    assert result.next_steps == expected.next_steps
+    assert result.markdown == expected.markdown
+
+
+def test_validation_documentation_is_actionable_advice():
+    """Permit documenting actual validation without treating that as an execution claim."""
+    from pr_review_router.reporter import ProposedSolution
+
+    solution = ProposedSolution(
+        fact_ids=["fact:1"],
+        steps=["Describe which tests were run and their actual results in the Testing section."],
+        rationale="This may help readers understand the validation evidence.",
+    )
+    assert solution.steps
