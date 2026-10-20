@@ -114,7 +114,7 @@ review routing. They stop at the final machine-readable report: no mock reporter
 is constructed. Consumer CI enforcement and reporter generation remain future
 increments; no `--reporter` flag or provider alias is introduced.
 
-The [synthetic corpus](../examples/synthetic-prs/README.md#communication-quality-benchmark)
+The [synthetic corpus](../benchmarks/synthetic-prs/README.md#communication-quality-benchmark)
 supplies existing title/description annotations to the separately versioned
 `communication-v1` benchmark. Supplied review text and `review-coverage` are legacy
 dimensions and must not affect that benchmark's communication decisions.
@@ -189,7 +189,7 @@ assessment runs; mismatched, missing, or unused exchanges fail with status 2 and
 never fall back to live inference. Hosted recording still requires separate
 consent. Replaying needs no credentials or live clients.
 
-The [communication benchmark](../examples/synthetic-prs/README.md#communication-quality-benchmark)
+The [communication benchmark](../benchmarks/synthetic-prs/README.md#communication-quality-benchmark)
 uses the same runtime with preserved canonical annotations. Benchmark version
 `communication-v1` and reference version `author-communication-v1` retain
 provisional author labels, frozen family splits, and independent provenance;
@@ -837,7 +837,7 @@ recommendations. Reference-label edits alone do not require fresh inference.
 See the [nine-case, six-criterion examples](../examples/rubric-review/README.md).
 Labels remain provisional and offline tapes explicitly synthetic.
 
-The separate [synthetic PR benchmark](../examples/synthetic-prs/README.md) contains
+The separate [synthetic PR benchmark](../benchmarks/synthetic-prs/README.md) contains
 157 sanitized fictional PRs across 30 families. Its existing router rubric and
 reference revisions retain their legacy review-coverage dimension. The planned
 communication benchmark will reuse the underlying corpus and communication

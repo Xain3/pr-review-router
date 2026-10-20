@@ -29,7 +29,9 @@ commands remain compatibility examples.
 | [`local-models/`](local-models/README.md) | Reusable decision adapters and legacy code-review experiments, with shadow skips and synthetic offline replay. | [Local models and replay](local-models/README.md) |
 | [`jev/`](jev/README.md) | Opt-in hosted decisions and semantic rubrics, pinned models, private recording, and credential-free replay. | [Hosted Jev guide](jev/README.md) |
 | [`rubric-review/`](rubric-review/README.md) | Reusable deterministic/semantic communication checks alongside a legacy supplied-review criterion and review pipeline. | [PR and review rubric](rubric-review/README.md) |
-| [`synthetic-prs/`](synthetic-prs/README.md) | 157 fictional PRs with reusable title/description annotations and family splits; supplied reviews are a legacy dimension. A separate communication benchmark uses canonical annotations without supplied reviews. | [Corpus guide](synthetic-prs/README.md) and [index](synthetic-prs/INDEX.md) |
+
+The [synthetic PR corpus and benchmarks](../benchmarks/README.md) are maintained
+separately from these runnable product examples.
 
 ## Run the examples
 

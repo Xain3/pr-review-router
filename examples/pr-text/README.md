@@ -26,7 +26,7 @@ section; its Testing-section check is advisory. The valid input is `accepted`;
 the invalid title is `rejected` and its empty Testing section yields a separate
 suggestion. Formal checks make no model or metadata calls. These examples assess
 structure only, not semantic accuracy. Use the separate
-[communication rubric](../synthetic-prs/communication-rubric.toml) with a typed
+[communication rubric](../../benchmarks/synthetic-prs/communication-rubric.toml) with a typed
 decider for meaningfulness and consistency against changes. Offline semantic
 mocks leave required semantic gates `unresolved`.
 

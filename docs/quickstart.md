@@ -95,7 +95,7 @@ uv run pr-review-router assess --input reports/pr-123/evidence.json --assessment
 ```
 
 For semantic quality and consistency checks, use
-`examples/synthetic-prs/communication-rubric.toml` and an explicitly selected
+`benchmarks/synthetic-prs/communication-rubric.toml` and an explicitly selected
 `--decider`. The default offline mock leaves unsupported semantic criteria
 unresolved. No reviewer configuration or review server is required. All
 applicable gates must pass without unresolved relevant evidence; suggestions

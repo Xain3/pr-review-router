@@ -99,7 +99,7 @@ schema version 1 holds the final verdict. Legacy `review_pull_request`,
    include preflight failures, ordered criteria, native confidence provenance,
    selected requirements, gate statuses, blockers, suggestions, and relevant
    unresolved evidence. No reviewer or mock reporter is constructed. The
-   [communication benchmark](../examples/synthetic-prs/README.md#communication-quality-benchmark)
+   [communication benchmark](../benchmarks/synthetic-prs/README.md#communication-quality-benchmark)
    preserves labels and family splits under separate benchmark/reference versions.
 2. **Consumer CI integration: future.** Enforce acceptance only when all
    applicable gates pass without unresolved relevant evidence. Suggestions cannot
