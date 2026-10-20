@@ -268,6 +268,7 @@ def run_experiment(
         if isinstance(decision, OllamaDecisionProvider):
             artifact["versions"]["llm_decision_version"] = llm_decision_versions()["revision"]
         if rubric_provider:
+            assert rubric_provider.provider is not None
             artifact["rubric_request_seconds"] = sum(
                 item.elapsed_seconds
                 for item in session.exchanges
