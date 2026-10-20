@@ -185,9 +185,30 @@ def assess_pull_request(
             )
         )
     batch = formal.assess(evidence)
+    owned_formal = {c.criterion_id: c for c in batch.criteria if c.source == "deterministic"}
+    formal_blocked = not rubric.enforcement_rules and any(
+        c.action == "block"
+        and c.criterion_id in owned_formal
+        and owned_formal[c.criterion_id].status == "failed"
+        for c in rubric.criteria
+    )
     diagnostics = [*coverage.issues, *pr_text.issues]
     diagnostics.extend(c.detail for c in checks.checks if not c.passed)
-    if all(g.status == "passed" for g in gates) and assessment_provider is not None:
+    if formal_blocked or any(g.status != "passed" for g in gates):
+        reason = (
+            "Not assessed: an unconditional formal gate failed."
+            if formal_blocked
+            else "Not assessed: preflight gates prevented semantic inference."
+        )
+        batch.criteria = [
+            c.model_copy(update={"explanation": reason}) if c.source == "unavailable" else c
+            for c in batch.criteria
+        ]
+    if (
+        all(g.status == "passed" for g in gates)
+        and not formal_blocked
+        and assessment_provider is not None
+    ):
         try:
             candidate = _enforce(
                 CriterionBatch, "Assessment", _Call(assessment_provider.assess, evidence)
@@ -200,6 +221,11 @@ def assess_pull_request(
                 criterion = next(c for c in rubric.criteria if c.criterion_id == identifier)
                 if criterion.check != "semantic" or label not in criterion.choice_options:
                     raise ValueError("assessment choice labels differ from the rubric")
+            candidate.criteria = [owned_formal.get(c.criterion_id, c) for c in candidate.criteria]
+            if any(
+                c.source == "unavailable" and c.status != "uncertain" for c in candidate.criteria
+            ):
+                raise ValueError("unavailable assessments must remain uncertain")
             batch = candidate
         except Exception:
             # Formal results survive inference failures; exception text may contain secrets.

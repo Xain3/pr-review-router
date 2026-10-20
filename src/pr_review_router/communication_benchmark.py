@@ -134,7 +134,7 @@ def run_benchmark(
                 CriterionAssessment(
                     criterion_id=criterion.criterion_id,
                     status=status if status in {"passed", "failed"} else "uncertain",
-                    source="unavailable",
+                    source="deterministic",
                     explanation=label["explanation"],
                 )
             )

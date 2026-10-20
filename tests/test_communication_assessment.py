@@ -513,6 +513,42 @@ def test_earlier_unknown_rule_cannot_be_bypassed_by_later_matching_rule():
     assert report.selected_enforcement_rule is None
 
 
+def test_provider_cannot_overwrite_a_deterministic_criterion():
+    item = evidence().model_copy(update={"title": "invalid"})
+    provider = Static(
+        {"title": "passed", "accuracy": "passed", "testing": "passed", "scale": "passed"},
+        {"scale": "small"},
+    )
+    report = assess_pull_request(item, Policy(), conditional_rubric(), provider)
+    assert report.verdict == "rejected"
+    assert report.criteria[0].status == "failed"
+    assert report.criteria[0].source == "deterministic"
+
+
+def test_known_formal_blocker_prevents_even_a_custom_provider_call():
+    calls = []
+
+    class Provider:
+        def assess(self, _):
+            calls.append(True)
+            raise AssertionError("must not be called")
+
+    report = assess_pull_request(
+        evidence().model_copy(update={"title": "invalid"}), Policy(), rubric(), Provider()
+    )
+    assert report.verdict == "rejected"
+    assert calls == []
+
+
+def test_provider_cannot_pass_an_unavailable_semantic_assessment():
+    provider = Static({"title": "passed", "accuracy": "passed", "testing": "passed"})
+    provider.batch.criteria[1] = provider.batch.criteria[1].model_copy(
+        update={"source": "unavailable"}
+    )
+    report = assess_pull_request(evidence(), Policy(), rubric(), provider)
+    assert report.verdict == "unresolved"
+
+
 @pytest.mark.integration
 def test_cli_replays_decider_only_even_with_missing_catalog_reviewer(tmp_path):
     run, _ = execute(record=True)
