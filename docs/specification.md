@@ -839,9 +839,14 @@ Labels remain provisional and offline tapes explicitly synthetic.
 
 The separate [synthetic PR benchmark](../benchmarks/synthetic-prs/README.md) contains
 157 sanitized fictional PRs across 30 families. Its existing router rubric and
-reference revisions retain their legacy review-coverage dimension. The planned
-communication benchmark will reuse the underlying corpus and communication
-annotations under its own version; it does not replace these archived results.
+reference revisions retain their legacy review-coverage dimension. Runners and
+configuration live under `legacy-review/`; `communication/` contains the separate
+`communication-v1` runner and rubric for `assess`. Both reuse the root case data,
+annotations, and family splits. Generated root `corpus*.json` manifests belong to
+legacy `evaluate` and point to `legacy-review/rubric.toml`. Communication inputs
+exclude supplied reviews and oracle labels. Archived results and reference
+revisions remain preserved; bindings to the previous manifest bytes require a
+fresh run after this path migration.
 Its fixed `splits.json` assigns
 133 cases (18 families) to development and 24 independently authored
 cases (12 new families) to evaluation. Matching description/review variants of a

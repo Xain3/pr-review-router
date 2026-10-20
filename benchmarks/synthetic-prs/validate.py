@@ -147,7 +147,8 @@ def validate_independent_review(
         "Independent review must not claim human review",
     )
     expected_rubric = (
-        expected_rubric_sha256 or hashlib.sha256((root / "rubric.toml").read_bytes()).hexdigest()
+        expected_rubric_sha256
+        or hashlib.sha256((root / "legacy-review/rubric.toml").read_bytes()).hexdigest()
     )
     require(
         review["rubric_sha256"] == expected_rubric,
@@ -358,7 +359,10 @@ def validate_splits(root: Path, index: dict) -> dict:
     )
     require(set(splits["partitions"]) == {"development", "evaluation"}, "Invalid partitions")
     corpus = read_json(root, "corpus.json")
-    require(corpus.get("assessment_rubric") == "rubric.toml", "Unexpected execution rubric")
+    require(
+        corpus.get("assessment_rubric") == "legacy-review/rubric.toml",
+        "Unexpected execution rubric",
+    )
     require(
         [case["case_id"] for case in corpus["cases"]]
         == [case["case_id"] for case in index["cases"]],

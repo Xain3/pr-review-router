@@ -1,7 +1,7 @@
 {
   "corpus_version": 1,
   "label_status": "provisional",
-  "assessment_rubric": "rubric.toml",
+  "assessment_rubric": "legacy-review/rubric.toml",
   "cases": [
     {
       "case_id": "pr-126",

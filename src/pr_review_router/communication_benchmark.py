@@ -246,7 +246,7 @@ def benchmark_main(root: Path) -> None:
     )
     parser.add_argument("--output-dir", type=Path, default=Path("reports/communication-benchmark"))
     parser.add_argument(
-        "--assessment-rubric", type=Path, default=root / "communication-rubric.toml"
+        "--assessment-rubric", type=Path, default=root / "communication/rubric.toml"
     )
     parser.add_argument("--models-config", type=Path)
     parser.add_argument("--profile")

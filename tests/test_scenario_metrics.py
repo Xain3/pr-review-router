@@ -49,7 +49,9 @@ def _score(summary):
     :param summary: Experiment outputs with embedded references.
     :returns: Stratified benchmark metrics.
     """
-    return runpy.run_path(str(ROOT / "benchmark.py"))["score"](summary, "evaluation", "original")
+    return runpy.run_path(str(ROOT / "legacy-review/benchmark.py"))["score"](
+        summary, "evaluation", "original"
+    )
 
 
 @pytest.mark.parametrize("mutation", ["missing", "duplicate", "unknown", "references"])
@@ -188,7 +190,7 @@ def test_triviality_scores_only_the_selected_partition_and_counts_abstention(
         ],
     }
     predictions["predictions"][0]["score"] = None
-    evaluate = runpy.run_path(str(ROOT / "evaluate_triviality.py"))["evaluate"]
+    evaluate = runpy.run_path(str(ROOT / "legacy-review/evaluate_triviality.py"))["evaluate"]
     result = evaluate(ROOT, predictions, "evaluation", "original")
     assert result["case_count"] == 24 and result["classified"] == 23
     assert result["exact_score_accuracy"] == 23 / 24
@@ -205,7 +207,7 @@ def test_triviality_scores_only_the_selected_partition_and_counts_abstention(
 
 
 def test_benchmark_executes_only_the_selected_corpus(tmp_path, monkeypatch):
-    namespace = runpy.run_path(str(ROOT / "benchmark.py"))
+    namespace = runpy.run_path(str(ROOT / "legacy-review/benchmark.py"))
     (tmp_path / "summary.json").write_text('{"cases": []}')
     commands = []
     monkeypatch.setattr(
@@ -213,8 +215,8 @@ def test_benchmark_executes_only_the_selected_corpus(tmp_path, monkeypatch):
     )
     namespace["run_router"](
         tmp_path,
-        config=ROOT / "policy.toml",
-        providers=ROOT / "providers.toml",
+        config=ROOT / "legacy-review/policy.toml",
+        providers=ROOT / "legacy-review/providers.toml",
         replay_dir=None,
         record=False,
     )
@@ -225,7 +227,7 @@ def test_benchmark_executes_only_the_selected_corpus(tmp_path, monkeypatch):
 
 @pytest.mark.parametrize("size,per_family", [(30, 1), (60, 2)])
 def test_random_sample_covers_families_and_reproduces_seed(size, per_family):
-    sample = runpy.run_path(str(ROOT / "benchmark.py"))["sample_cases"]
+    sample = runpy.run_path(str(ROOT / "legacy-review/benchmark.py"))["sample_cases"]
     cases = json.loads((ROOT / "index.json").read_text())["cases"]
     selected = sample(size, 42)
     assert len(selected) == len(set(selected)) == size
@@ -247,7 +249,7 @@ def test_random_sample_covers_families_and_reproduces_seed(size, per_family):
 
 
 def test_random_sample_execution_corpus_loads_selected_inputs(tmp_path, monkeypatch):
-    namespace = runpy.run_path(str(ROOT / "benchmark.py"))
+    namespace = runpy.run_path(str(ROOT / "legacy-review/benchmark.py"))
     selected = namespace["sample_cases"](60, 42)
     (tmp_path / "summary.json").write_text('{"cases": []}')
 
@@ -262,8 +264,8 @@ def test_random_sample_execution_corpus_loads_selected_inputs(tmp_path, monkeypa
     monkeypatch.setattr(namespace["subprocess"], "run", check_corpus)
     namespace["run_router"](
         tmp_path,
-        config=ROOT / "policy.toml",
-        providers=ROOT / "providers.toml",
+        config=ROOT / "legacy-review/policy.toml",
+        providers=ROOT / "legacy-review/providers.toml",
         replay_dir=None,
         record=False,
         split="random",
@@ -274,7 +276,7 @@ def test_random_sample_execution_corpus_loads_selected_inputs(tmp_path, monkeypa
 
 
 def test_model_provenance_collects_configured_and_observed_models(tmp_path):
-    collect = runpy.run_path(str(ROOT / "benchmark.py"))["collect_model_provenance"]
+    collect = runpy.run_path(str(ROOT / "legacy-review/benchmark.py"))["collect_model_provenance"]
     artifact = {
         "providers": {
             "decision": {
@@ -340,12 +342,12 @@ def test_model_provenance_collects_configured_and_observed_models(tmp_path):
 def test_rescoring_requires_the_original_input_binding(tmp_path, evaluation_summary):
     root = tmp_path / "corpus"
     shutil.copytree(ROOT, root, ignore=shutil.ignore_patterns("__pycache__"))
-    namespace = runpy.run_path(str(ROOT / "benchmark.py"))
+    namespace = runpy.run_path(str(ROOT / "legacy-review/benchmark.py"))
     namespace["input_binding"].__globals__["ROOT"] = root
     summary_path = tmp_path / "summary.json"
     summary_path.write_text(json.dumps(evaluation_summary))
     binding = namespace["input_binding"](
-        "evaluation", root / "policy.toml", root / "providers.toml"
+        "evaluation", root / "legacy-review/policy.toml", root / "legacy-review/providers.toml"
     )
     with pytest.raises(ValueError, match="Missing.*rerun"):
         namespace["verify_binding"](summary_path, binding)

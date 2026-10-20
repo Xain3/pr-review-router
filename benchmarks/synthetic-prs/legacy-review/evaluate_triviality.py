@@ -23,7 +23,7 @@ def evaluate(
     index = json.loads((root / "index.json").read_text(encoding="utf-8"))
     if split not in {"all", "development", "evaluation"}:
         raise ValueError("Unknown corpus split")
-    validation = runpy.run_path(str(Path(__file__).with_name("validate.py")))
+    validation = runpy.run_path(str(Path(__file__).resolve().parents[1] / "validate.py"))
     validation["validate_splits"](root.resolve(), index)
     revision = validation["load_grading_references"](root.resolve(), split, reference_revision)
     cases = [case for case in index["cases"] if split == "all" or case["split"] == split]
@@ -115,7 +115,7 @@ def main() -> None:
         if not isinstance(predictions, dict):
             raise ValueError("Predictions must be a JSON object")
         result = evaluate(
-            Path(__file__).resolve().parent, predictions, args.split, args.reference_revision
+            Path(__file__).resolve().parents[1], predictions, args.split, args.reference_revision
         )
     except (OSError, ValueError) as error:
         parser.error(str(error))

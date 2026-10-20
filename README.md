@@ -75,7 +75,7 @@ Start with a deterministic communication assessment; this example needs no model
 uv run pr-review-router assess --input examples/pr-text/valid.json --assessment-rubric examples/pr-text/assessment.toml
 ```
 
-Use `--assessment-rubric benchmarks/synthetic-prs/communication-rubric.toml` for
+Use `--assessment-rubric benchmarks/synthetic-prs/communication/rubric.toml` for
 semantic title/description checks, and select a typed `--decider` explicitly for
 live inference. Offline mocks leave unsupported semantic gates unresolved.
 The commands below also retain examples of legacy review routing.
@@ -388,9 +388,9 @@ human-reviewed labels are needed to assess model quality. Local routing
 confidence remains unavailable until task calibration; reviewer confidence is
 self-reported.
 
-The [synthetic PR benchmark](benchmarks/synthetic-prs/README.md#router-rubric-benchmark)
+The [synthetic PR benchmark](benchmarks/synthetic-prs/legacy-review/README.md#router-rubric-benchmark)
 defaults to 60 randomly selected cases, exactly two per family across all 30 families. Use
-`uv run python benchmarks/synthetic-prs/benchmark.py --seed 42` to reproduce a sample;
+`uv run python benchmarks/synthetic-prs/legacy-review/benchmark.py --seed 42` to reproduce a sample;
 `--sample-size 30` for a quick run with one case per family; `--split all` runs all
 157 cases. Reports
 record the seed, selected case IDs, and model provenance separately for the decision
