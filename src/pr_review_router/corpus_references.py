@@ -101,7 +101,9 @@ def load_reference_revision(
         raise ValueError(f"Invalid reference archives for {resolved}")
     for relative in archives.values():
         _source(root, relative)
-    current_rubric_sha256 = hashlib.sha256((root / "rubric.toml").read_bytes()).hexdigest()
+    current_rubric_sha256 = hashlib.sha256(
+        (root / "legacy-review/rubric.toml").read_bytes()
+    ).hexdigest()
     archived_rubric_sha256 = definition.get("rubric_sha256")
     if kind == "adjudicated_review" and (
         not isinstance(archived_rubric_sha256, str)
@@ -114,12 +116,12 @@ def load_reference_revision(
     protocol = definition.get("review_protocol")
     if kind == "adjudicated_review" and protocol not in {"historical", "blind_assessments"}:
         raise ValueError(f"Invalid review protocol for {resolved}")
-    rubric = load_assessment_rubric(root / "rubric.toml")
+    rubric = load_assessment_rubric(root / "legacy-review/rubric.toml")
     identifiers = {criterion.criterion_id for criterion in rubric.criteria}
     levels = {level["label"]: level["score"] for level in index["triviality_scale"]["levels"]}
     paths = {
         REGISTRY: root / REGISTRY,
-        "rubric.toml": root / "rubric.toml",
+        "rubric.toml": root / "legacy-review/rubric.toml",
         "index.json": root / "index.json",
     }
     records: dict[str, Any] = {}

@@ -55,13 +55,13 @@ uv build
 uv run pr-review-router --help
 uv run pr-review-router --version
 uv run pr-review-router assess --input examples/pr-text/valid.json --assessment-rubric examples/pr-text/assessment.toml
-uv run python benchmarks/synthetic-prs/benchmark_communication.py --split evaluation
+uv run python benchmarks/synthetic-prs/communication/benchmark.py --split evaluation
 uv run pr-review-router review --input examples/diff/evidence.json --config examples/diff/policy.toml
 uv run pr-review-router evaluate --corpus examples/local-models/corpus.json --providers-config examples/local-models/replay.toml --replay-dir examples/local-models/recordings --output-dir reports/replay-evaluation
 uv run pr-review-router evaluate --corpus examples/rubric-review/corpus.json --providers-config examples/local-models/replay.toml --replay-dir examples/rubric-review/recordings --output-dir reports/rubric-review-replay
 uv run python examples/rubric-review/compare.py
 uv run python benchmarks/synthetic-prs/validate.py
-uv run python benchmarks/synthetic-prs/review_report.py --split all
+uv run python benchmarks/synthetic-prs/legacy-review/review_report.py --split all
 ```
 
 Use `uv run ruff format .` to format changes. Commit `uv.lock` whenever dependencies

@@ -17,7 +17,7 @@ from urllib.parse import urlsplit
 from pr_review_router.corpus_metrics import rubric_metrics, stratify
 from pr_review_router.corpus_references import reference_revisions
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parents[1]
 RUBRIC_TRIVIALITY = "change-triviality"
 
 
@@ -291,7 +291,7 @@ def input_binding(
     validation = runpy.run_path(str(ROOT / "validate.py"))
     validation["validate_splits"](ROOT, index)
     selected = select_cases(split, selected_case_ids)
-    paths = {name: ROOT / name for name in ("splits.json", "rubric.toml")}
+    paths = {"splits.json": ROOT / "splits.json", "rubric.toml": ROOT / "legacy-review/rubric.toml"}
     paths.update({"policy.toml": config, "providers.toml": providers})
     return {
         "schema_version": 2,
@@ -462,8 +462,10 @@ def main() -> None:
     """Run or replay the benchmark and save ``benchmark.json`` beside the router outputs."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-dir", type=Path, default=Path("reports/synthetic-prs-benchmark"))
-    parser.add_argument("--config", type=Path, default=ROOT / "policy.toml")
-    parser.add_argument("--providers-config", type=Path, default=ROOT / "providers.toml")
+    parser.add_argument("--config", type=Path, default=ROOT / "legacy-review/policy.toml")
+    parser.add_argument(
+        "--providers-config", type=Path, default=ROOT / "legacy-review/providers.toml"
+    )
     parser.add_argument(
         "--split", choices=["random", "evaluation", "development", "all"], default=None
     )

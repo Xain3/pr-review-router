@@ -53,7 +53,7 @@ def _summary(root=ROOT, split="all", answers="original"):
 def test_latest_defaults_use_adjudications_and_preserve_unknown_reference_levels():
     summary = _summary()
     before = copy.deepcopy(summary)
-    score = runpy.run_path(str(ROOT / "benchmark.py"))["score"]
+    score = runpy.run_path(str(ROOT / "legacy-review/benchmark.py"))["score"]
     latest = score(summary)
     original = score(summary, reference_revision="original")
     assert summary == before
@@ -75,7 +75,7 @@ def test_latest_defaults_use_adjudications_and_preserve_unknown_reference_levels
 
 
 def test_latest_perfect_answers_grade_uncertainty_separately_from_numeric_accuracy():
-    score = runpy.run_path(str(ROOT / "benchmark.py"))["score"]
+    score = runpy.run_path(str(ROOT / "legacy-review/benchmark.py"))["score"]
     result = score(_summary(answers="latest"))
     assert result["recommendation"]["agreement"] == 1
     assert all(value["agreement"] == 1 for value in result["criteria"].values())
@@ -197,14 +197,14 @@ def test_registered_scope_cannot_hide_missing_or_invalid_review_coverage(tmp_pat
 def bound_predictions(tmp_path):
     root = tmp_path / "corpus"
     shutil.copytree(ROOT, root, ignore=shutil.ignore_patterns("__pycache__"))
-    namespace = runpy.run_path(str(ROOT / "benchmark.py"))
+    namespace = runpy.run_path(str(ROOT / "legacy-review/benchmark.py"))
     namespace["score"].__globals__["ROOT"] = root
     summary = _summary(root, "evaluation")
     path = tmp_path / "predictions" / "summary.json"
     path.parent.mkdir()
     path.write_text(json.dumps(summary))
     binding = namespace["input_binding"](
-        "evaluation", root / "policy.toml", root / "providers.toml"
+        "evaluation", root / "legacy-review/policy.toml", root / "legacy-review/providers.toml"
     )
     namespace["write_binding"](path, binding)
     return root, namespace, path, binding
@@ -235,9 +235,9 @@ def test_offline_cli_rescores_same_predictions_with_latest_and_original(
                 "--output-dir",
                 str(output),
                 "--config",
-                str(root / "policy.toml"),
+                str(root / "legacy-review/policy.toml"),
                 "--providers-config",
-                str(root / "providers.toml"),
+                str(root / "legacy-review/providers.toml"),
             ],
         )
         namespace["main"]()
@@ -253,7 +253,7 @@ def test_offline_cli_rescores_same_predictions_with_latest_and_original(
 
 @pytest.mark.parametrize("seed", [42, None])
 def test_random_cli_records_seed_and_reuses_sample_offline(tmp_path, monkeypatch, seed):
-    namespace = runpy.run_path(str(ROOT / "benchmark.py"))
+    namespace = runpy.run_path(str(ROOT / "legacy-review/benchmark.py"))
     predictions = _summary()
     output = tmp_path / "predictions"
 
@@ -311,7 +311,7 @@ def test_random_cli_records_seed_and_reuses_sample_offline(tmp_path, monkeypatch
 
 
 def test_explicit_case_cli_records_selected_ids_and_reuses_them_offline(tmp_path, monkeypatch):
-    namespace = runpy.run_path(str(ROOT / "benchmark.py"))
+    namespace = runpy.run_path(str(ROOT / "legacy-review/benchmark.py"))
     predictions = _summary()
     output = tmp_path / "selected"
     selected_ids = ["pr-101", "pr-001"]
@@ -389,7 +389,7 @@ def test_new_review_revision_changes_grading_without_invalidating_predictions(bo
     registry["latest"] = "future-review"
     (root / REGISTRY).write_text(json.dumps(registry))
     current = namespace["input_binding"](
-        "evaluation", root / "policy.toml", root / "providers.toml"
+        "evaluation", root / "legacy-review/policy.toml", root / "legacy-review/providers.toml"
     )
     assert current == binding
     origins = namespace["verify_binding"](path, current)
@@ -410,9 +410,9 @@ def test_reference_selection_never_bypasses_changed_prediction_inputs(bound_pred
         "evidence": root / "prs/pr-126/evidence.json",
         "metadata": root / "prs/pr-126/metadata.json",
         "review": root / "prs/pr-126/review.md",
-        "rubric": root / "rubric.toml",
-        "policy": root / "policy.toml",
-        "providers": root / "providers.toml",
+        "rubric": root / "legacy-review/rubric.toml",
+        "policy": root / "legacy-review/policy.toml",
+        "providers": root / "legacy-review/providers.toml",
         "split": root / "splits.json",
         "summary": path,
     }
@@ -424,7 +424,7 @@ def test_reference_selection_never_bypasses_changed_prediction_inputs(bound_pred
     else:
         target.write_text(target.read_text() + "\n")
     expected = namespace["input_binding"](
-        "evaluation", root / "policy.toml", root / "providers.toml"
+        "evaluation", root / "legacy-review/policy.toml", root / "legacy-review/providers.toml"
     )
     with pytest.raises(ValueError, match="Stale"):
         namespace["verify_binding"](path, expected)
@@ -459,7 +459,7 @@ def test_standalone_triviality_defaults_to_selected_adjudications():
             for case_id, case in load_reference_revision(ROOT).cases.items()
         ],
     }
-    evaluate = runpy.run_path(str(ROOT / "evaluate_triviality.py"))["evaluate"]
+    evaluate = runpy.run_path(str(ROOT / "legacy-review/evaluate_triviality.py"))["evaluate"]
     result = evaluate(ROOT, predictions)
     assert result["reference_uncertain"] == 0
     assert result["native_label_agreement"] == 1
@@ -474,7 +474,9 @@ def test_revision_archive_paths_cannot_leave_the_corpus(tmp_path):
     registry["revisions"]["bad"] = {
         "kind": "adjudicated_review",
         "review_protocol": "blind_assessments",
-        "rubric_sha256": hashlib.sha256((root / "rubric.toml").read_bytes()).hexdigest(),
+        "rubric_sha256": hashlib.sha256(
+            (root / "legacy-review/rubric.toml").read_bytes()
+        ).hexdigest(),
         "archives": {"development": "../outside.json"},
     }
     (root / REGISTRY).write_text(json.dumps(registry))
@@ -505,7 +507,9 @@ def test_binding_rejects_redirected_execution_inputs(bound_predictions, redirect
         }
         (root / f"corpus-{split}.json").write_text(json.dumps(partition))
     with pytest.raises(ValueError, match="execution rubric|Execution corpus|execution corpus"):
-        namespace["input_binding"]("evaluation", root / "policy.toml", root / "providers.toml")
+        namespace["input_binding"](
+            "evaluation", root / "legacy-review/policy.toml", root / "legacy-review/providers.toml"
+        )
 
 
 @pytest.mark.parametrize(

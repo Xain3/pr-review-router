@@ -233,7 +233,7 @@ def test_benchmark_rejects_stale_grading_without_invalidating_prediction_binding
     archive = json.loads(path.read_text())
     archive["cases"]["pr-001"]["input_sha256"] = "0" * 64
     path.write_text(json.dumps(archive))
-    namespace = runpy.run_path(str(ROOT / "benchmark.py"))
+    namespace = runpy.run_path(str(ROOT / "legacy-review/benchmark.py"))
     namespace["score"].__globals__["ROOT"] = root
     corpus = json.loads((root / "corpus-development.json").read_text())
     summary = {
@@ -243,12 +243,14 @@ def test_benchmark_rejects_stale_grading_without_invalidating_prediction_binding
     with pytest.raises(ValueError, match="re-review"):
         namespace["score"](summary, "development", revision)
     # Review revisions affect grading, not immutable prediction inputs.
-    namespace["input_binding"]("development", root / "policy.toml", root / "providers.toml")
+    namespace["input_binding"](
+        "development", root / "legacy-review/policy.toml", root / "legacy-review/providers.toml"
+    )
 
 
 @pytest.mark.parametrize("split,count", [("development", 133), ("evaluation", 24), ("all", 157)])
 def test_review_report_scores_selected_partition_and_exposes_final_adjudications(split, count):
-    result = runpy.run_path(str(ROOT / "review_report.py"))["report"](split)
+    result = runpy.run_path(str(ROOT / "legacy-review/review_report.py"))["report"](split)
     assert result["split"] == split
     assert result["label_status"] == "provisional"
     assert result["adjudication_summary"]["case_count"] == count

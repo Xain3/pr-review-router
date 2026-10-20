@@ -2090,7 +2090,7 @@ def main(output_root: Path = ROOT) -> None:
     :param output_root: Directory in which to write the generated artifacts.
     """
     cases = []
-    rubric = load_assessment_rubric(ROOT / "rubric.toml")
+    rubric = load_assessment_rubric(ROOT / "legacy-review/rubric.toml")
     router_cases = []
     packaged = []
     for number, (profile, profile_index, family_index, family) in enumerate(case_plan(), 1):
@@ -2170,7 +2170,7 @@ def main(output_root: Path = ROOT) -> None:
         {
             "corpus_version": 1,
             "label_status": "provisional",
-            "assessment_rubric": "rubric.toml",
+            "assessment_rubric": "legacy-review/rubric.toml",
             "cases": router_cases,
         },
     )
@@ -2187,7 +2187,7 @@ def main(output_root: Path = ROOT) -> None:
             {
                 "corpus_version": 1,
                 "label_status": "provisional",
-                "assessment_rubric": "rubric.toml",
+                "assessment_rubric": "legacy-review/rubric.toml",
                 "cases": [case for case in router_cases if case["case_id"] in selected_ids],
             },
         )
