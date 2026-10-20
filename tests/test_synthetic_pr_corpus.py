@@ -13,7 +13,7 @@ from pr_review_router.assessment_rubric import load_assessment_rubric
 from pr_review_router.experiments import load_corpus, load_corpus_rubric
 
 pytestmark = pytest.mark.unit
-CORPUS = Path(__file__).resolve().parents[1] / "examples" / "synthetic-prs"
+CORPUS = Path(__file__).resolve().parents[1] / "benchmarks" / "synthetic-prs"
 
 
 def test_synthetic_pr_corpus_integrity():

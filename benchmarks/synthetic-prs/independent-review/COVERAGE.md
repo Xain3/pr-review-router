@@ -68,7 +68,7 @@ labels include motivation for Japanese punctuation, requested workflow checks,
 and validation that omits a removed Ruby alias. Coverage does not establish
 correctness, and an open review concern can still cover every changed file.
 
-Run `uv run python examples/synthetic-prs/review_report.py` to regenerate
+Run `uv run python benchmarks/synthetic-prs/review_report.py` to regenerate
 `reports/synthetic-prs-label-review.json` from the hash-validated archive.
 It contains support and complete confusion by criterion, scenario, reference
 triviality level, family, author, split, review confidence (`by_review_confidence`),

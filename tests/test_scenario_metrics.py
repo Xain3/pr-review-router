@@ -11,7 +11,7 @@ import pytest
 from pr_review_router.experiments import load_corpus, load_corpus_rubric
 
 pytestmark = pytest.mark.unit
-ROOT = Path(__file__).resolve().parents[1] / "examples" / "synthetic-prs"
+ROOT = Path(__file__).resolve().parents[1] / "benchmarks" / "synthetic-prs"
 
 
 @pytest.fixture

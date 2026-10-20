@@ -106,7 +106,7 @@ criterion/scenario/level intersections expose the three reference issues even
 though overall status agreement is high. Pass B's perfect native agreement with
 author intent does not resolve the 35 cases left uncertain by arbitration.
 
-Run `uv run python examples/synthetic-prs/review_report.py --split development`
+Run `uv run python benchmarks/synthetic-prs/review_report.py --split development`
 to write the complete report to `reports/synthetic-prs-label-review-development.json`.
 Use `--split all` for the combined 149-case report; evaluation remains the default.
 Every group retains support, criterion confusion, native-level confusion, and

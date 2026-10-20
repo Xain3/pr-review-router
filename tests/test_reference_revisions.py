@@ -12,7 +12,7 @@ import pytest
 from pr_review_router.corpus_references import REGISTRY, load_reference_revision
 
 pytestmark = pytest.mark.unit
-ROOT = Path(__file__).resolve().parents[1] / "examples" / "synthetic-prs"
+ROOT = Path(__file__).resolve().parents[1] / "benchmarks" / "synthetic-prs"
 
 
 def _summary(root=ROOT, split="all", answers="original"):

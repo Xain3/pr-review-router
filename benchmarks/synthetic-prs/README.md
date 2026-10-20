@@ -22,13 +22,13 @@ enforcement are not implemented.
 
 ```sh
 # Offline mocks: formal criteria run; unsupported semantics remain unresolved.
-uv run python examples/synthetic-prs/benchmark_communication.py --split evaluation
+uv run python benchmarks/synthetic-prs/benchmark_communication.py --split evaluation
 
 # Explicit live decision inference after installing/configuring the selected model.
-uv run python examples/synthetic-prs/benchmark_communication.py --split development --decider winnow --record --output-dir reports/communication-live
+uv run python benchmarks/synthetic-prs/benchmark_communication.py --split development --decider winnow --record --output-dir reports/communication-live
 
 # Exact assessment-only replay, with no live fallback.
-uv run python examples/synthetic-prs/benchmark_communication.py --split development --decider winnow --replay-dir reports/communication-live --output-dir reports/communication-replay
+uv run python benchmarks/synthetic-prs/benchmark_communication.py --split development --decider winnow --replay-dir reports/communication-live --output-dir reports/communication-replay
 ```
 
 `communication-rubric.toml` selects these existing canonical annotation IDs:
@@ -55,9 +55,9 @@ Outputs include per-case `*.assessment.json` and `*.provenance.json`, optional
 hashes; criterion confusion/agreement; final decision agreement; false acceptance;
 unresolved assessments; family/scenario support; and each case's expected and
 actual statuses. Criterion metrics compare against independently normalized
-annotation statuses; final expected verdicts still come from the assessment engine.
-Original reference statuses remain visible. `not_assessable`, `uncertain`, and
-`not_applicable` are never converted into passing gates: without an explicit
+annotation statuses; final expected verdicts still come from the assessment
+engine. Original reference statuses remain visible. `not_assessable`, `uncertain`,
+and `not_applicable` are never converted into passing gates: without an explicit
 applicability rule, they score as unresolved. Reports must be written outside the
 preserved corpus.
 
@@ -109,7 +109,7 @@ Load inputs separately from the benchmark oracle:
 import json
 from pathlib import Path
 
-root = Path("examples/synthetic-prs")
+root = Path("benchmarks/synthetic-prs")
 index = json.loads((root / "index.json").read_text())
 for case in index["cases"]:
     evidence = json.loads((root / case["evidence"]).read_text())
@@ -427,8 +427,8 @@ are 49 contested labels across 45 original cases. Reproduce the complete
 scenario/criterion/reference-level confusion and adjudication findings offline:
 
 ```sh
-uv run python examples/synthetic-prs/review_report.py --split development
-uv run python examples/synthetic-prs/review_report.py --split all
+uv run python benchmarks/synthetic-prs/review_report.py --split development
+uv run python benchmarks/synthetic-prs/review_report.py --split all
 ```
 
 These commands write `reports/synthetic-prs-label-review-development.json` and
@@ -467,7 +467,7 @@ full confusion by scenario, criterion, reference level, and their intersections
 without inference:
 
 ```sh
-uv run python examples/synthetic-prs/review_report.py
+uv run python benchmarks/synthetic-prs/review_report.py
 ```
 
 This writes `reports/synthetic-prs-label-review.json` for both reviewers, with
@@ -559,7 +559,7 @@ After running your system on the selected partition, write one prediction per ca
 ```
 
 ```sh
-uv run python examples/synthetic-prs/evaluate_triviality.py reports/triviality-predictions.json
+uv run python benchmarks/synthetic-prs/evaluate_triviality.py reports/triviality-predictions.json
 ```
 
 The scorer requires exactly one integer 0–4 prediction (or `null` for explicit
@@ -667,21 +667,21 @@ reviewer supplies synthetic fixtures and performs no substantive code review.
 
 ```sh
 # Live local inference on a reproducible 60-case sample, recording HTTP exchanges.
-uv run python examples/synthetic-prs/benchmark.py --seed 42 --record \
+uv run python benchmarks/synthetic-prs/benchmark.py --seed 42 --record \
   --output-dir reports/synthetic-prs-benchmark
 
 # Offline replay of that recording; no inference.
-uv run python examples/synthetic-prs/benchmark.py --seed 42 \
+uv run python benchmarks/synthetic-prs/benchmark.py --seed 42 \
   --replay-dir reports/synthetic-prs-benchmark \
   --output-dir reports/synthetic-prs-benchmark-replay
 
 # Re-evaluate an explicit set of PRs with the current rubric; repeat --case-id.
-uv run python examples/synthetic-prs/benchmark.py \
+uv run python benchmarks/synthetic-prs/benchmark.py \
   --case-id pr-001 --case-id pr-101 --reference-revision original --record \
   --output-dir reports/synthetic-prs-rationale-rereview
 
 # Rescore the same bound summary against the latest review, offline.
-uv run python examples/synthetic-prs/benchmark.py \
+uv run python benchmarks/synthetic-prs/benchmark.py \
   --summary reports/synthetic-prs-benchmark/summary.json \
   --output-dir reports/synthetic-prs-benchmark-rescored
 ```
@@ -690,16 +690,16 @@ Select grading labels independently of model inputs:
 
 ```sh
 # List available revisions without inference, including the current rubric refresh.
-uv run python examples/synthetic-prs/benchmark.py --list-reference-revisions
+uv run python benchmarks/synthetic-prs/benchmark.py --list-reference-revisions
 
 # Compare the same bound predictions with the canonical author-intent baseline.
-uv run python examples/synthetic-prs/benchmark.py \
+uv run python benchmarks/synthetic-prs/benchmark.py \
   --summary reports/synthetic-prs-benchmark/summary.json \
   --reference-revision original \
   --output-dir reports/synthetic-prs-original-grade
 
 # Pin an immutable named review rather than the moving latest alias.
-uv run python examples/synthetic-prs/benchmark.py \
+uv run python benchmarks/synthetic-prs/benchmark.py \
   --summary reports/synthetic-prs-benchmark/summary.json \
   --reference-revision review-2026-10-18-rubric-refresh \
   --output-dir reports/synthetic-prs-pinned-grade
@@ -805,16 +805,16 @@ From the repository root after `uv sync --locked`:
 
 ```sh
 # Validate all fixtures, cross-file references, commits, labels, and coverage.
-uv run python examples/synthetic-prs/validate.py
+uv run python benchmarks/synthetic-prs/validate.py
 uv run pytest tests/test_synthetic_pr_corpus.py
 
 # Inspect a good input or an invalid conventional title with the existing policy.
-uv run pr-review-router review --input examples/synthetic-prs/prs/pr-001/evidence.json --config examples/pr-text/policy.toml
-uv run pr-review-router review --input examples/synthetic-prs/prs/pr-011/evidence.json --config examples/pr-text/policy.toml
+uv run pr-review-router review --input benchmarks/synthetic-prs/prs/pr-001/evidence.json --config examples/pr-text/policy.toml
+uv run pr-review-router review --input benchmarks/synthetic-prs/prs/pr-011/evidence.json --config examples/pr-text/policy.toml
 
 # Recreate all data and indexes deterministically after editing the generator.
-uv run python examples/synthetic-prs/generate.py
-uv run python examples/synthetic-prs/validate.py
+uv run python benchmarks/synthetic-prs/generate.py
+uv run python benchmarks/synthetic-prs/validate.py
 ```
 
 Mocks and deterministic format checks do not assess semantic description
