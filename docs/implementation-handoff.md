@@ -1,9 +1,21 @@
 # Implementation handoff
 
-The mock-provider MVP is implemented. Its contracts and behavior are documented
-in the [specification](specification.md); runnable inputs are in
-[diff-routing examples](../examples/diff/README.md) and
-[PR-text format examples](../examples/pr-text/README.md), plus
+The intended product checks PR title/description quality, consistency between
+them, and accuracy against supplied changes. The decider, deterministic checks,
+semantic assessment rubric, confidence provenance, and evidence validation remain
+reusable. The [specification](specification.md#intended-pr-communication-check)
+defines the intended architecture and acceptance conditions.
+
+The current advisory router is implemented with mocks and opt-in local/hosted
+experiments. Its review stage is legacy behavior: it assesses diffs and can
+influence escalation, while the optional Ollama review adapter looks for code
+defects. Code correctness review is outside the intended product scope. The
+planned reporter instead explains a finalized assessment and cannot change its
+outcome, confidence, or CI status. This documentation correction preserves all
+runtime behavior, public names, prompts, fixtures, and recordings.
+
+Runnable current inputs are in [legacy diff-routing examples](../examples/diff/README.md),
+[PR-text format examples](../examples/pr-text/README.md), and
 [weighted rubric examples](../examples/rubric/README.md).
 
 Optional [direct-routing examples](../examples/direct/README.md) now demonstrate
@@ -11,40 +23,41 @@ independent acceptance/rejection permissions and thresholds, feedback depth/mode
 acceptance with feedback, and unresolved human-handoff versus blocking policy.
 The report contract is version 4. Default policy preserves existing routing.
 
-## Architecture
+## Current architecture
 
-In this document and the code, **decision provider** means the component that
-recommends a route, while **review provider** means the component that assesses
-the diff. These are provider interfaces, not a promise of two distinct
-underlying models. The engine is the router; it applies deterministic gates and
-thresholds. `standard` and `deep` identify review depth, not different provider
-roles.
+The implemented `DecisionProvider` (decider) recommends a route; the legacy
+`ReviewProvider` assesses the diff. Neither interface promises a distinct
+underlying model. The engine applies deterministic gates and thresholds.
+`standard` and `deep` identify legacy review depth, not reporter roles.
 
 | Module | Responsibility |
 | --- | --- |
 | `contracts.py` | Strict Pydantic evidence, confidence, decision, finding, and report models |
 | `config.py` | Default policy, validated TOML loading, and weighted rubric criterion contracts |
 | `patches.py` | Unified hunk parsing and line tracking |
-| `providers.py` | Replaceable decision/review protocols and deterministic mocks |
+| `providers.py` | Decision and legacy review protocols and deterministic mocks |
 | `engine.py` | Coverage, PR-text, and rubric preflight; threshold routing, escalation, and finding limits |
 | `cli.py` | Argument parsing, evidence loading, mock wiring, and JSON/file output |
+| `assessment_rubric.py` | Mixed deterministic/semantic criteria, enforcement rules, and separate assessment artifacts |
 
 The engine receives provider instances; it contains no mock-specific decision
 rules and does not depend on provider transport SDKs. To integrate a real
 decision adapter, implement `DecisionProvider.decide(evidence)` and return the
-normalized `Decision` contract. To integrate a real review adapter, implement
-`ReviewProvider.review(evidence, *, depth)` and return `ReviewResult`. The review
-adapter receives `standard` or `deep` as a depth argument; the engine does not
-require separate models for those depths.
+normalized `Decision` contract. Existing legacy review adapters implement
+`ReviewProvider.review(evidence, *, depth)` and return `ReviewResult`; this
+evidence/depth interface does not supply the finalized report a reporter needs.
+Do not treat it as the contract for a new reporter. Current review depths do not
+require separate models.
 
 Responses are validated by `request_decision`/`request_review` in `providers.py`:
 malformed output gets one retry (passing `strict_schema=True` when the adapter
 accepts it), then fails closed according to `unresolved_outcome` with value-free diagnostics. Confidence provenance
 must reflect the adapter's actual source.
 
-## Review invariants
+## Current routing invariants
 
-Coverage, budget, PR-text format, or rubric failures prevent provider calls.
+Coverage, budget, PR-text format, or deterministic policy-rubric gate failures
+prevent provider calls.
 Hard rubric blockers always fail; soft criteria affect the weighted score and
 the configured overall minimum. Provider failures cannot yield a clear advisory
 outcome, and exception messages do not enter reports.
@@ -69,17 +82,48 @@ CI installs locked dependencies, runs the quality suite and example reports,
 builds the package, and runs the wheel from outside the checkout in a fresh
 environment. Action commits were resolved from official release refs.
 
-## Later integration work
+## Subsequent implementation increments
 
-Local Ollaya and Ollama adapters now implement the existing protocols. See
-[local experiments](../examples/local-models/README.md) for configuration,
-shadow skips, context safeguards, provenance, evaluation, and offline replay.
-Hosted Jev/TypeSafe and review adapters still need credential configuration and
-capability testing. Human-reviewed evaluation and task calibration precede
-honoring model skips. The default CLI still uses offline demonstration mocks.
-A PR evidence collector must paginate files, bind metadata and patches to supplied
-commit identifiers, and mark unavailable/truncated content accurately. A consumer
-GitHub/Docker Action is separate from this repository's read-only quality CI.
+The first increment is this documentation-only scope correction. Keep
+`review_pull_request`, `ReviewProvider`, `--reviewer`, model catalogs, policy
+semantics, schema version 4, and replay fingerprints unchanged. The following
+work requires separate implementation and compatibility plans, in this order:
+
+1. **Communication-quality benchmark.** Reuse the
+   [synthetic corpus and its existing communication annotations](../examples/synthetic-prs/README.md#communication-quality-benchmark-planned)
+   under a separate benchmark version. Exclude supplied reviews and
+   `review-coverage` from inputs and acceptance rules. Preserve case/family splits,
+   reference history, and provisional provenance; add labels only where needed.
+2. **Mock reporter pipeline.** Finalize the machine assessment from deterministic
+   results, semantic criteria, rulesets, confidence provenance, and unresolved
+   relevant evidence before reporting. Replace outcome-changing review stages
+   with a mock reporter that consumes that report, covering preflight failures
+   and direct rejection too. Keep recorded facts distinct from explanatory
+   hypotheses. Reporter failure must retain the decision and allow a
+   deterministic explanation. Specify the new interfaces and migration then.
+3. **Consumer CI integration.** Enforce acceptance only when all applicable gates
+   pass with no unresolved relevant evidence. Suggestions remain non-blocking
+   and cannot override those conditions. Use the machine assessment independently
+   of reporter text; current CLI status 0 is only report-generation success.
+   Acceptance is for this check alone and does not approve or merge the PR.
+4. **Live reporter generation.** Add human-readable explanations using the same
+   explanation-only contract; do not reintroduce code-defect assessment or a
+   second vote on the result.
+
+Benchmark validation should include inconsistent title/body pairs, omitted
+changes, missing or truncated evidence, and unchanged communication judgments
+when only legacy supplied review text changes. Measure criterion and decision
+agreement, false acceptance, and unresolved assessments with support counts.
+Label agreement does not establish calibration; human-reviewed evaluation and
+task calibration still precede confidence-based automation.
+
+Local Ollaya, structured-output Ollama, and hosted Jev decision adapters are
+implemented. Preserve their confidence and experiment safeguards. See
+[local experiments](../examples/local-models/README.md) and
+[hosted Jev](../examples/jev/README.md) for current configuration and replay.
+A future integrated PR collector must paginate files, bind metadata and patches
+to commit identifiers, and accurately mark missing/truncated evidence. The
+consumer check is separate from this repository's existing read-only quality CI.
 
 Keep raw exports, credentials, and private reports untracked; `reports/` is ignored.
 Preserve sanitized evidence fixtures and the dependency lockfile. Licensing remains

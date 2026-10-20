@@ -1,7 +1,15 @@
 # Local models and offline replay
 
 Mocks remain the CLI default. Explicit provider configuration selects Ollaya or a
-structured-output Ollama LLM for routing decisions and Ollama for substantive diff review. Reports remain
+structured-output Ollama LLM for decisions and optionally Ollama for legacy
+code-defect assessment. The decision adapters, semantic rubric support, and
+transport safeguards remain reusable for PR communication checks. The code-review
+stage and defect-based metrics below are legacy experiments outside the intended
+product scope; they do not implement the planned reporter, which consumes a
+finalized assessment and cannot change the result. See the
+[target architecture](../../docs/specification.md#intended-pr-communication-check).
+
+These commands still use current decision/review interfaces. Reports remain
 advisory, and no command fetches, posts to, approves, or merges a PR.
 
 ## Offline example
@@ -27,6 +35,9 @@ before marking `label_status` as `human_reviewed` or tuning thresholds. Expand
 this small corpus with representative sanitized cases before assessing quality.
 
 ## Live local evaluation
+
+The review alias in this section executes legacy code assessment. It is not a
+requirement or recommendation for implementing the intended reporter.
 
 Check `ollaya list` and `ollama list`. This example uses installed `winnow:e4b`
 and creates a review alias from `qwen3.5:2b`. Edit the model names and Modelfile
@@ -86,7 +97,8 @@ has identifiable provenance. Reviewer confidence is `self_reported`.
 Loopback transport ignores system proxies, does not follow redirects, and
 supports unauthenticated local servers only. Cloud/remote model selectors and
 remote models advertised by Ollama are rejected. Local server metadata remains
-a trust boundary. Authenticated and hosted adapters are later work.
+a trust boundary. Authenticated local review transport remains later work;
+hosted Jev decision support is documented in the [Jev examples](../jev/README.md).
 
 ## Explicit recording and replay
 

@@ -1,39 +1,61 @@
 # pr-review-router
 
-An advisory pull request review router with offline mocks and opt-in local or hosted model experiments.
-It accepts exported PR evidence, checks patch coverage, selects a review path,
-and emits a structured JSON report. Reports never approve, merge, or change a PR.
+The intended product checks PR title and description quality, consistency
+between them, and accuracy against the supplied changes. Patches provide evidence for those comparisons. Code correctness,
+security review, and implementation recommendations are outside its scope.
 
-The default mock providers are deterministic demonstration rules. Their confidence
-scores have `source: "mock"` and are not calibrated probabilities. The mocks cannot assess substantive correctness. Default routing hands such
-changes to humans; optional direct/feedback policies demonstrate other routes.
+The implemented CLI currently accepts exported PR evidence and emits advisory
+JSON reports using offline mocks or opt-in local/hosted experiments. The decider,
+deterministic checks, semantic rubric, confidence provenance, and patch validation
+remain reusable. A legacy diff-review stage still affects routing; the planned
+reporter and consumer CI check are not implemented yet. This scope correction
+changes documentation only; commands, schemas, prompts, mocks, and recordings
+retain their behavior. Reports never approve, merge, or change a PR.
 
 ## Terminology and roles
 
-The engine has two provider roles. A **decision provider** (`DecisionProvider`)
-reads the PR evidence and recommends whether to skip review, start review, or
-hand the PR to a person, or directly accept/reject when enabled by policy. It chooses a route; it does not assess whether the
-change is correct. A **review provider** (`ReviewProvider`) assesses the diff
-and returns `no_concerns`, `concerns`, or `uncertain`, with findings when
-appropriate.
+The intended flow is **PR evidence → deterministic checks and semantic assessments
+→ rulesets and confidence requirements → finalized machine report → reporter**.
+The future CI consumer enforces the machine result independently of reporter text.
 
-The **router** is the engine that validates evidence, applies policy thresholds,
-calls the providers in order, and escalates unresolved results. PR-title/body
-format checks and the optional rubric are deterministic policy checks that run
-before providers; they are not model roles and do not establish whether a
-description accurately describes the diff. A **human reviewer** handles cases
-the automated route cannot safely resolve.
+| Role | Intended responsibility | Current implementation |
+| --- | --- | --- |
+| Decider / decision provider | Assess configured criteria against the evidence. | Decision adapters and mixed deterministic/semantic assessment rubrics are implemented. |
+| Engine / router | Apply rulesets and confidence requirements to determine the check result. | Evidence validation and policy routing exist; legacy review results can still affect outcomes. |
+| Reporter | Explain the finalized report, distinguishing recorded facts from qualified interpretations of likely issues. | Planned; `ReviewProvider` is not a reporter. |
 
-“Provider” names the integration interface, not necessarily the technology
-behind it: the CLI defaults to offline mocks and can explicitly select local
-or hosted Jev decision adapters. `standard` and `deep` are review depths passed to the same review
-provider interface, not two different model roles. The mocks cannot perform a
-substantive code review.
+The reporter must cover early deterministic failures and direct rejections too.
+It cannot change decisions, confidence, or CI status, invent rejection reasons,
+or conduct a code review. If reporting fails, the machine result remains valid
+and a deterministic explanation can render the recorded facts.
+
+The existing **legacy review provider** (`ReviewProvider`, `--reviewer`, and
+`review` model settings) receives evidence at `standard` or `deep` depth and
+returns concerns or uncertainty that can drive escalation. Its optional Ollama
+adapter explicitly looks for code defects. Those interfaces remain unchanged for
+compatibility; they are not aliases for the planned reporter. The mock providers
+are deterministic demonstrations; their `source: "mock"` confidence is not
+calibrated and they cannot assess substantive correctness.
+
+## Intended acceptance and CI behavior
+
+Acceptance for this check requires **all applicable gates to pass with no
+unresolved relevant evidence**, under the configured rules and confidence
+requirements. Non-blocking suggestions can accompany passing gates; they cannot
+override a failed gate or unresolved relevant evidence. Passing title syntax alone
+does not resolve an accuracy check that needs a missing patch. Acceptance applies
+only to this communication check and does not approve or merge the PR.
+
+The current CLI exits 0 whenever a valid advisory report is generated, including
+rejection and human handoff. It does not yet enforce the intended CI gate.
+See the [target architecture and examples](docs/specification.md#intended-pr-communication-check)
+and [transition increments](docs/implementation-handoff.md#subsequent-implementation-increments).
 
 ## Install and run
 
-See the [quickstart guide](docs/quickstart.md) for exporting a real PR, configuring review
-providers, using the CLI and Python API, and interpreting report outputs.
+See the [quickstart guide](docs/quickstart.md) for exporting PR evidence, running
+the current pipeline, using the CLI and Python API, and interpreting reports.
+The commands below demonstrate current routing, including legacy review stages.
 
 Use Python 3.12+ and [uv](https://docs.astral.sh/uv/).
 
@@ -44,10 +66,10 @@ uv sync --locked
 uv run pr-review-router --help
 uv run pr-review-router --version
 
-# A narrow editorial correction skips review.
+# Legacy routing: a narrow editorial correction skips review.
 uv run pr-review-router review --input examples/diff/evidence.json --config examples/diff/policy.toml
 
-# A synthetic concern escalates through standard and deep review to a human.
+# Legacy routing: a synthetic concern escalates to a human.
 uv run pr-review-router review --input examples/diff/concern.json --output reports/concern.json
 
 # Explicit PR title and body format checks.
@@ -86,9 +108,13 @@ the CLI.
 Exit status is 0 for every successful advisory report, including
 `needs_human_review`. Invalid evidence, policy, arguments, or file I/O produce
 status 2 and a concise diagnostic on stderr. Consumers should inspect the
-report's `outcome`, rather than treating CLI success as permission to merge.
+report's `outcome`; CLI success is neither a passing communication gate nor
+permission to merge.
 
 ## Named models and profiles
+
+These settings describe current decider and legacy review interfaces. Selecting
+a live reviewer runs the existing diff-assessment adapter, not a reporter.
 
 `review` and `evaluate` load `models.toml` from the current working directory,
 or the packaged catalog when it is absent. Use `--models-config PATH` for an
@@ -173,6 +199,9 @@ See [local setup and replay](examples/local-models/README.md).
 
 ## Routing behavior
 
+This is the current pipeline, including legacy review stages. Its outcomes do
+not yet implement the intended communication-quality CI acceptance contract.
+
 1. Missing, truncated, malformed, or inconsistent patches; incomplete file lists;
    empty evidence; and exceeded input/file budgets go directly to human review.
 2. A validated decision can skip review only at the policy's skip threshold.
@@ -198,7 +227,7 @@ fixture. They check structure only, not whether the description is accurate.
 For multiple weighted criteria, hard/soft blockers, and aggregate scores, see
 the [rubric examples](examples/rubric/README.md). For the assessment-rubric
 framework that combines deterministic format checks with semantic questions
-about the supplied diff and review, see the
+about PR communication, plus a legacy supplied-review criterion, see the
 [mixed formal/semantic examples](examples/rubric-review/README.md).
 
 ```sh
@@ -238,18 +267,23 @@ kind = "script"
 command = ["./ci/check-pr.py"]
 ```
 
-The [synthetic PR corpus](examples/synthetic-prs/README.md) provides 149 fictional
-PRs across 30 change families, with metadata, commits, complete patches, supplied
-reviews, and provisional communication and 0–4 triviality labels. Its fixed
-[partitions](examples/synthetic-prs/splits.json) reserve 24 independently authored
-cases from 12 new families for evaluation; the original 125 cases are for
-development. Scorers report confusion by scenario, criterion, reference triviality
-level, and their intersections, with support counts and explicit uncertainty.
+The [synthetic PR corpus](examples/synthetic-prs/README.md) provides 157 fictional
+PRs across 30 change families with reusable title/description annotations,
+metadata, commits, complete patches, and provisional 0–4 triviality labels.
+Supplied reviews and review-coverage criteria are legacy experiment dimensions.
+A [separately versioned communication benchmark](examples/synthetic-prs/README.md#communication-quality-benchmark-planned)
+can reuse existing communication labels, extending them only where needed while
+preserving reference history and withholding oracle annotations from model inputs.
+Its fixed [partitions](examples/synthetic-prs/splits.json) reserve 24 independently
+authored cases from 12 new families for evaluation; 133 cases are for development.
+Scorers report confusion by scenario, criterion, reference triviality level, and
+their intersections, with support counts and explicit uncertainty.
 The [index](examples/synthetic-prs/INDEX.md) includes family and author provenance.
 Both partitions have fresh blind review under the same seven-criterion rubric;
 the [review guide](examples/synthetic-prs/README.md#independent-review) explains
 the preserved history, current adjudications, and unresolved cases.
-The benchmark grades the latest adjudicated review by default. Use
+The existing router benchmark retains its review-coverage dimension and grades
+the latest adjudicated reference revision by default. Use
 `--reference-revision original` for canonical author labels, or select a registered
 review snapshot with `--reference-revision NAME`; list them with
 `--list-reference-revisions`. Bound predictions can be rescored offline under
@@ -273,9 +307,9 @@ consumers and never change a PR.
 
 The `jev` decision backend uses the synchronous TypeSafe SDK for routing and
 semantic rubric questions (`choice`, `noul`/`predicate`, and `score`). It does not
-generate explanations or free-form findings and cannot replace a substantive
-reviewer. Select a local Ollama reviewer separately, or hand substantive review
-to a human; the example's mock reviewer is demonstration-only.
+generate the planned reporter's explanations. Current experiments still select
+a separate legacy review provider; the example uses a demonstration mock.
+Code assessment by the optional Ollama reviewer is outside the intended scope.
 
 See [hosted configuration and commands](examples/jev/README.md). Hosted use
 requires `allow_network = true`, an environment-based API key, an HTTPS origin,
@@ -301,6 +335,10 @@ confidence, but thresholds remain experimental until validated against
 human-reviewed PR labels. No hosted calibration or automated skips are enabled.
 
 ## Local models and reproducible CI
+
+The CI commands here validate adapter integration and replay. They are separate
+from the future consumer communication check; code-defect review experiments
+remain legacy examples.
 
 Use `review --providers-config PATH` to select Ollaya or structured-output
 Ollama decisions and Ollama reviews independently. Provider TOML is separate from routing policy. Local
@@ -334,8 +372,10 @@ record the seed, selected case IDs, and model provenance separately for the deci
 and review roles, including explicit mock-provider labels.
 
 The [six-criterion PR and review rubric](examples/rubric-review/README.md)
-evaluates title format, Summary structure, meaningful rationale, description
-coverage of the diff, supplied-review coverage, and relevant testing. It shows
+combines reusable title format, Summary structure, rationale, description/diff
+coverage, and testing-explanation criteria with legacy supplied-review coverage.
+The supplied review is not a reporter output, and this experiment is not the
+planned communication-only benchmark. It shows
 blocking failures, suggestions, uncertainty, and all-pass advisory skip/approval
 recommendations while preserving shadow mode. Semantic criteria support `choice`,
 `noul` (also named `predicate` in rubric configuration), and ordinal `score`
@@ -393,7 +433,9 @@ See the [specification](docs/specification.md),
 [diff-routing examples](examples/diff/README.md),
 [PR-text examples](examples/pr-text/README.md), and
 [contribution guide](CONTRIBUTING.md).
-Hosted Jev/TypeSafe and review providers, PR fetching/posting, and a
-consumer GitHub/Docker Action are future work.
+Local and hosted decision adapters are implemented. Subsequent increments add
+the communication benchmark, a mock reporter pipeline, consumer CI enforcement,
+and live reporter generation. Integrated PR collection/posting remains future
+work; the current CLI does not change PRs.
 
 Licensing is pending owner selection.

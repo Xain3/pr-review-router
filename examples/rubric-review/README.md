@@ -1,5 +1,14 @@
 # Six-criterion PR and review rubric
 
+The deterministic and semantic title/description checks here remain reusable.
+The supplied-review criterion and the downstream review-provider stage are
+legacy dimensions, not core requirements for the intended PR communication
+check. Supplied review text is an input to this experiment, not the planned
+reporter's explanation of a finalized report. Current fixtures, expectations,
+recordings, and routing remain unchanged. See the
+[target architecture](../../docs/specification.md#intended-pr-communication-check)
+and the [planned communication benchmark](../synthetic-prs/README.md#communication-quality-benchmark-planned).
+
 This use case evaluates a PR title, description, full diff, and separately
 supplied review against six criteria. The PR has two substantive changes:
 handle empty input in `average()` and raise a batch limit from 100 to 250.
@@ -68,7 +77,10 @@ to merge. Artifacts always have `advisory_only: true` and
 `automation_authorized: false`. Existing experiments retain shadow skips, so an
 all-pass rubric's original skip recommendation is recorded while the actual
 router continues reviewing. Neither a rubric pass nor its approval flag can
-override incomplete coverage, provider failures, or unresolved code review.
+override incomplete coverage, provider failures, or the current legacy review
+stage's unresolved result. These experiment outcomes are not the intended CI
+acceptance contract, which requires all applicable gates to pass without
+unresolved relevant evidence.
 Advisory report schema version 4 and policy semantics remain unchanged.
 
 ## Run offline in CI

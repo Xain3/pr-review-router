@@ -1,8 +1,8 @@
 # Repository instructions
 
 Follow `CONTRIBUTING.md`, `README.md`, and `docs/specification.md` as the
-authoritative project guidance. Preserve established contracts and terminology;
-do not describe the mock providers as performing substantive code review.
+authoritative project guidance. Preserve established runtime contracts while
+distinguishing current behavior from the intended PR communication check.
 
 ## Code and Tests
 
@@ -19,16 +19,30 @@ do not describe the mock providers as performing substantive code review.
 
 - Reports are advisory only: the router must not approve, merge, or otherwise
   change a pull request.
+- The intended check evaluates title/description quality, consistency between
+  them, and accuracy against changes. Patches are comparison evidence; code
+  correctness review is outside the intended product scope.
+- Acceptance for the check requires all applicable gates to pass with no
+  unresolved relevant evidence. Suggestions cannot override these conditions.
 - Preserve confidence provenance, patch-coverage checks, conservative
-  escalation, and provider independence. Incomplete or unresolved cases must
-  not be treated as safe automated acceptance.
+  handling of uncertainty, and provider independence. Current legacy escalation
+  behavior remains until a separately specified runtime migration.
 - Keep deterministic policy checks distinct from provider assessments, and
-  preserve the decision-provider and review-provider roles.
+  distinguish the decider from the planned reporter. The reporter explains a
+  finalized report and cannot change the decision, confidence, or CI status.
+- `ReviewProvider`, `--reviewer`, review depths, and review-driven escalation
+  describe legacy runtime behavior; they are not an implemented reporter.
+  Mocks remain demonstrations and do not perform substantive code review.
 
 ## Data and Validation
 
 - Use sanitized fixtures in `examples/`; never commit credentials, raw pull
   request exports, or private reports. Keep runtime output under `reports/`.
+- Preserve synthetic corpus evidence, annotations, family splits, and reference
+  history. Reuse communication labels for a separately versioned benchmark;
+  legacy supplied reviews and review-coverage criteria are not core requirements.
+  Reference annotations must stay out of model inputs and remain provisional
+  until human validation.
 - Run the relevant checks from `CONTRIBUTING.md` for the change, including
   focused tests where practical. Suggested checks include `uv run pyright`;
   report which checks actually ran.

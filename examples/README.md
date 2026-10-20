@@ -8,28 +8,32 @@ access. Live local examples explicitly require running local model servers.
 Hosted Jev examples require explicit network consent and an environment-based
 credential, and can incur API charges. They are not run by default tests.
 
-The project uses **decision provider** for the route recommender and
-**review provider** for the diff assessor. `standard` and `deep` are review
-depths, not separate provider roles. See the
+The intended product checks title/description quality and consistency against
+changes. Its **decider** performs assessments; the planned **reporter** explains
+the finalized result without changing it. These examples still use the current
+**legacy review provider**, whose diff assessments can affect routing.
+`standard` and `deep` are legacy review depths, not reporter roles. See the
 [terminology and roles guide](../README.md#terminology-and-roles).
+The reporter and consumer CI check are not implemented by the scope correction.
+Current commands and outputs remain compatibility examples.
 
 ## Example sets
 
 | Directory | What it demonstrates | Detailed guide |
 | --- | --- | --- |
-| [`direct/`](direct/README.md) | Configurable direct decider acceptance/rejection, non-blocking reviewer feedback, and combined text/rubric gates. | [Direct-routing examples](direct/README.md) |
-| [`diff/`](diff/README.md) | Patch-coverage validation and review routing, from skipping a narrow documentation edit to escalating a synthetic concern for human review. | [Diff-review examples](diff/README.md) |
+| [`direct/`](direct/README.md) | Direct decider acceptance/rejection and legacy non-blocking review feedback; feedback does not implement the reporter contract. | [Direct-routing examples](direct/README.md) |
+| [`diff/`](diff/README.md) | Reusable patch-coverage checks and legacy review routing with synthetic concerns and escalation. | [Legacy diff-review examples](diff/README.md) |
 | [`pr-text/`](pr-text/README.md) | Optional Conventional Commits title and non-empty `Summary` and `Testing` section checks, including passing and failing inputs. | [PR-text examples](pr-text/README.md) |
 | [`rubric/`](rubric/README.md) | Weighted title/body criteria, hard and soft blockers, and the resulting aggregate score and routing behavior. | [Rubric examples](rubric/README.md) |
-| [`local-models/`](local-models/README.md) | Independent local adapters, shadow skips, provisional evaluation labels, and explicitly synthetic offline HTTP replay. | [Local models and replay](local-models/README.md) |
+| [`local-models/`](local-models/README.md) | Reusable decision adapters and legacy code-review experiments, with shadow skips and synthetic offline replay. | [Local models and replay](local-models/README.md) |
 | [`jev/`](jev/README.md) | Opt-in hosted decisions and semantic rubrics, pinned models, private recording, and credential-free replay. | [Hosted Jev guide](jev/README.md) |
-| [`rubric-review/`](rubric-review/README.md) | Assessment-rubric examples combining deterministic title/section checks with semantic questions about rationale, diff coverage, review coverage, and testing. Includes offline replay. | [PR and review rubric](rubric-review/README.md) |
-| [`synthetic-prs/`](synthetic-prs/README.md) | 157 fictional PRs across 30 families, including 24 independently authored held-out cases, supplied reviews, provisional labels, and scenario/criterion/triviality confusion reports. | [Corpus guide](synthetic-prs/README.md) and [index](synthetic-prs/INDEX.md) |
+| [`rubric-review/`](rubric-review/README.md) | Reusable deterministic/semantic communication checks alongside a legacy supplied-review criterion and review pipeline. | [PR and review rubric](rubric-review/README.md) |
+| [`synthetic-prs/`](synthetic-prs/README.md) | 157 fictional PRs with reusable title/description annotations and family splits; supplied reviews are a legacy dimension. A communication-only benchmark is planned separately. | [Corpus guide](synthetic-prs/README.md) and [index](synthetic-prs/INDEX.md) |
 
 ## Run the examples
 
 ```sh
-# Diff-review routing
+# Legacy diff-review routing
 uv run pr-review-router review --input examples/diff/evidence.json --config examples/diff/policy.toml
 uv run pr-review-router review --input examples/diff/concern.json --output reports/concern.json
 

@@ -1,8 +1,16 @@
 # Direct decisions and non-blocking feedback
 
+These are current routing demonstrations, not an implementation of the planned
+communication-quality CI check or reporter. Acceptance for that check requires
+all applicable gates to pass with no unresolved relevant evidence. Existing
+direct-decision and feedback policies below retain their behavior. The legacy
+review provider receives evidence, not the finalized report, and direct
+rejection currently returns without generating review text. See the
+[target architecture](../../docs/specification.md#intended-pr-communication-check).
+
 These offline fixtures add configurable routing alongside the existing skip,
 standard/deep review, PR-text, rubric, and human-handoff paths. A decision
-provider (decider) can directly reject or accept; a review provider (reviewer)
+provider (decider) can directly reject or accept; a legacy review provider
 can return feedback that leaves the human free to act on it without requiring
 a human step in the route.
 

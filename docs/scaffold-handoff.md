@@ -1,5 +1,11 @@
 # Mini handoff: scaffold the independent project
 
+Historical foundation-only instructions follow. They record the original
+scaffolding task, not current implementation status or product scope. Use the
+[current specification](specification.md#intended-pr-communication-check) and
+[implementation handoff](implementation-handoff.md) for the intended PR
+communication check and transition from legacy review routing.
+
 Create only the development foundation for `pr-review-router` in a new owner-supplied directory. Do not modify Pianoteq Remote. The [specification](specification.md) and [full implementation handoff](implementation-handoff.md) describe later work; do not implement providers, routing, PR integration, paid API calls, or a Docker Action in this task.
 
 ## Project layout

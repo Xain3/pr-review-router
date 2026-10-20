@@ -1,14 +1,113 @@
-# Advisory router specification
+# PR communication quality specification
 
 ## Purpose and scope
 
-Provide an offline CLI and a provider-independent engine for advisory PR review
-routing. Accept owner-supplied JSON evidence and optional TOML policy; produce
-validated JSON reports. The default mode uses deterministic mocks and makes no
-API calls. Explicit local or hosted experiments use separately configured model adapters.
+The intended product is a CI quality check for a PR's title and description:
+evaluate configured criteria, consistency between title and description, and
+accuracy and completeness against the actual supplied changes. Patches are
+evidence for those comparisons. Assessing code correctness, security defects,
+or implementation improvements is outside this check's scope.
 
-Hosted generative review adapters, GitHub evidence
-collection, PR comments, approval/merge operations, and a Docker Action are deferred.
+The existing decider adapters, deterministic checks, semantic assessment rubric,
+confidence provenance, and evidence validation remain reusable. The current CLI
+and engine still implement an advisory routing pipeline with a legacy review
+stage. That stage can influence routing, and the optional Ollama review adapter
+explicitly assesses code defects; neither is the intended reporter.
+
+This scope correction changes documentation only. Public APIs, commands, flags,
+configuration, prompts, report schema version 4, mocks, fixtures, labels, and
+recording fingerprints retain their behavior. The default mode remains offline;
+local and hosted inference are explicit experiments. The intended architecture
+below is planned. Subsequent sections document the current implementation.
+
+## Intended PR communication check
+
+### Decision and reporting responsibilities
+
+```mermaid
+flowchart LR
+    E["PR evidence"] --> A["Deterministic checks and semantic assessments"]
+    A --> P["Rulesets and confidence requirements"]
+    P --> M["Final machine-readable assessment report"]
+    M --> C["CI consumer: enforce the check result"]
+    M --> R["Reporter: explain the result"]
+```
+
+The **decider** (decision provider) assesses semantic criteria alongside explicit
+deterministic checks. The **engine** applies the configured rulesets and
+confidence requirements to determine the check result. Deterministic checks
+establish format or other programmatic requirements; semantic assessments judge
+meaning, including meaningful titles, rationale, and consistency with changes.
+Change/triviality classification may select communication requirements without
+establishing code safety.
+
+The final assessment report is the authority for the CI consumer. It must retain
+gate results, criterion identifiers and statuses, blocking reasons, suggestions,
+unresolved evidence, and confidence provenance, including early deterministic
+failures where no model ran. This describes the required information, not a new
+wire schema. Today semantic rubric assessments live in separate experiment
+artifacts; `ReviewReport` is still the current routing report.
+
+The **reporter** consumes that finalized report and communicates it to a human.
+It explains which criteria failed or remain unresolved and what could improve
+the title or description. It may make educated interpretations of likely issues,
+but must distinguish recorded assessment facts from qualified hypotheses. It
+must not invent a rejection reason, claim tests were run, or independently
+review the code. It cannot alter the decision, criterion statuses, confidence,
+or CI status. It must cover direct rejection and preflight failure as well as
+acceptance, suggestions, and unresolved assessment. Reporter failure preserves
+the machine result and permits a deterministic rendering of the recorded facts.
+
+### Acceptance and CI meaning
+
+Acceptance applies only to this check's configured communication requirements.
+It requires **all applicable gates to pass, with no unresolved relevant
+evidence**, under the configured rules and confidence requirements. Evidence is
+relevant when needed to resolve an applicable gate. Irrelevant unknowns do not
+justify expanding the check into a code review.
+
+Non-blocking suggestions can accompany passing gates; they cannot compensate for
+a failed gate or unresolved relevant evidence. A failed gate yields a blocking
+failure. Unresolved relevant evidence prevents acceptance and remains explicit
+for resolution; it is not an observed failure of the PR's claims. No average
+score, fluent explanation, or unsupported confidence claim can override these
+conditions.
+
+The following are target behavior examples, not new CLI outcomes or fixtures:
+
+| Evidence and configured requirements | Check result and explanation |
+| --- | --- |
+| Meaningful title and accurate description agree with complete changes; every applicable gate passes | Acceptance for this check only. |
+| Every applicable gate passes; an advisory testing-explanation criterion suggests more detail | Non-blocking suggestion; passing gates remain passing. |
+| Description claims a default is unchanged, but the patch changes it and accuracy is required | Blocking failure identifying the contradiction. |
+| An accuracy gate needs a missing or truncated patch, even though title syntax passes | Unresolved relevant evidence; acceptance is unavailable. |
+| Title and description name different changes and consistency is required | Blocking failure identifying the conflicting claims. |
+| A description omits a changed configuration setting and complete coverage is required | Blocking failure identifying the omission. |
+
+A future CI consumer enforces the finalized result independently of reporter
+generation. Passing this check is not a GitHub approval, permission to merge, or
+an assessment of code correctness. Current CLI exit status 0 means report
+generation succeeded, including rejected and unresolved reports; the consumer
+integration and reporter contract are not implemented by this documentation
+change. Existing mock confidence and live experiment restrictions still apply.
+
+### Transition and benchmark reuse
+
+Preserve the decider work and current contracts while migrating in separate
+increments: introduce a communication-quality benchmark, replace outcome-changing
+review stages with a mock reporter, add consumer CI enforcement, then add live
+reporter generation. Concrete interfaces and compatibility migrations belong
+to those increments; this correction adds no `--reporter` flag or provider alias.
+
+The [synthetic corpus](../examples/synthetic-prs/README.md#communication-quality-benchmark-planned)
+is a reusable asset. Its title/description annotations can seed a separately
+versioned benchmark. Supplied review text and `review-coverage` are legacy
+dimensions and must not affect that benchmark's communication decisions.
+Preserve evidence, case identities, family splits, labels and reference history;
+extend annotations only where required communication criteria lack suitable
+labels. Existing label adjudications apply only where their criterion definitions
+match. Labels remain provisional until human validation, and reference
+annotations must never enter model inputs.
 
 ## Evidence contract
 
@@ -138,20 +237,23 @@ consumers must enforce rejected outcomes as blocking.
 
 ## Provider roles, contracts, and confidence
 
-Use **decision provider** and **review provider** as the names for the two
-provider roles (rather than using “decider” and “evaluator” interchangeably).
-They describe responsibilities, not necessarily separate underlying models:
+The following are the current implemented interfaces. Use **decider** or
+**decision provider** for the assessment role, **reporter** for the planned
+explanation role, and **legacy review provider** for `ReviewProvider`.
+Preserve these existing interface names until a separately specified migration;
+renaming a diff assessor in prose does not give it the reporter contract.
 
 | Term | Responsibility | Output |
 | --- | --- | --- |
 | Decision provider (`DecisionProvider`) | Recommends whether to skip review, begin review, or hand off to a human. It chooses a route; it does not assess whether the diff is correct. | `Decision`: recommendation, confidence, reason, and provider identity |
-| Review provider (`ReviewProvider`) | Assesses the diff at the requested review depth. | `ReviewResult`: outcome, confidence, summary, provider identity, and findings |
+| Legacy review provider (`ReviewProvider`) | Assesses the diff at the requested review depth; its result can affect routing. It does not consume the finalized decision report. | `ReviewResult`: outcome, confidence, summary, provider identity, and findings |
 
 The engine/router validates evidence, applies policy checks and thresholds,
 sequences provider calls, and escalates unresolved results; it is not a model.
-Optional PR-text checks and rubric scoring are deterministic policy gates that
-run before providers, not additional provider roles. A human reviewer handles
-cases the automated route cannot resolve.
+Optional PR-text checks and `Policy.rubric_criteria` scoring are deterministic
+policy gates that run before providers. The separate assessment-rubric framework
+also includes semantic questions answered by the decider. A human handles cases
+the current automated route cannot resolve.
 
 `standard` and `deep` are depth values passed to the review provider interface.
 They are not two separate provider roles or necessarily different models. The
@@ -183,6 +285,11 @@ Line locations are supplied by providers; the engine does not validate their
 semantic correctness.
 
 ## Routing and reporting
+
+This is current legacy routing, preserved for compatibility. The review stage's
+authority over escalation differs from the planned reporter's explanation-only
+role. `skipped`, `reviewed`, and `accepted` here are existing advisory outcomes,
+not evidence that the intended communication check has been fully implemented.
 
 With the default policy, incomplete coverage goes directly to human review without provider calls.
 A decision-provider recommendation of `needs_human_review` stops the pipeline.
@@ -354,7 +461,10 @@ calls even when both use the same endpoint. Report schema version 4 is unchanged
 
 Ollama uses `POST /v1/chat/completions`, separate instructions and untrusted
 evidence messages, JSON-schema output, and configurable generation settings.
-Model content contains outcome, numeric confidence, summary, and findings.
+The legacy review adapter prompts for concrete correctness defects. Its model
+content contains outcome, numeric confidence, summary, and findings. This code
+assessment is outside the intended communication check and remains documented
+only to describe existing adapter behavior, not as a future reporter design.
 Adapter code supplies identity and `self_reported` confidence provenance.
 Existing response and changed-file validation applies. Refusal, incomplete
 generation, a different answering model, or invalid output fails closed.
@@ -406,9 +516,10 @@ routes, and expected concern anchors. Label status distinguishes provisional
 from human-reviewed labels. Initial examples/tapes are explicitly provisional
 and synthetic and do not claim model reviews.
 
-Metrics count unsafe original skips, missed planted defects, findings unmatched
-by reference anchors, human handoffs, schema/transport failures, and request
-latency. Path/optional-line matching of uncapped native findings is a proxy
+The legacy local routing benchmark's metrics count unsafe original skips, missed
+planted defects, findings unmatched by reference anchors, human handoffs,
+schema/transport failures, and request latency. Path/optional-line matching of
+uncapped native findings is a proxy
 requiring human assessment. Replay uses recorded timing and does not assess
 current model quality or speed. Preflight handoffs have no provider decision or
 HTTP calls. Outputs are individually atomic/private; earlier case files can
@@ -507,8 +618,11 @@ Ollama decision adapter. Every
 semantic question includes its configured description and criterion-specific
 instructions, regardless of question type. The entire PR evidence and separately
 supplied review are untrusted state data;
-criterion instructions are separate. Document/review coverage is not proof of
-code correctness, and review-provider responsibilities remain unchanged.
+criterion instructions are separate. Description quality and consistency checks
+are reusable for the intended scope. Supplied-review coverage is a legacy
+experiment dimension, separate from assessing title/description quality; it is
+not a requirement for the planned communication benchmark or an assessment of
+the reporter. Current review-provider behavior is unchanged.
 
 The synthetic PR rubric's `change-rationale` criterion requires a motivating
 problem, need, or constraint distinct from a paraphrase of the change. Its paired
@@ -635,7 +749,11 @@ See the [nine-case, six-criterion examples](../examples/rubric-review/README.md)
 Labels remain provisional and offline tapes explicitly synthetic.
 
 The separate [synthetic PR benchmark](../examples/synthetic-prs/README.md) contains
-157 sanitized fictional PRs across 30 families. Its fixed `splits.json` assigns
+157 sanitized fictional PRs across 30 families. Its existing router rubric and
+reference revisions retain their legacy review-coverage dimension. The planned
+communication benchmark will reuse the underlying corpus and communication
+annotations under its own version; it does not replace these archived results.
+Its fixed `splits.json` assigns
 133 cases (18 families) to development and 24 independently authored
 cases (12 new families) to evaluation. Matching description/review variants of a
 family stay together. Validation rejects overlapping families, identical patch

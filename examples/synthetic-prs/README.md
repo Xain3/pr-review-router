@@ -1,13 +1,77 @@
 # Synthetic PR quality corpus
 
-157 fictional, sanitized pull requests across 30 change families for benchmarking PR title and description
-quality, supplied-review coverage, and actual change triviality. Each has metadata, a one- to three-commit
-list, complete unified file patches, independent criterion annotations, and (for
-most) a supplied review.
+157 fictional, sanitized pull requests across 30 change families with reusable
+PR title/description quality annotations and actual change-triviality labels.
+Each has metadata, a one- to three-commit list, complete unified file patches,
+independent criterion annotations, and (for most) a supplied review. Supplied
+reviews and their coverage assessments are legacy experiment dimensions; the
+corpus and its communication annotations remain relevant to the intended scope.
 Everything is checked in; loading, regeneration, and validation need no network
 or credentials.
 
 Start with the [human-readable index](INDEX.md) or [machine-readable manifest](index.json).
+
+## Communication quality benchmark (planned)
+
+All 157 cases already carry annotations for meaningful titles, consistency
+between title and description, and consistency of each with the actual patches.
+Reuse this evidence and the suitable annotations for a separately versioned
+benchmark of the [intended communication check](../../docs/specification.md#intended-pr-communication-check).
+The existing router benchmark still uses the legacy review-coverage dimension;
+this documentation change does not change its rubric, scripts, labels, or results.
+
+The reusable canonical annotations include:
+
+| Assessment | Existing criterion IDs |
+| --- | --- |
+| Title syntax and meaning | `title_format`, `title_meaningful` |
+| Title agrees with changes | `title_diff_consistency` |
+| Substantive description and concrete change account | `description_present`, `changes_described` |
+| Title and description agree | `description_title_consistency` |
+| Description accurately covers the patches | `description_diff_consistency` |
+| Motivation, scope limits, compatibility disclosure, and validation explanation | `rationale`, `limitations`, `breaking_changes`, `testing` |
+| Optional format and requirement selection | `summary-section`, `change_triviality` |
+
+Some canonical annotations have rubric-ID mirrors, such as `title-format` and
+`description-coverage`; do not count both copies as independent criteria.
+`description_commit_consistency` is also available if a benchmark explicitly
+includes companion commit metadata; the current router evidence does not ingest
+commit lists. Change triviality can select appropriate communication requirements,
+without judging code safety. A testing explanation is a communication claim,
+not evidence that the benchmark executed tests.
+
+The subsequent benchmark increment should:
+
+- Select and version its communication criteria and enforcement rules explicitly.
+  Exclude supplied `review.md` text and `review-coverage` from model inputs and
+  acceptance rules. Retain the legacy benchmark and all historical artifacts.
+- Reuse matching annotations and extend them only where required communication
+  criteria lack suitable labels. Reuse adjudications only when definitions match;
+  the existing seven-criterion review snapshots do not cover every canonical
+  communication criterion. Preserve status, explanation, evidence references,
+  provisional provenance, and reference versions rather than overwriting them.
+- Keep failures, `not_assessable`/uncertain evidence, and `not_applicable` distinct.
+  A criterion that cannot be assessed must not become a pass when it is needed
+  for an applicable gate. Applicability exclusions must be explicit in the new
+  ruleset. Acceptance requires all applicable gates to pass with no unresolved
+  relevant evidence; suggestions cannot compensate for a failed or unresolved gate.
+- Preserve case identities and family-based partitions: 133 development cases
+  and 24 evaluation cases. Keep matched variants in their original partition.
+  Random samples across both partitions are not held-out evaluation.
+- Pass only the declared evidence to models. Withhold annotations, reference
+  summaries, scenario/quality tags, expected outcomes, and other oracle metadata.
+- Measure criterion agreement, final decision agreement, false acceptance, and
+  unresolved assessments, including support counts by scenario and family.
+  Compare results only under identified rubric/reference versions. Labels remain
+  provisional until human validation and cannot establish task calibration.
+
+Benchmark checks should include gibberish titles with valid syntax, meaningful
+titles that contradict the patches, conflicting title/body claims, omitted
+changes, and missing/truncated evidence. For identical title, description, and
+patches, changing or removing only legacy supplied review text must leave
+communication assessments and decisions unchanged. A failed legacy
+`review-coverage` label alone must not fail this future benchmark's communication
+check.
 
 ## Layout and loading
 
@@ -578,6 +642,10 @@ and enforcement. This is a conservative threshold on self-reported, uncalibrated
 confidence, not a probability guarantee; the raw answer remains in the result.
 
 ## Router rubric benchmark
+
+This existing benchmark retains supplied-review coverage as a legacy dimension.
+It is separate from the planned [communication quality benchmark](#communication-quality-benchmark-planned),
+which will reuse the corpus without making supplied review text a requirement.
 
 `generate.py` also writes `corpus.json`, a router `evaluate` corpus for
 `rubric.toml`. Its expected criterion statuses come from the oracle
