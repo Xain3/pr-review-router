@@ -11,7 +11,8 @@ These deterministic checks are reusable for the intended communication-quality
 gate. The remaining review routing below is legacy behavior. Passing format
 checks alone does not establish semantic consistency or the intended gate's
 acceptance: all applicable gates must pass without unresolved relevant evidence.
-Reporter generation and CI enforcement remain future work, described in the
+Reporter generation is available separately through `report`; CI enforcement
+remains future work, described in the
 [specification](../../docs/specification.md#intended-pr-communication-check).
 
 ## Assessment without a reviewer
@@ -31,9 +32,11 @@ decider for meaningfulness and consistency against changes. Offline semantic
 mocks leave required semantic gates `unresolved`.
 
 Reports use `report_type: "pr_communication"`, schema version `"1"`, and
-`automation_authorized: false`. CLI status 0 means the report was emitted,
-including rejected/unresolved verdicts; status 2 means invalid arguments,
-configuration, replay, or I/O. No reviewer or reporter runs. The legacy policy
+`automation_authorized: false`. The `assess` exit codes are 0 for accepted,
+3 for accepted with suggestions,
+1 for rejected, 4 for unresolved, and 2 for command errors. No reviewer or reporter
+runs during assessment. Explain a saved report through the separate
+[reporter command](../reporter/README.md). The legacy policy
 examples below keep their original behavior and report schema.
 
 ## PR-text validation pipeline

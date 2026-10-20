@@ -88,8 +88,8 @@ judgments depend on the configured decider and remain subject to its limitations
 
 A future CI consumer enforces the finalized result independently of reporter
 generation. Passing this check is not a GitHub approval, permission to merge, or
-an assessment of code correctness. Consumer integration and reporter generation
-remain separate future work. `assess` uses the following exit contract:
+an assessment of code correctness. Consumer integration remains future work;
+reporter rendering is a separate command. `assess` uses the following exit contract:
 
 | Exit code | Assessment result | Suggested CI handling |
 | --- | --- | --- |
@@ -111,8 +111,9 @@ task calibration.
 
 The assessment-only runtime and communication benchmark now coexist with legacy
 review routing. They stop at the final machine-readable report: no mock reporter
-is constructed. Consumer CI enforcement and reporter generation remain future
-increments; no `--reporter` flag or provider alias is introduced.
+is constructed. Consumer CI enforcement remains future work. The independent
+`report` command adds reporter-specific selection without modifying the
+assessment runtime.
 
 The [synthetic corpus](../benchmarks/synthetic-prs/README.md#communication-quality-benchmark)
 supplies existing title/description annotations to the separately versioned
@@ -123,6 +124,57 @@ extend annotations only where required communication criteria lack suitable
 labels. Existing label adjudications apply only where their criterion definitions
 match. Labels remain provisional until human validation, and reference
 annotations must never enter model inputs.
+
+## Explanation reporter runtime
+
+`report --input ASSESSMENT.json [--output COMMENT.md] [--json]` consumes only a
+validated, finalized `AssessmentReport` v1. It never invokes deciders, routing,
+reviewers, or GitHub APIs. `reporter.py` defines `ReporterProvider`, `ReporterInput`,
+`ReporterPlan`, and `ReporterOutput`; `explain_assessment(report, provider=None)`
+is the corresponding Python API. The existing `assess`, `review`, and `evaluate`
+paths and their schemas/recordings are unchanged.
+
+The reporter receives a detached report snapshot and enumerated facts: every
+gate and its criterion references, criterion assessment including confidence
+provenance, suggestions, diagnostics, coverage, PR-text validation, deterministic
+check results, and policy rubric results. These are recorded evidence metadata;
+raw patches and new evidence are neither collected nor required. The returned
+artifact carries the fingerprint of the original finalized report, separately
+from Markdown and rendering diagnostics. No reporter-supplied verdict, status,
+confidence, CI meaning, or free-form factual claim is accepted.
+
+The deterministic renderer always summarizes the verdict, blockers, unresolved
+gates, and non-blocking suggestions, and quotes the recorded facts with escaped
+Markdown/HTML. Recorded explanations are attributed data, not newly verified
+claims. The model may reorder all fact IDs exactly once, and may select the
+`clarification_may_help` interpretation template only for recorded uncertainty.
+Interpretations are explicitly qualified, separated from facts, and never new
+rejection reasons. This initial constrained generation deliberately excludes
+free-form paraphrases: JSON structure alone cannot prove arbitrary prose faithful.
+
+Default rendering is deterministic and offline. Live use requires both
+`--reporter-config PATH` and `--reporter ALIAS`. The separate TOML catalog has
+`[models.ALIAS]` tables using the established `backend`, loopback-only `endpoint`,
+and explicit `model` fields. There is no live default, environment override, or
+legacy reviewer alias. Examples provide experimental Ollama identifiers
+`qwen3.6:35b-a3b-coding-mtp-q4_K_M` and `qwen3.6:35b-a3b-mtp-q4_K_M`.
+Additional installed local identifiers can be configured explicitly.
+
+`OllamaReporter` uses bounded `/api/chat` structured generation, a response schema,
+zero temperature, fixed seed, disabled thinking, timeout/response/input budgets,
+and no retries. Incomplete generations, unknown/duplicate/omitted fact IDs,
+unqualified interpretations, schema violations, provider exceptions, and transport
+failures produce identical deterministic Markdown and a generic fallback diagnostic.
+No upstream exception or invalid generated text is rendered. Configuration and
+input validation errors are command errors, rather than model fallback.
+
+`ReporterOutput` schema version `"1"` has type `pr_communication_explanation`, an
+`assessment_fingerprint`, `mode` (`deterministic`, `model`, or `fallback`), optional
+`diagnostic` (`reporter_unavailable_or_invalid`), and `markdown`. Output is atomic;
+input and configuration paths are protected from overwrite. Reporting status 0
+means explanation generation completed, including fallback; status 2 means a
+command or I/O error. These are not assessment/CI verdict codes. A reporter never
+runs tests, reviews code correctness, approves a PR, or authorizes merging.
 
 ## Communication assessment runtime
 
@@ -327,7 +379,7 @@ consumers must enforce rejected outcomes as blocking.
 ## Provider roles, contracts, and confidence
 
 The following are the current implemented interfaces. Use **decider** or
-**decision provider** for the assessment role, **reporter** for the planned
+**decision provider** for the assessment role, **reporter** for the implemented
 explanation role, and **legacy review provider** for `ReviewProvider`.
 Preserve these existing interface names until a separately specified migration;
 renaming a diff assessor in prose does not give it the reporter contract.
@@ -376,7 +428,7 @@ semantic correctness.
 ## Routing and reporting
 
 This is current legacy routing, preserved for compatibility. The review stage's
-authority over escalation differs from the planned reporter's explanation-only
+authority over escalation differs from the reporter's explanation-only
 role. `skipped`, `reviewed`, and `accepted` here are existing advisory outcomes,
 not evidence that the intended communication check has been fully implemented.
 

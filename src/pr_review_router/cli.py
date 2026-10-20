@@ -118,6 +118,14 @@ def _parse_args(
     tapes = assess.add_mutually_exclusive_group()
     tapes.add_argument("--replay", type=Path)
     tapes.add_argument("--record", type=Path)
+    report = commands.add_parser("report", help="Explain a finalized communication assessment.")
+    report.add_argument("--input", type=Path, required=True, help="Final AssessmentReport JSON.")
+    report.add_argument("--output", type=Path, help="Markdown output (default: stdout).")
+    report.add_argument("--json", action="store_true", help="Emit a typed explanation artifact.")
+    report.add_argument(
+        "--reporter-config", type=Path, help="Separate named reporter catalog TOML."
+    )
+    report.add_argument("--reporter", help="Explicit opt-in Ollama reporter model alias.")
     for command in (review, evaluate, assess):
         command.add_argument("--models-config", type=Path, help="Named model catalog TOML.")
         command.add_argument("--profile", help="Catalog profile name.")
@@ -135,7 +143,7 @@ def _parse_args(
     if args.command is None:
         parser.print_help()
         return None
-    if args.command == "assess":
+    if args.command in {"assess", "report"}:
         return args
     try:
         args.config = resolve_config_path(args.config)
@@ -344,6 +352,8 @@ def main(argv: list[str] | None = None) -> int:
     args = _parse_args(parser, argv)
     if args is None:
         return 0
+    if args.command == "report":
+        return _report(args, parser)
     if args.command == "assess":
         return _assess(args, parser)
     if isinstance(args.provider_settings.decision, ReviewSettings):
@@ -391,6 +401,40 @@ def main(argv: list[str] | None = None) -> int:
             sys.stdout.write(content)
     except OSError:
         parser.error("could not write the report")
+    return 0
+
+
+def _report(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
+    """Explain a saved assessment independently of its verdict exit code.
+
+    :param args: Reporter-only arguments.
+    :param parser: Safe command diagnostic formatter.
+    :returns: Zero when rendered (including fallback); command/I/O errors exit 2.
+    """
+    from .assessment_engine import AssessmentReport
+    from .reporter import OllamaReporter, explain_assessment, load_reporter_settings
+
+    if bool(args.reporter) != bool(args.reporter_config):
+        parser.error("--reporter and --reporter-config must be supplied together")
+    _protect_paths(parser, [args.output], [args.input, args.reporter_config])
+    try:
+        report = AssessmentReport.model_validate_json(args.input.read_bytes())
+        provider = (
+            OllamaReporter(load_reporter_settings(args.reporter_config, args.reporter))
+            if args.reporter
+            else None
+        )
+    except (OSError, UnicodeError, ValueError):
+        parser.error("could not load a finalized assessment or reporter configuration")
+    result = explain_assessment(report, provider)
+    content = result.model_dump_json(indent=2) + "\n" if args.json else result.markdown
+    try:
+        if args.output:
+            _write_report(args.output, content)
+        else:
+            sys.stdout.write(content)
+    except OSError:
+        parser.error("could not write the explanation")
     return 0
 
 
