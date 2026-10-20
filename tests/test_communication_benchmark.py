@@ -15,7 +15,7 @@ pytestmark = pytest.mark.unit
 
 def test_communication_benchmark_uses_frozen_partitions_and_no_review_labels(tmp_path):
     root = ROOT / "benchmarks/synthetic-prs"
-    config = load_assessment_rubric(root / "communication-rubric.toml")
+    config = load_assessment_rubric(root / "communication/rubric.toml")
     summary = run_benchmark(root, config, MockSettings(), tmp_path / "benchmark")
     assert summary["support"] == 24
     assert summary["reference_version"] == "author-communication-v1"
@@ -32,7 +32,7 @@ def test_communication_benchmark_uses_frozen_partitions_and_no_review_labels(tmp
 
 def test_criterion_metrics_use_normalized_annotations_after_preflight_skips(tmp_path):
     root = ROOT / "benchmarks/synthetic-prs"
-    config = load_assessment_rubric(root / "communication-rubric.toml")
+    config = load_assessment_rubric(root / "communication/rubric.toml")
     summary = run_benchmark(
         root, config, MockSettings(), tmp_path / "benchmark", split="development"
     )
@@ -46,7 +46,7 @@ def test_criterion_metrics_use_normalized_annotations_after_preflight_skips(tmp_
 def test_legacy_review_changes_cannot_change_communication_results(tmp_path):
     root = tmp_path / "corpus"
     shutil.copytree(ROOT / "benchmarks/synthetic-prs", root)
-    config = load_assessment_rubric(root / "communication-rubric.toml")
+    config = load_assessment_rubric(root / "communication/rubric.toml")
     before = run_benchmark(root, config, MockSettings(), tmp_path / "before")
     for path in root.glob("prs/*/review.md"):
         path.write_text("A completely different legacy review.")

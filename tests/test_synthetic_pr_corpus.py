@@ -118,7 +118,7 @@ def test_text_diff_diagnostics_keep_mismatches_conflicts_and_unknowns(
 
 def test_all_active_rubric_criteria_have_oracle_labels():
     """Keep active rubric identifiers mirrored in every synthetic oracle annotation."""
-    rubric = load_assessment_rubric(CORPUS / "rubric.toml")
+    rubric = load_assessment_rubric(CORPUS / "legacy-review/rubric.toml")
     rubric_ids = {criterion.criterion_id for criterion in rubric.criteria}
     index = json.loads((CORPUS / "index.json").read_text())
 
@@ -148,7 +148,7 @@ def test_router_corpus_derives_labels_from_oracle_and_rubric_policy():
 
 def test_benchmark_scores_oracle_identical_answers_as_full_agreement():
     """Score a summary whose router outputs equal the oracle-derived labels."""
-    score = runpy.run_path(str(CORPUS / "benchmark.py"))["score"]
+    score = runpy.run_path(str(CORPUS / "legacy-review/benchmark.py"))["score"]
     corpus = json.loads((CORPUS / "corpus.json").read_text())
     index = {
         case["case_id"]: case for case in json.loads((CORPUS / "index.json").read_text())["cases"]
@@ -190,7 +190,7 @@ def test_triviality_scorer_does_not_use_diagnostic_text_scores(tmp_path, trivial
         destination = tmp_path / case["annotations"]
         destination.parent.mkdir(parents=True, exist_ok=True)
         destination.write_text(json.dumps(annotation))
-    evaluate = runpy.run_path(str(CORPUS / "evaluate_triviality.py"))["evaluate"]
+    evaluate = runpy.run_path(str(CORPUS / "legacy-review/evaluate_triviality.py"))["evaluate"]
     modified = evaluate(tmp_path, triviality_predictions, reference_revision="original")
     baseline = evaluate(CORPUS, triviality_predictions, reference_revision="original")
     assert modified.pop("grading_reference") != baseline.pop("grading_reference")
@@ -254,7 +254,7 @@ def triviality_predictions():
 
 
 def test_triviality_benchmark_reports_ordinal_and_binary_errors(triviality_predictions):
-    evaluate = runpy.run_path(str(CORPUS / "evaluate_triviality.py"))["evaluate"]
+    evaluate = runpy.run_path(str(CORPUS / "legacy-review/evaluate_triviality.py"))["evaluate"]
     perfect = evaluate(CORPUS, triviality_predictions, reference_revision="original")
     assert perfect["exact_score_accuracy"] == perfect["binary_triviality_accuracy"] == 1
     assert perfect["mean_absolute_error"] == 0
@@ -276,7 +276,7 @@ def test_triviality_benchmark_reports_ordinal_and_binary_errors(triviality_predi
 
 @pytest.mark.parametrize("score", [-1, 5, True, 2.5, "2"])
 def test_triviality_benchmark_rejects_invalid_scores(triviality_predictions, score):
-    evaluate = runpy.run_path(str(CORPUS / "evaluate_triviality.py"))["evaluate"]
+    evaluate = runpy.run_path(str(CORPUS / "legacy-review/evaluate_triviality.py"))["evaluate"]
     triviality_predictions["predictions"][0]["score"] = score
     with pytest.raises(ValueError, match="integers from 0 through 4"):
         evaluate(CORPUS, triviality_predictions, reference_revision="original")
@@ -284,7 +284,7 @@ def test_triviality_benchmark_rejects_invalid_scores(triviality_predictions, sco
 
 @pytest.mark.parametrize("kind", ["missing", "duplicate", "unknown"])
 def test_triviality_benchmark_requires_all_unique_case_ids(triviality_predictions, kind):
-    evaluate = runpy.run_path(str(CORPUS / "evaluate_triviality.py"))["evaluate"]
+    evaluate = runpy.run_path(str(CORPUS / "legacy-review/evaluate_triviality.py"))["evaluate"]
     if kind == "missing":
         triviality_predictions["predictions"].pop()
     elif kind == "duplicate":
@@ -443,7 +443,7 @@ def test_appended_boundary_variants_complete_family_pairs_without_changing_holdo
 
 
 def test_rubric_instructions_separate_failure_from_insufficient_evidence():
-    rubric = load_assessment_rubric(CORPUS / "rubric.toml")
+    rubric = load_assessment_rubric(CORPUS / "legacy-review/rubric.toml")
     instructions = {
         criterion.criterion_id: criterion.instructions or "" for criterion in rubric.criteria
     }
@@ -593,7 +593,9 @@ def test_validator_rejects_stale_or_overclaiming_independent_review(tmp_path, ch
         path = root / "prs" / "pr-001" / "evidence.json"
         path.write_text(path.read_text().replace("Read the guide", "Read this guide"))
     elif change == "rubric":
-        (root / "rubric.toml").write_text((root / "rubric.toml").read_text() + "\n# edited\n")
+        (root / "legacy-review/rubric.toml").write_text(
+            (root / "legacy-review/rubric.toml").read_text() + "\n# edited\n"
+        )
     else:
         path = root / "independent-review" / "reviews.json"
         path.write_text(path.read_text().replace("independent_ai_review", "human_reviewed", 1))

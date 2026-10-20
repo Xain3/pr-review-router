@@ -13,7 +13,7 @@ from pr_review_router.assessment_rubric import (
 )
 from pr_review_router.corpus_metrics import rubric_metrics
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def report(split: str = "evaluation") -> dict:
@@ -43,8 +43,8 @@ def report(split: str = "evaluation") -> dict:
     }
     corpus_path = ROOT / ("corpus.json" if split == "all" else f"corpus-{split}.json")
     corpus = json.loads(corpus_path.read_text(encoding="utf-8"))
-    rubric = load_assessment_rubric(ROOT / "rubric.toml")
-    score = runpy.run_path(str(ROOT / "benchmark.py"))["score"]
+    rubric = load_assessment_rubric(ROOT / "legacy-review/rubric.toml")
+    score = runpy.run_path(str(ROOT / "legacy-review/benchmark.py"))["score"]
     index = json.loads((ROOT / "index.json").read_text())
     indexed = {case["case_id"]: case for case in index["cases"]}
     levels = {level["label"]: level["score"] for level in index["triviality_scale"]["levels"]}
