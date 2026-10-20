@@ -226,6 +226,12 @@ def assess_pull_request(
                 c.source == "unavailable" and c.status != "uncertain" for c in candidate.criteria
             ):
                 raise ValueError("unavailable assessments must remain uncertain")
+            unavailable = {c.criterion_id for c in candidate.criteria if c.source == "unavailable"}
+            candidate.labels = {
+                identifier: label
+                for identifier, label in candidate.labels.items()
+                if identifier not in unavailable
+            }
             batch = candidate
         except Exception:
             # Formal results survive inference failures; exception text may contain secrets.

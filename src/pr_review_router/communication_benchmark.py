@@ -125,15 +125,18 @@ def run_benchmark(
         )
         annotation = json.loads(_source(root, case["annotations"]).read_text(encoding="utf-8"))
         criteria = []
+        reference_statuses = {}
         for criterion in rubric.criteria:
             label = annotation["criteria"][criterion.criterion_id]
             status = label["status"]
             if status not in {"passed", "failed", "uncertain", "not_assessable", "not_applicable"}:
                 raise ValueError("unknown communication reference status")
+            normalized_status = status if status in {"passed", "failed"} else "uncertain"
+            reference_statuses[criterion.criterion_id] = normalized_status
             criteria.append(
                 CriterionAssessment(
                     criterion_id=criterion.criterion_id,
-                    status=status if status in {"passed", "failed"} else "uncertain",
+                    status=normalized_status,
                     source="deterministic",
                     explanation=label["explanation"],
                 )
@@ -149,9 +152,9 @@ def run_benchmark(
                 )
             ),
         )
-        prepared.append((case, evidence, annotation, expected))
+        prepared.append((case, evidence, annotation, expected, reference_statuses))
     rows = []
-    for case, evidence, annotation, expected in prepared:
+    for case, evidence, annotation, expected, reference_statuses in prepared:
         identifier = case["case_id"]
         run = run_assessment(
             evidence,
@@ -181,12 +184,12 @@ def run_benchmark(
                 "expected": expected.verdict,
                 "actual": run.report.verdict,
                 "criteria": {
-                    c.criterion_id: {
-                        "reference": c.status,
-                        "actual": actual[c.criterion_id],
-                        "original_status": annotation["criteria"][c.criterion_id]["status"],
+                    criterion_id: {
+                        "reference": reference_statuses[criterion_id],
+                        "actual": actual[criterion_id],
+                        "original_status": annotation["criteria"][criterion_id]["status"],
                     }
-                    for c in expected.criteria
+                    for criterion_id in reference_statuses
                 },
             }
         )
@@ -200,7 +203,7 @@ def run_benchmark(
         "label_status": "provisional",
         "split": split,
         "support": len(rows),
-        "reference_hash": fingerprint([annotation for _, _, annotation, _ in prepared]),
+        "reference_hash": fingerprint([annotation for _, _, annotation, _, _ in prepared]),
         "rubric_hash": fingerprint(rubric.model_dump(mode="json")),
         "split_hash": fingerprint(splits),
         "criterion_confusion": dict(criterion_counts),

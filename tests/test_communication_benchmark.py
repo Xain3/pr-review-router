@@ -30,6 +30,19 @@ def test_communication_benchmark_uses_frozen_partitions_and_no_review_labels(tmp
         run_benchmark(root, config, MockSettings(), root / "outputs")
 
 
+def test_criterion_metrics_use_normalized_annotations_after_preflight_skips(tmp_path):
+    root = ROOT / "examples/synthetic-prs"
+    config = load_assessment_rubric(root / "communication-rubric.toml")
+    summary = run_benchmark(
+        root, config, MockSettings(), tmp_path / "benchmark", split="development"
+    )
+
+    case = next(row for row in summary["cases"] if row["case_id"] == "pr-011")
+    title = case["criteria"]["title_meaningful"]
+    assert title["reference"] == "passed"
+    assert title["original_status"] == "passed"
+
+
 def test_legacy_review_changes_cannot_change_communication_results(tmp_path):
     root = tmp_path / "corpus"
     shutil.copytree(ROOT / "examples/synthetic-prs", root)

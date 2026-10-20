@@ -193,7 +193,10 @@ The [communication benchmark](../examples/synthetic-prs/README.md#communication-
 uses the same runtime with preserved canonical annotations. Benchmark version
 `communication-v1` and reference version `author-communication-v1` retain
 provisional author labels, frozen family splits, and independent provenance;
-they do not replace legacy reference revisions or establish calibration.
+they do not replace legacy reference revisions or establish calibration. Criterion
+confusion/agreement uses normalized canonical annotation statuses independently
+of engine-derived expected verdicts, so preflight-skipped criteria cannot inflate
+criterion agreement.
 
 ## Evidence contract
 

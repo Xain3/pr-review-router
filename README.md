@@ -299,8 +299,10 @@ uses existing canonical title/description labels under `author-communication-v1`
 preserves reference history, and withholds oracle annotations from model inputs.
 Its fixed [partitions](examples/synthetic-prs/splits.json) reserve 24 independently
 authored cases from 12 new families for evaluation; 133 cases are for development.
-Scorers report confusion by scenario, criterion, reference triviality level, and
-their intersections, with support counts and explicit uncertainty.
+Criterion confusion/agreement uses normalized canonical annotations independently
+of engine-derived expected verdicts. Scorers report confusion by scenario,
+criterion, reference triviality level, and their intersections, with support
+counts and explicit uncertainty.
 The [index](examples/synthetic-prs/INDEX.md) includes family and author provenance.
 Both partitions have fresh blind review under the same seven-criterion rubric;
 the [review guide](examples/synthetic-prs/README.md#independent-review) explains

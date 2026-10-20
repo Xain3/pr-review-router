@@ -54,10 +54,12 @@ Outputs include per-case `*.assessment.json` and `*.provenance.json`, optional
 `*.tape.json`, and `summary.json`. The summary records rubric, split, and reference
 hashes; criterion confusion/agreement; final decision agreement; false acceptance;
 unresolved assessments; family/scenario support; and each case's expected and
-actual statuses. Original reference statuses remain visible. `not_assessable`,
-`uncertain`, and `not_applicable` are never converted into passing gates: without
-an explicit applicability rule, they score as unresolved. Reports must be written
-outside the preserved corpus.
+actual statuses. Criterion metrics compare against independently normalized
+annotation statuses; final expected verdicts still come from the assessment engine.
+Original reference statuses remain visible. `not_assessable`, `uncertain`, and
+`not_applicable` are never converted into passing gates: without an explicit
+applicability rule, they score as unresolved. Reports must be written outside the
+preserved corpus.
 
 Version 1 accepts communication-only rubrics with explicit `block`/`suggest`
 actions and matching canonical annotation IDs; the runtime itself also supports

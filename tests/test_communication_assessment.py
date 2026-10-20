@@ -549,6 +549,22 @@ def test_provider_cannot_pass_an_unavailable_semantic_assessment():
     assert report.verdict == "unresolved"
 
 
+def test_unavailable_assessment_labels_cannot_select_enforcement_rules():
+    provider = Static(
+        {"title": "passed", "accuracy": "passed", "testing": "passed", "scale": "uncertain"},
+        {"scale": "small"},
+    )
+    provider.batch.criteria[-1] = provider.batch.criteria[-1].model_copy(
+        update={"source": "unavailable"}
+    )
+
+    report = assess_pull_request(evidence(), Policy(), conditional_rubric(), provider)
+
+    assert report.verdict == "unresolved"
+    assert report.selected_enforcement_rule is None
+    assert "rules:selection" in report.unresolved
+
+
 @pytest.mark.integration
 def test_cli_replays_decider_only_even_with_missing_catalog_reviewer(tmp_path):
     run, _ = execute(record=True)
