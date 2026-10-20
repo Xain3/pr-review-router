@@ -1,0 +1,24 @@
+rubric_version = 1
+
+[[criteria]]
+criterion_id = "title-format"
+description = "The title follows Conventional Commits."
+check = "conventional_title"
+action = "block"
+suggestion = "Use a Conventional Commits title."
+
+[[criteria]]
+criterion_id = "summary-section"
+description = "The body has a populated Summary section."
+check = "body_section"
+section = "Summary"
+action = "block"
+suggestion = "Add a populated Summary section."
+
+[[criteria]]
+criterion_id = "testing-section"
+description = "The body has a populated Testing section."
+check = "body_section"
+section = "Testing"
+action = "suggest"
+suggestion = "Add a populated Testing section."

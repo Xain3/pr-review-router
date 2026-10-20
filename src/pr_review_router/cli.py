@@ -109,11 +109,21 @@ def _parse_args(
     evaluate.add_argument(
         "--record", action="store_true", help="Explicitly refresh tapes in the output directory."
     )
-    for command in (review, evaluate):
+    assess = commands.add_parser("assess", help="Assess PR communication without a reviewer.")
+    assess.add_argument("--input", type=Path, required=True)
+    assess.add_argument("--assessment-rubric", type=Path, required=True)
+    assess.add_argument("--config", type=Path)
+    assess.add_argument("--output", type=Path)
+    assess.add_argument("--experiment-output", type=Path)
+    tapes = assess.add_mutually_exclusive_group()
+    tapes.add_argument("--replay", type=Path)
+    tapes.add_argument("--record", type=Path)
+    for command in (review, evaluate, assess):
         command.add_argument("--models-config", type=Path, help="Named model catalog TOML.")
         command.add_argument("--profile", help="Catalog profile name.")
         command.add_argument("--decider", help="Catalog decision-model name.")
-        command.add_argument("--reviewer", help="Catalog review-model name (both depths).")
+        if command is not assess:
+            command.add_argument("--reviewer", help="Catalog review-model name (both depths).")
         command.add_argument(
             "--model-override",
             action="append",
@@ -125,6 +135,8 @@ def _parse_args(
     if args.command is None:
         parser.print_help()
         return None
+    if args.command == "assess":
+        return args
     try:
         args.config = resolve_config_path(args.config)
     except ValueError as error:
@@ -332,6 +344,8 @@ def main(argv: list[str] | None = None) -> int:
     args = _parse_args(parser, argv)
     if args is None:
         return 0
+    if args.command == "assess":
+        return _assess(args, parser)
     if isinstance(args.provider_settings.decision, ReviewSettings):
         sys.stderr.write(
             "warning: general LLM deciders are a non-optimal compatibility fallback. "
@@ -377,6 +391,64 @@ def main(argv: list[str] | None = None) -> int:
             sys.stdout.write(content)
     except OSError:
         parser.error("could not write the report")
+    return 0
+
+
+def _assess(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
+    """Write a decider-only communication report using existing safe output handling.
+
+    :param args: Assessment arguments, separate from legacy review selections.
+    :param parser: CLI error formatter.
+    :returns: Zero for every emitted report, including rejection and uncertainty.
+    """
+    from .assessment_rubric import load_assessment_rubric
+    from .assessment_runtime import run_assessment
+    from .model_catalog import load_decider_settings
+
+    try:
+        config_path = resolve_config_path(args.config)
+        policy, evidence = _load_inputs(args.input, config_path, parser)
+        rubric = load_assessment_rubric(args.assessment_rubric)
+        catalog_path = resolve_catalog_path(args.models_config)
+        settings = load_decider_settings(
+            catalog_path, profile=args.profile, decider=args.decider, overrides=args.model_override
+        )
+        if any(c.target == "review" for c in rubric.criteria):
+            raise ValueError("communication rubrics cannot assess supplied reviews")
+    except (OSError, UnicodeError, ValueError):
+        parser.error("could not load valid communication rubric, policy, or decider settings")
+    artifact_path = args.experiment_output or Path(
+        f"reports/assessment-{evidence.number}-{fingerprint(evidence.head_sha)[:12]}.json"
+    )
+    _protect_paths(
+        parser,
+        [args.output, artifact_path, args.record],
+        [
+            args.input,
+            config_path,
+            args.assessment_rubric,
+            catalog_path,
+            args.replay,
+        ],
+    )
+    if isinstance(settings, ReviewSettings):
+        sys.stderr.write("warning: LLM decider probabilities are self-reported, not calibrated.\n")
+    try:
+        result = run_assessment(
+            evidence, policy, rubric, settings, replay=args.replay, record=bool(args.record)
+        )
+        _write_report(artifact_path, json.dumps(result.artifact, indent=2) + "\n")
+        if args.record and result.tape:
+            _write_report(args.record, result.tape.model_dump_json(indent=2) + "\n")
+        content = result.report.model_dump_json(indent=2) + "\n"
+        if args.output:
+            _write_report(args.output, content)
+        else:
+            sys.stdout.write(content)
+    except ReplayMismatch:
+        parser.error("replay does not match this assessment; refresh recordings explicitly")
+    except (OSError, UnicodeError, ValueError):
+        parser.error("could not execute assessment or write its outputs")
     return 0
 
 
