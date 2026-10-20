@@ -103,8 +103,10 @@ schema version 1 holds the final verdict. Legacy `review_pull_request`,
    preserves labels and family splits under separate benchmark/reference versions.
 2. **Consumer CI integration: future.** Enforce acceptance only when all
    applicable gates pass without unresolved relevant evidence. Suggestions cannot
-   override those conditions. Current CLI status 0 means a report was emitted,
-   and reports retain `automation_authorized: false`.
+   override those conditions. `assess` exits 0 for accepted, 3 for accepted with
+   suggestions, 1 for rejected, 4 for unresolved, and 2 for command errors. CI
+   must explicitly treat 3 as success with warnings. Reports retain
+   `automation_authorized: false`.
 3. **Reporter: future.** Consume the finalized machine assessment, covering early
    failures as well as accepted/rejected/unresolved results. Distinguish recorded
    facts from hypotheses. Reporter failure cannot change the decision or CI

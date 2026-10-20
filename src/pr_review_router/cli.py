@@ -337,7 +337,7 @@ def main(argv: list[str] | None = None) -> int:
     """Run advisory routing or an explicitly configured local evaluation.
 
     :param argv: Optional argument list; defaults to the process command line.
-    :returns: Process exit status, with zero for a successful command.
+    :returns: Process exit status; assess distinguishes verdicts and suggestions.
     :raises SystemExit: If arguments, inputs, or output paths are invalid.
     """
     parser = argparse.ArgumentParser(description="Advisory pull request review router.")
@@ -399,7 +399,8 @@ def _assess(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
 
     :param args: Assessment arguments, separate from legacy review selections.
     :param parser: CLI error formatter.
-    :returns: Zero for every emitted report, including rejection and uncertainty.
+    :returns: 0 for accepted, 3 for accepted with suggestions, 1 for rejected,
+        or 4 for unresolved; invalid commands and output errors exit 2.
     """
     from .assessment_rubric import load_assessment_rubric
     from .assessment_runtime import run_assessment
@@ -449,7 +450,11 @@ def _assess(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
         parser.error("replay does not match this assessment; refresh recordings explicitly")
     except (OSError, UnicodeError, ValueError):
         parser.error("could not execute assessment or write its outputs")
-    return 0
+    if result.report.verdict == "rejected":
+        return 1
+    if result.report.verdict == "unresolved":
+        return 4
+    return 3 if result.report.suggestions else 0
 
 
 if __name__ == "__main__":

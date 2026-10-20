@@ -47,9 +47,21 @@ does not resolve an accuracy check that needs a missing patch. Acceptance applie
 only to this communication check and does not approve or merge the PR.
 
 `assess` returns `accepted`, `rejected`, or `unresolved`, with suggestions separate
-from the verdict. Its reports retain `automation_authorized: false`. The CLI
-exits 0 whenever a valid report is generated, including rejection or uncertainty;
-invalid invocation or file/configuration errors exit 2. CI enforcement is separate.
+from the verdict. Its reports retain `automation_authorized: false`.
+The `assess` command uses these exit codes:
+
+| Exit code | Assessment result | Suggested CI handling |
+| --- | --- | --- |
+| `0` | Accepted without suggestions | Success |
+| `3` | Accepted with suggestions | Success with warnings |
+| `1` | Rejected | Failure |
+| `4` | Unresolved | Block acceptance pending resolution |
+| `2` | Invalid invocation, configuration, input, replay, or output error | Failure |
+
+Code `3` is nonzero: CI must explicitly map it to success with warnings rather
+than relying on the shell's default failure handling. Reports are written before
+returning an assessment status; output failures return `2` instead. Legacy
+`review` and `evaluate` retain their existing exit behavior.
 See the [target architecture and examples](docs/specification.md#intended-pr-communication-check)
 and [transition increments](docs/implementation-handoff.md#subsequent-implementation-increments).
 

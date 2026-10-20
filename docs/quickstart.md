@@ -100,8 +100,24 @@ For semantic quality and consistency checks, use
 unresolved. No reviewer configuration or review server is required. All
 applicable gates must pass without unresolved relevant evidence; suggestions
 are separate and non-blocking. Reports are advisory and do not authorize
-external automation. CLI status 0 means report generation succeeded; inspect
-`verdict` to determine the assessment result.
+external automation. `assess` exits `0` for accepted without suggestions, `3`
+for accepted with suggestions, `1` for rejected, `4` for unresolved, and `2` for
+command/configuration/input/replay/output errors. CI should treat `0` and `3`
+as passing, displaying warnings for `3`; all other codes block acceptance.
+A bare shell step treats `3` as failure, so capture and map the status explicitly.
+The JSON retains the verdict, suggestions, and evidence for the check summary.
+
+For a shell-based CI step, capture the status before mapping it:
+
+```sh
+status=0
+uv run pr-review-router assess --input reports/pr-123/evidence.json --assessment-rubric examples/pr-text/assessment.toml --output reports/pr-123/assessment.json || status=$?
+case "$status" in
+  0) exit 0 ;;
+  3) echo "PR communication accepted with suggestions; see assessment.json"; exit 0 ;;
+  *) exit "$status" ;;
+esac
+```
 
 Python callers can use `assess_pull_request(evidence, policy, rubric)` from
 `pr_review_router.assessment_engine` for offline formal assessment, or

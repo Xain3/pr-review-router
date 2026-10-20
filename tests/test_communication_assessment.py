@@ -440,7 +440,7 @@ def test_cli_assessment_emits_final_json_without_reviewer(tmp_path, name, verdic
         "--experiment-output",
         tmp_path / "artifact.json",
     )
-    assert completed.returncode == 0, completed.stderr
+    assert completed.returncode == (0 if verdict == "accepted" else 1), completed.stderr
     assert json.loads(report.read_text())["verdict"] == verdict
     assert "--reviewer" not in cli("assess", "--help").stdout
 
@@ -578,3 +578,47 @@ def test_cli_replays_decider_only_even_with_missing_catalog_reviewer(tmp_path):
     )
     assert completed.returncode == 0, completed.stderr
     assert json.loads(completed.stdout)["verdict"] == "accepted"
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize(
+    "scenario,expected_status,verdict,has_suggestions",
+    [
+        ("accepted", 0, "accepted", False),
+        ("suggestions", 3, "accepted", True),
+        ("rejected", 1, "rejected", True),
+        ("unresolved", 4, "unresolved", True),
+    ],
+)
+@pytest.mark.parametrize("write_file", [False, True])
+def test_cli_assessment_exit_codes_preserve_reports(
+    tmp_path, scenario, expected_status, verdict, has_suggestions, write_file
+):
+    item = evidence()
+    if scenario == "accepted":
+        item = item.model_copy(update={"body": item.body + "\n## Testing\nRead the guide.\n"})
+    elif scenario == "rejected":
+        item = item.model_copy(update={"title": "invalid"})
+    elif scenario == "unresolved":
+        item = item.model_copy(update={"files_complete": False})
+    data = tmp_path / "evidence.json"
+    data.write_text(item.model_dump_json())
+    report = tmp_path / "report.json"
+    artifact = tmp_path / "artifact.json"
+    completed = cli(
+        "assess",
+        "--input",
+        data,
+        "--assessment-rubric",
+        ROOT / "examples/pr-text/assessment.toml",
+        "--experiment-output",
+        artifact,
+        *(["--output", report] if write_file else []),
+    )
+    assert completed.returncode == expected_status, completed.stderr
+    result = json.loads(report.read_text() if write_file else completed.stdout)
+    assert result["verdict"] == verdict
+    assert bool(result["suggestions"]) is has_suggestions
+    assert artifact.is_file()
+    if write_file:
+        assert completed.stdout == ""

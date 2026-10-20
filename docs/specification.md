@@ -88,12 +88,24 @@ judgments depend on the configured decider and remain subject to its limitations
 
 A future CI consumer enforces the finalized result independently of reporter
 generation. Passing this check is not a GitHub approval, permission to merge, or
-an assessment of code correctness. Current CLI exit status 0 means report
-generation succeeded, including rejected and unresolved reports; the consumer
-integration and reporter generation remain separate future work. The new
-`assess` command also exits 0 for every emitted verdict, including unresolved
-results, and 2 for invalid invocation or file/configuration errors. Its reports
-retain `automation_authorized: false`; native values do not establish task calibration.
+an assessment of code correctness. Consumer integration and reporter generation
+remain separate future work. `assess` uses the following exit contract:
+
+| Exit code | Assessment result | Suggested CI handling |
+| --- | --- | --- |
+| `0` | Accepted without suggestions | Success |
+| `3` | Accepted with suggestions | Success with warnings |
+| `1` | Rejected | Failure |
+| `4` | Unresolved | Block acceptance pending resolution |
+| `2` | Invalid invocation, configuration, input, replay, or output error | Failure |
+
+Code `3` is nonzero: CI must explicitly map it to success with warnings rather
+than relying on the shell's default failure handling. Reports are written before
+returning an assessment status; output failures return `2` instead. Legacy
+`review` and `evaluate` retain their existing exit behavior.
+
+Its reports retain `automation_authorized: false`; native values do not establish
+task calibration.
 
 ### Transition and benchmark reuse
 
@@ -946,8 +958,9 @@ rules and clearly label confidence as mock-derived.
 
 `pr-review-router review --input PATH [--config PATH] [--output PATH]` returns JSON
 using the resolved catalog defaults unless explicit provider selection is supplied.
-Help/version work without credentials. Successful advisory runs exit 0; invalid
-input/policy or I/O exits 2. File writes are atomic, and validation failures leave
+Help/version work without credentials. Legacy successful advisory runs exit 0;
+`assess` uses its verdict-specific exit contract above. Invalid input/policy or
+I/O exits 2. File writes are atomic, and validation failures leave
 an existing report untouched. Evidence/policy cannot be overwritten by the report.
 
 A fresh checkout installs from `uv.lock`, passes Ruff, formatting, codespell,
