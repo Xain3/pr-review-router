@@ -2,7 +2,13 @@
 
 These files contain fictional, sanitized evidence and require no credentials.
 
-## Diff-review pipeline
+The patch-coverage validation remains relevant to the intended PR communication
+check. Diff assessment, synthetic findings, and review-driven escalation below
+document the current legacy pipeline, not the planned reporter. Code correctness
+review is outside the intended product scope. See the
+[target architecture](../../docs/specification.md#intended-pr-communication-check).
+
+## Legacy diff-review pipeline
 
 The router validates patch coverage before calling any provider. The decision
 provider recommends whether to skip, review, or hand off; the review provider

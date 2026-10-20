@@ -5,6 +5,31 @@ Use Python 3.12+ and uv. Create a feature branch, implement changes under
 Keep the [specification](docs/specification.md), examples, and README in sync with
 user-visible behavior.
 
+## Product scope and compatibility
+
+The intended product checks PR title/description quality, consistency between
+them, and accuracy against supplied changes. Deterministic checks and semantic
+decider assessments feed rulesets and confidence requirements. Acceptance for
+this check requires all applicable gates to pass without unresolved relevant
+evidence. Non-blocking suggestions cannot override a failed or unresolved gate.
+Code correctness review is outside this scope.
+
+The planned reporter explains the finalized assessment, including early failures
+and qualified interpretations of likely issues. It cannot change outcomes,
+confidence, or CI status. Current `ReviewProvider` implementations assess diffs
+and can drive escalation; they are legacy behavior, not the reporter. Preserve
+their API names, configuration, prompts, schemas, and recordings until a
+separate runtime migration. CLI status 0 currently means a report was generated;
+the consumer CI check is future work. See the
+[target architecture](docs/specification.md#intended-pr-communication-check).
+
+The synthetic corpus and its title/description annotations remain reusable.
+Preserve its case identities, family splits, reference versions, and provenance.
+Document communication-benchmark changes under a separate version, exclude
+legacy review-coverage requirements there, and keep reference labels out of model
+inputs. Extend labels only for missing required criteria; retain provisional
+status until human validation.
+
 ## Python docstrings
 
 Use reStructuredText fields in callable docstrings so Pylance can surface

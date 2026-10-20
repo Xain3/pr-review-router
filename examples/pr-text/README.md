@@ -7,6 +7,13 @@ These examples apply explicit PR-text rules through a TOML policy:
 - The description must contain non-empty level-two `## Summary` and
   `## Testing` sections.
 
+These deterministic checks are reusable for the intended communication-quality
+gate. The remaining review routing below is legacy behavior. Passing format
+checks alone does not establish semantic consistency or the intended gate's
+acceptance: all applicable gates must pass without unresolved relevant evidence.
+The planned reporter and CI consumer are described in the
+[specification](../../docs/specification.md#intended-pr-communication-check).
+
 ## PR-text validation pipeline
 
 Text checks run before provider review and do not replace patch-coverage

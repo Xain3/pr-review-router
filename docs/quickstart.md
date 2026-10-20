@@ -1,8 +1,14 @@
-# Router quickstart: work on a real PR
+# Router quickstart: export evidence and run the current pipeline
 
-Export a GitHub PR, select review providers, and read the router's advisory
-report. The router currently consumes JSON exports; PR collection is an external
-step. It does not post comments, approve, merge, or change the PR.
+Export a GitHub PR and read the current router's advisory report. The intended
+product checks title/description quality, consistency between them, and accuracy
+against changes. The existing diff-review stages are legacy behavior; the
+reporter and consumer CI gate are planned. This guide describes implemented
+commands and outputs, not a completed communication-quality check. See the
+[target architecture](specification.md#intended-pr-communication-check).
+
+The router currently consumes JSON exports; PR collection is an external step.
+It does not post comments, approve, merge, or change the PR.
 
 ## 1. Install the router
 
@@ -16,7 +22,7 @@ uv sync --locked
 uv run pr-review-router --help
 ```
 
-## 2. Export the PR you want to review
+## 2. Export the PR evidence
 
 The following **Bash** recipe uses the separately installed GitHub CLI (`gh`)
 and `jq`. Authenticate with `gh auth login` using an account with read access to
@@ -79,39 +85,41 @@ Keep exports under `reports/`; they can contain private source and PR text.
 Do not commit them. The [evidence contract](specification.md#evidence-contract)
 is the reference if you already have your own exporter.
 
-## 3. Select providers and run the review
+## 3. Run the current pipeline
 
-The shipped defaults use offline mocks. They demonstrate routing and **cannot
-perform substantive code review**. For a real model assessment, install and
-start the local decision and review servers described in
-[local model setup](../examples/local-models/README.md#live-local-evaluation).
-The supplied `local` profile expects Ollaya with `winnow:e4b` on port 11435 and
-Ollama with `pr-review-local:latest` on port 11434. Adjust the names and settings
-in `models.toml` to your installed models; the router does not download models
-or start servers. Check their inventories with `ollaya list` and `ollama list`.
-
-For PR 123, after the servers and models are ready:
-
-```sh
-uv run pr-review-router review --input reports/pr-123/evidence.json --profile local --output reports/pr-123/report.json --experiment-output reports/pr-123/experiment.json
-```
-
-Replace `123` in these paths if you exported another PR. Explicit model selection
-enters experiment mode: skip recommendations are shadowed by continued review,
-and policy direct acceptance/rejection must be disabled. This remains an
-experimental advisory workflow, with human review for unresolved assessments.
-See [model selection](../README.md#named-models-and-profiles) for custom profiles
-and [hosted Jev setup](../README.md#hosted-jev-decisions) for hosted decisions
-paired with a separate review provider.
-
-To check the export and routing plumbing before configuring models:
+Start with offline mocks to check the export and routing plumbing. For PR 123:
 
 ```sh
 uv run pr-review-router review --input reports/pr-123/evidence.json --decider mock --reviewer mock --output reports/pr-123/report.json --experiment-output reports/pr-123/experiment.json
 ```
 
-Expect ordinary code changes to require human review with mocks. Their scores
-have `source: "mock"` and are not calibrated probabilities.
+Replace `123` in these paths with the exported PR number. Ordinary code changes
+usually require human handoff with the mocks; this reflects their limited
+legacy routing rules, not a judgment that the PR's communication is poor. Mock
+confidence has `source: "mock"` and is not calibrated. The mock review provider
+is not a report-consuming reporter and cannot perform substantive code review.
+
+### Optional live legacy experiment
+
+Decision adapters and semantic rubrics remain useful for communication checks.
+The current `local` profile additionally runs an Ollama code-defect assessment,
+which is outside the intended product scope and does not implement the reporter.
+To reproduce that legacy experiment, install and start the servers in
+[local model setup](../examples/local-models/README.md#live-local-evaluation).
+The supplied profile expects Ollaya with `winnow:e4b` on port 11435 and Ollama
+with `pr-review-local:latest` on port 11434. Adjust `models.toml` to your installed
+models; the router does not download models or start servers. Inspect their
+inventories with `ollaya list` and `ollama list`.
+
+```sh
+uv run pr-review-router review --input reports/pr-123/evidence.json --profile local --output reports/pr-123/report.json --experiment-output reports/pr-123/experiment.json
+```
+
+Explicit model selection enters experiment mode: skip recommendations are
+shadowed by continued legacy review, and direct acceptance/rejection policies
+must be disabled. Unresolved assessments remain advisory human handoffs. See
+[model selection](../README.md#named-models-and-profiles) and
+[hosted Jev setup](../README.md#hosted-jev-decisions) for current adapter options.
 
 ### Apply your repository's policy
 
@@ -130,7 +138,7 @@ required_body_sections = ["Summary", "Testing"]
 Apply it to the exported PR (a format failure hands the PR to a human):
 
 ```sh
-uv run pr-review-router review --input reports/pr-123/evidence.json --profile local --config reports/quickstart-policy.toml --output reports/pr-123/report.json --experiment-output reports/pr-123/experiment.json
+uv run pr-review-router review --input reports/pr-123/evidence.json --decider mock --reviewer mock --config reports/quickstart-policy.toml --output reports/pr-123/report.json --experiment-output reports/pr-123/experiment.json
 ```
 
 Without `--config`, policy loading uses `PR_REVIEW_ROUTER_CONFIG` when set,
@@ -146,7 +154,7 @@ See the [specification](specification.md) for all fields and constraints.
 ### Command-line interface
 
 ```sh
-uv run pr-review-router review --input reports/pr-123/evidence.json --profile local
+uv run pr-review-router review --input reports/pr-123/evidence.json --decider mock --reviewer mock
 ```
 
 JSON is written to stdout unless `--output PATH` is supplied. Diagnostics go to
@@ -181,17 +189,19 @@ print(report.model_dump_json(indent=2))
 ```
 
 This minimal Python example explicitly uses mocks to demonstrate the engine API;
-use the configured CLI command above for model assessment. `load_policy(None)`
-loads packaged defaults and per-setting environment overrides; select a policy
-file by passing its path. CLI catalog/profile resolution is separate from this
-engine call. The
-engine returns a `ReviewReport`; it does not write a file. Evidence and policy
+the optional live command above reproduces the legacy model experiment.
+`load_policy(None)` loads packaged defaults and per-setting environment overrides;
+select a policy file by passing its path. CLI catalog/profile resolution is
+separate from this engine call. The engine returns a `ReviewReport`; it does not
+write a file. Evidence and policy
 validation errors raise exceptions in Python rather than CLI exit codes.
 
-A `DecisionProvider` recommends a route. A `ReviewProvider` assesses the diff
-at `standard` or `deep` depth. Both depths use the same review-provider
-interface. See [provider contracts](../src/pr_review_router/providers.py) and
-[data contracts](../src/pr_review_router/contracts.py) for integrations.
+A `DecisionProvider` recommends a route. The legacy `ReviewProvider` assesses
+the diff at `standard` or `deep` depth and may influence escalation. Both depths
+use the same interface. It does not receive the finalized assessment report and
+must not be treated as the intended reporter API. See the current
+[provider contracts](../src/pr_review_router/providers.py) and
+[data contracts](../src/pr_review_router/contracts.py).
 
 ## 5. Act on the report
 
@@ -215,9 +225,19 @@ Reports use `schema_version: "4"` and always set `advisory_only: true`.
 | `accepted`, `rejected` | Advisory direct decision or configured unresolved rejection; inspect `route` and `reasons`. |
 | `feedback` | Non-blocking review feedback under an explicit policy. |
 
-Reports never approve, merge, or change a PR. A successful command or an
-`accepted` result does not authorize automated acceptance. Confidence must be
-interpreted with its source; unavailable confidence cannot clear review.
+Reports never approve, merge, or change a PR. The table describes current
+advisory routing, not the intended CI acceptance contract. Status 0 means report
+generation succeeded, including rejection and unresolved results. Confidence
+must be interpreted with its source; unavailable confidence cannot clear the
+current review stages.
+
+The intended communication check accepts only when all applicable gates pass
+with no unresolved relevant evidence, under the configured rules and confidence
+requirements. Non-blocking suggestions cannot override a failed or unresolved
+gate. That acceptance applies only to this check; it is not a GitHub approval or
+permission to merge. The reporter explains the finalized result and cannot
+change the CI status. Neither the reporter nor consumer CI enforcement is
+implemented by this scope correction.
 
 File output creates parent directories and replaces the destination atomically.
 Input and policy files cannot be output destinations. Keep private evidence and
@@ -225,15 +245,17 @@ generated reports out of version control; use `reports/` for runtime output and
 sanitized fixtures in `examples/`.
 
 Before acting, compare the report's `head_sha` and `base_sha` with the current
-PR. If either changed, export and review again. Start with `coverage.issues` and
-`reasons`: fix an incomplete export or route unsupported changes to a human.
-Then read `reviews` and `findings` against the actual diff. A human handoff may
-reflect uncertainty, a provider failure, or a policy gate rather than a defect.
+PR. If either changed, export and assess again. Start with `coverage.issues`
+and `reasons`, plus enabled `pr_text` and `rubric` checks, to distinguish an
+incomplete export from an assessed communication failure. In legacy experiments,
+`reviews` and `findings` describe the separate diff-assessment stages. A handoff
+may reflect a provider limitation, uncertainty, or a policy gate; it is not proof
+of a code defect or poor PR communication.
 
 `report.json` contains the advisory result. `experiment.json` contains separate
 provider/configuration provenance and original decisions, useful when a shadowed
 skip differs from the final route. Keep both with the evidence for the reviewed
-commit. Neither replaces repository tests or a human review decision.
+commit. Neither replaces repository tests or a code-review decision.
 
 For an optional offline installation check, use the
 [small example](../README.md#install-and-run). For adapter testing and evaluation

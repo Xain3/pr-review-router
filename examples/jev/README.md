@@ -22,11 +22,13 @@ uv run pr-review-router evaluate \
   --output-dir reports/jev-rubric
 ```
 
-Jev performs route selection and semantic Choice/Noul/Score checklist assessment,
-not substantive code review or free-form finding generation. The selected mock
-reviewer is demonstration-only. Configure an independent local Ollama reviewer
-as in [local model examples](../local-models/README.md), or hand substantive
-review to a human. Keep provider roles distinct.
+Jev performs route selection and semantic Choice/Noul/Score checklist assessment.
+These decision capabilities are reusable for the intended PR communication
+check. Jev does not generate the planned reporter's explanations. The selected
+mock reviewer is a legacy routing demonstration; an optional Ollama review
+adapter executes code assessment outside the intended product scope. Neither
+implements the report-consuming reporter contract. See the
+[target architecture](../../docs/specification.md#intended-pr-communication-check).
 
 Choice and Score confidence describe their native distributions; Noul supplies
 only a yes-probability. None is a calibrated probability that a PR is safe.

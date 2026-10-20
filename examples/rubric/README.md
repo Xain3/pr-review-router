@@ -2,9 +2,15 @@
 
 For a six-criterion use case combining formal checks with semantic rationale,
 description/diff coverage, supplied-review coverage, blockers, suggestions,
-and an advisory skip/approval recommendation, see
+and a legacy advisory skip/approval recommendation, see
 [PR and review rubric evaluation](../rubric-review/README.md). This set below
 demonstrates the existing deterministic policy rubric.
+
+Title/body criteria remain reusable for the intended PR communication check.
+The downstream diff-review route is legacy behavior, and supplied-review
+coverage is not a core communication requirement. The planned reporter explains
+the finalized assessment without affecting acceptance. See the
+[target architecture](../../docs/specification.md#intended-pr-communication-check).
 
 This set demonstrates multiple weighted criteria rather than a single format
 gate. Rubric scoring is a deterministic policy check, not a model/provider
