@@ -439,7 +439,17 @@ def explain_assessment(
         elif identifier == "policy:pr_text":
             details.extend(final.pr_text.issues)
         elif identifier == "policy:rubric":
-            details.extend(c.explanation for c in final.policy_rubric.criteria if not c.passed)
+            rubric = final.policy_rubric
+            details.extend(
+                c.explanation
+                for c in rubric.criteria
+                if c.criterion_id in rubric.failed_hard_blockers
+            )
+            if rubric.enabled and rubric.score is not None and rubric.score < rubric.minimum_score:
+                details.append(
+                    f"Rubric score {rubric.score:.1f} is below the "
+                    f"{rubric.minimum_score:.1f} minimum."
+                )
         elif identifier.startswith("check:"):
             details.extend(
                 c.detail

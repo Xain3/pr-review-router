@@ -68,6 +68,83 @@ def test_preflight_failure_and_unavailable_inference():
     assert "Qualified interpretation" not in text
 
 
+def test_policy_rubric_explains_aggregate_score_failure():
+    """Explain a score shortfall even when every criterion meets its threshold."""
+    policy = Policy.model_validate(
+        {
+            "rubric_minimum_score": 70,
+            "rubric_criteria": [
+                {
+                    "criterion_id": "summary-length",
+                    "description": "Summary has sufficient detail.",
+                    "field": "body",
+                    "check": "min_words",
+                    "minimum_words": 10,
+                    "pass_score": 40,
+                    "blocker": "hard",
+                }
+            ],
+        }
+    )
+    report = assess_pull_request(evidence(), policy, rubric())
+
+    assert all(criterion.passed for criterion in report.policy_rubric.criteria)
+    assert report.policy_rubric.failed_hard_blockers == []
+    assert report.policy_rubric.score < report.policy_rubric.minimum_score
+    blocking_line = next(
+        line
+        for line in explain_assessment(report).markdown.splitlines()
+        if line.startswith("- policy:rubric:")
+    )
+    assert "Rubric score 50.0 is below the 70.0 minimum." in blocking_line
+
+
+def test_policy_rubric_excludes_soft_failures_from_blocking_explanation():
+    """Explain hard failures without presenting soft failures as blockers."""
+    policy = Policy.model_validate(
+        {
+            "rubric_minimum_score": 70,
+            "rubric_criteria": [
+                {
+                    "criterion_id": "hard-marker",
+                    "description": "Hard marker is present.",
+                    "field": "body",
+                    "check": "contains",
+                    "value": "Hard marker:",
+                    "blocker": "hard",
+                },
+                {
+                    "criterion_id": "soft-marker",
+                    "description": "Soft marker is present.",
+                    "field": "body",
+                    "check": "contains",
+                    "value": "Soft marker:",
+                    "blocker": "soft",
+                },
+                {
+                    "criterion_id": "body-present",
+                    "description": "Description is present.",
+                    "field": "body",
+                    "check": "non_empty",
+                    "weight": 10,
+                },
+            ],
+        }
+    )
+    report = assess_pull_request(evidence(), policy, rubric())
+    blocking_line = next(
+        line
+        for line in explain_assessment(report).markdown.splitlines()
+        if line.startswith("- policy:rubric:")
+    )
+
+    assert report.policy_rubric.score >= report.policy_rubric.minimum_score
+    assert report.policy_rubric.failed_hard_blockers == ["hard-marker"]
+    assert report.policy_rubric.failed_soft_criteria == ["soft-marker"]
+    assert "Hard marker:" in blocking_line
+    assert "Soft marker:" not in blocking_line
+
+
 class Organizer:
     """Supply constrained plans while attempting to mutate a private input copy."""
 
