@@ -14,7 +14,7 @@ this check requires all applicable gates to pass without unresolved relevant
 evidence. Non-blocking suggestions cannot override a failed or unresolved gate.
 Code correctness review is outside this scope.
 
-The planned reporter explains the finalized assessment, including early failures
+The separate reporter explains the finalized assessment, including early failures
 and qualified interpretations of likely issues. It cannot change outcomes,
 confidence, or CI status. Current `ReviewProvider` implementations assess diffs
 and can drive escalation; they are legacy behavior, not the reporter. Preserve

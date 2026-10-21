@@ -9,8 +9,34 @@ JSON reports using offline mocks or opt-in local/hosted experiments. The decider
 deterministic checks, semantic rubric, confidence provenance, and patch validation
 now support the `assess` command, which returns a final communication verdict
 without invoking a reviewer. Legacy `review`/`evaluate` behavior and recordings
-remain available. The reporter and consumer CI integration are not implemented.
+remain available. The separate `report` command explains saved assessments;
+consumer CI integration remains future work.
 Reports never approve, merge, or change a PR.
+
+## Explain a finalized assessment
+
+```sh
+uv run pr-review-router assess --input examples/pr-text/valid.json --assessment-rubric examples/pr-text/assessment.toml --output reports/assessment.json
+uv run pr-review-router report --input reports/assessment.json --output reports/comment.md
+# Explicit experimental local inference (requires the selected model installed in Ollama):
+uv run pr-review-router report --input reports/assessment.json --reporter-config examples/reporter/models.toml --reporter qwen-coding --json
+```
+
+`report` defaults to offline deterministic Markdown. `--json` emits a versioned
+explanation artifact with the assessment fingerprint, rendering mode, and safe
+fallback diagnostic. Both `qwen-coding` and `qwen-general` are opt-in choices;
+see the [reporter examples](examples/reporter/README.md). The model organizes
+recorded facts and can add reasoned, actionable proposals tied to recorded issues.
+Both modes include suggested next steps: broad remedies for deterministic checks,
+and optional model advice with concrete steps and rationale. Advice is explicitly
+proposed, separate from authoritative facts, and must be verified against the PR.
+The JSON artifact exposes these as `next_steps` with evidence references and origin. Invalid or unavailable
+model output falls back to the complete deterministic explanation.
+
+The saved assessment remains authoritative and unchanged. `report` returns 0
+when an explanation is written, including fallback and rejected/unresolved
+assessments; command/configuration/I/O errors return 2. Use `assess` exit codes
+for CI decisions. Neither command posts comments or changes a PR.
 
 ## Terminology and roles
 
@@ -22,7 +48,7 @@ The future CI consumer enforces the machine result independently of reporter tex
 | --- | --- | --- |
 | Decider / decision provider | Assess configured criteria against the evidence. | Decision adapters and mixed deterministic/semantic rubrics power `assess`. |
 | Engine / router | Apply rulesets and confidence requirements to determine the check result. | `assess` finalizes communication gates; legacy `review` still uses review results. |
-| Reporter | Explain the finalized report, distinguishing recorded facts from qualified interpretations of likely issues. | Planned; `ReviewProvider` is not a reporter. |
+| Reporter | Explain the finalized report, distinguishing recorded facts from qualified interpretations of likely issues. | Offline rendering or explicit experimental Ollama generation through `report`. |
 
 The reporter must cover early deterministic failures and direct rejections too.
 It cannot change decisions, confidence, or CI status, invent rejection reasons,
@@ -33,7 +59,7 @@ The existing **legacy review provider** (`ReviewProvider`, `--reviewer`, and
 `review` model settings) receives evidence at `standard` or `deep` depth and
 returns concerns or uncertainty that can drive escalation. Its optional Ollama
 adapter explicitly looks for code defects. Those interfaces remain unchanged for
-compatibility; they are not aliases for the planned reporter. The mock providers
+compatibility; they are not aliases for the explanation reporter. The mock providers
 are deterministic demonstrations; their `source: "mock"` confidence is not
 calibrated and they cannot assess substantive correctness.
 
@@ -332,7 +358,7 @@ consumers and never change a PR.
 
 The `jev` decision backend uses the synchronous TypeSafe SDK for routing and
 semantic rubric questions (`choice`, `noul`/`predicate`, and `score`). It does not
-generate the planned reporter's explanations. Current experiments still select
+generate reporter explanations. Current experiments still select
 a separate legacy review provider; the example uses a demonstration mock.
 Code assessment by the optional Ollama reviewer is outside the intended scope.
 
@@ -459,8 +485,8 @@ See the [specification](docs/specification.md),
 [PR-text examples](examples/pr-text/README.md), and
 [contribution guide](CONTRIBUTING.md).
 Local/hosted decision adapters, the assessment runtime, and the communication
-benchmark are implemented. Consumer CI enforcement and reporter generation
-remain separate future increments. Integrated PR collection/posting remains future
-work; the current CLI does not change PRs.
+benchmark and separate explanation reporter are implemented. Consumer CI
+enforcement and integrated PR collection/posting remain future work; the current
+CLI does not change PRs.
 
 Licensing is pending owner selection.

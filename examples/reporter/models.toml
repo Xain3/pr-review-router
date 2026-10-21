@@ -1,0 +1,10 @@
+# Experimental, explicit selections; this file has no live default.
+[models.qwen-coding]
+backend = "ollama"
+endpoint = "http://localhost:11434"
+model = "qwen3.6:35b-a3b-coding-mtp-q4_K_M"
+
+[models.qwen-general]
+backend = "ollama"
+endpoint = "http://localhost:11434"
+model = "qwen3.6:35b-a3b-mtp-q4_K_M"
